@@ -1,0 +1,351 @@
+{
+  "@@locale": "en",
+  "appName": "Reminder Schedule",
+  "homeTab": "Home",
+  "homeSegmentActivities": "Activities",
+  "homeSegmentSchedules": "Schedules",
+  "statsTab": "Stats",
+  "settingsTab": "Settings",
+  "greetingMorning": "Good morning",
+  "greetingAfternoon": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "todayActivities": "Today's activities",
+  "emptyActivities": "No activities yet. Add one to get started.",
+  "photoTracking": "Photo tracking on",
+  "notScheduledToday": "Not scheduled today",
+  "todaySummary": "{completedCount}/{taskCount} tasks completed today",
+  "@todaySummary": {
+    "placeholders": {
+      "taskCount": {
+        "type": "int"
+      },
+      "completedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "globalStreakValue": "Global streak: {days} days",
+  "@globalStreakValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "createActivity": "Create activity",
+  "editActivity": "Edit activity",
+  "activityTitle": "Activity title",
+  "activityTitleHint": "Example: Morning Workout",
+  "selectedDays": "Selected days",
+  "scheduledTime": "Scheduled time",
+  "weeklyGoalLabel": "Weekly goal",
+  "weeklyGoalHint": "How many completions per week?",
+  "weeklyGoalValue": "{count} times / week",
+  "@weeklyGoalValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "preReminderLabel": "Pre-start reminder",
+  "preReminderHint": "Select reminder offset",
+  "preReminderOff": "Off",
+  "preReminderMinutesValue": "{minutes} minutes before start",
+  "@preReminderMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "enableNotifications": "Enable notifications",
+  "enableMorningReminder": "Enable morning reminder",
+  "enableEndOfDayReminder": "Enable end-of-day reminder",
+  "enablePhotoProgress": "Enable photo progress",
+  "formValidationMessage": "Please fill title and choose at least one day.",
+  "save": "Save",
+  "saving": "Saving...",
+  "activityDetail": "Activity detail",
+  "activityNotFound": "Activity not found.",
+  "deleteActivity": "Delete activity",
+  "deleteActivityConfirm": "Delete \"{title}\"?",
+  "@deleteActivityConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "completionRate": "Completion rate",
+  "currentStreak": "Current streak",
+  "daysCount": "{count} days",
+  "@daysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "weeklyProgress": "Weekly progress",
+  "completeToday": "Complete today",
+  "oneTapComplete": "One tap completion",
+  "subActivitiesLabel": "Sub-activities",
+  "subActivityHint": "Example: Leg day",
+  "addSubActivity": "Add sub",
+  "subActivitiesProgress": "Sub completed: {completed}/{total}",
+  "@subActivitiesProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "checklistConfirmTitle": "Checklist confirmation",
+  "checklistConfirmMessage": "Are you sure this status is correct and should be changed?",
+  "checklistConfirmAction": "Yes, change",
+  "journalNotesTitle": "Journal notes",
+  "journalAddNote": "Add note",
+  "journalEditNote": "Edit note",
+  "journalDeleteNote": "Delete note",
+  "journalDeleteConfirm": "Delete note on {date}?",
+  "@journalDeleteConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journalNoteSaved": "Note saved.",
+  "journalNoteLockedDeleteFirst": "A note already exists for that date. Delete it first if you want to replace it.",
+  "journalNoteDeleted": "Note deleted.",
+  "journalEmpty": "No notes yet.",
+  "journalNotesCount": "{count} saved notes",
+  "@journalNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noteDateLabel": "Note date",
+  "noteInputHint": "Write your note...",
+  "comparisonTimelineTitle": "Progress timeline",
+  "comparisonFilter7d": "7 days",
+  "comparisonFilter30d": "30 days",
+  "comparisonFilterAll": "All",
+  "comparisonEmpty": "No data available for comparison yet.",
+  "comparisonTapPhotoCompare": "Tap photo to pick 2 photos for comparison",
+  "comparisonNoPreviousPhoto": "No previous photo to compare yet.",
+  "comparisonPhotoDialogTitle": "Photo comparison",
+  "comparisonCurrentPhoto": "Current photo",
+  "comparisonPreviousPhoto": "Previous photo",
+  "comparisonFirstSelection": "Selection 1",
+  "comparisonSecondSelection": "Selection 2",
+  "comparisonNeedTwoPhotos": "Add at least 2 photos to compare.",
+  "comparisonPhotoSwipeHint": "Swipe thumbnails to view more, tap to open full screen.",
+  "photoUploadCommentTitle": "Photo upload comment",
+  "comparisonTargetLabel": "Compare with",
+  "comparisonTargetPrevious": "Previous photo",
+  "comparisonTarget1Week": "1 week",
+  "comparisonTarget2Weeks": "2 weeks",
+  "comparisonTarget1Month": "1 month",
+  "comparisonTargetCustomDate": "Pick date",
+  "comparisonDatePickerHelp": "Select comparison date",
+  "closeDialogAction": "Close",
+  "photoDatePickerHelp": "Select photo date",
+  "viewAllPhotoAction": "View",
+  "photoUploadOptionsTitle": "Photo upload options",
+  "photoCommentLabel": "Photo comment (optional)",
+  "photoCommentHint": "Write a short review for this photo...",
+  "photoCommentApplyAll": "This comment will be applied to all selected photos.",
+  "deletePhotoComment": "Delete photo comment",
+  "deletePhotoCommentConfirm": "Delete uploaded photo comment on {date}?",
+  "@deletePhotoCommentConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "photoCommentDeleted": "Photo upload comment deleted.",
+  "photoBatchImported": "{count} photos saved on {startDate}.",
+  "@photoBatchImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
+  "testerModeTitle": "Tester mode",
+  "testerModeDescription": "Generate quick sample history so timeline/statistics can be tested instantly without waiting for day changes.",
+  "testerSeed14Days": "Seed 14 days",
+  "testerSeed30Days": "Seed 30 days",
+  "testerSeedConfirm": "Generate sample data for last {days} days for this activity?",
+  "@testerSeedConfirm": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "testerSeedResult": "{count} sample entries added.",
+  "@testerSeedResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressPhotos": "Progress photos",
+  "addPhoto": "Add photo",
+  "deletePhoto": "Delete photo",
+  "deletePhotoConfirm": "Delete progress photo on {date}?",
+  "@deletePhotoConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "photoDeleted": "Photo deleted.",
+  "historyLog": "History log",
+  "noHistoryYet": "No history yet.",
+  "completed": "Completed",
+  "notCompleted": "Not completed",
+  "noPhotoYet": "No photos yet.",
+  "dataImmutableWarningTitle": "Save confirmation",
+  "noteSaveWarningMessage": "A note can only be saved once per date. After saving, it cannot be edited (only deleted). Continue?",
+  "photoSaveWarningMessage": "Uploaded photos and upload comments cannot be edited after saving (only deleted). Continue?",
+  "overallCompletion": "Overall completion",
+  "last7DaysChart": "Last 7 days",
+  "last28DaysHeatmap": "Last 28 days heatmap",
+  "insightsTitle": "Auto insights",
+  "insightBestTimeEmpty": "Not enough data for best time insight yet.",
+  "insightBestTimeValue": "Most consistent time: {time}",
+  "@insightBestTimeValue": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "insightMostMissedEmpty": "No frequently missed activity yet.",
+  "insightMostMissedValue": "Most missed: {title} ({count}x)",
+  "@insightMostMissedValue": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightTrendValue": "Weekly trend: {sign}{percent}%",
+  "@insightTrendValue": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyGoalProgressLabel": "This week goal: {completed}/{goal}",
+  "@weeklyGoalProgressLabel": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "breakdownPerActivity": "Per-activity breakdown",
+  "reminderSettings": "Reminder settings",
+  "morningReminderTime": "Morning reminder time",
+  "endOfDayReminderTime": "End-of-day reminder time",
+  "testNotificationNow": "Send test notification now",
+  "testNotificationSent": "Test notification has been sent.",
+  "notificationHealthTitle": "Notification health",
+  "healthStatusUnavailable": "Device health status unavailable.",
+  "timezoneLabel": "Active timezone",
+  "scheduleModeLabel": "Scheduling mode",
+  "notificationsPermissionLabel": "Notification permission",
+  "exactAlarmLabel": "Exact alarm",
+  "batteryOptimizationLabel": "Ignoring battery optimization",
+  "statusOn": "On",
+  "statusOff": "Off",
+  "statusUnknown": "Unknown",
+  "openNotificationSettings": "Open notification settings",
+  "openExactAlarmSettings": "Open exact alarm settings",
+  "openBatterySettings": "Open battery settings",
+  "openAutoStartSettings": "Open auto-start settings",
+  "refreshHealthStatus": "Refresh status",
+  "openedNotificationSettings": "Opening notification settings.",
+  "openedExactAlarmSettings": "Opening exact alarm settings.",
+  "openedBatterySettings": "Opening battery settings.",
+  "openedAutoStartSettings": "Opening auto-start / app settings.",
+  "cannotOpenSettings": "Cannot open settings on this device.",
+  "backupRestoreTitle": "Backup & restore",
+  "exportBackup": "Export backup",
+  "importBackup": "Import backup",
+  "chooseBackupFile": "Choose backup file",
+  "noBackupFilesFound": "No backup files found yet.",
+  "importBackupConfirm": "Import will overwrite current data. Continue?",
+  "backupShareText": "Reminder Schedule backup",
+  "backupExported": "Backup exported: {path}",
+  "@backupExported": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "backupImported": "Backup imported successfully.",
+  "language": "Language",
+  "languageId": "Bahasa Indonesia",
+  "languageEn": "English",
+  "addRecurringActivity": "Recurring activity",
+  "addRecurringActivitySubtitle": "Daily/weekly schedule",
+  "addOneTimeReminder": "Specific schedule",
+  "addOneTimeReminderSubtitle": "One-time date and time reminder",
+  "oneTimeRemindersSection": "Specific schedules",
+  "oneTimeRemindersEmpty": "No specific schedules yet.",
+  "notificationsDisabled": "Notifications disabled",
+  "createOneTimeReminder": "Create specific schedule",
+  "editOneTimeReminder": "Edit specific schedule",
+  "oneTimeReminderDetail": "Specific schedule detail",
+  "oneTimeReminderNotFound": "Specific schedule not found.",
+  "deleteOneTimeReminder": "Delete specific schedule",
+  "deleteOneTimeReminderConfirm": "Delete \"{title}\"?",
+  "@deleteOneTimeReminderConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "oneTimeTitleLabel": "Reminder title",
+  "oneTimeTitleHint": "Example: Pay electricity bill",
+  "oneTimeDateLabel": "Date",
+  "oneTimeTimeLabel": "Time",
+  "oneTimeValidationMessage": "Please enter reminder title.",
+  "oneTimeStatusDone": "Done",
+  "oneTimeStatusPending": "Pending",
+  "oneTimeStatusMissed": "Schedule missed",
+  "oneTimeMarkDone": "Mark as done",
+  "oneTimeDoneSubtitle": "This schedule is completed.",
+  "oneTimePendingSubtitle": "Mark this when you complete it."
+}

@@ -1,0 +1,1052 @@
+[
+  {
+    "family": "olahraga",
+    "aliases": ["olahraga", "workout", "work out", "wo", "gym", "ngegym", "lari", "jogging", "run", "berenang", "renang", "swimming", "swim", "sepeda", "gowes", "cycling", "badminton", "bulu tangkis", "basket", "futsal", "sepak bola", "tenis", "yoga", "pilates", "zumba", "stretching", "jalan pagi", "jalan kaki", "hiking", "push up", "pushup", "sit up", "situp", "pull up", "pullup", "plank", "skipping", "angkat beban"],
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "spaced",
+      "preferredTimeWindows": ["morning", "evening"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "hidrasi",
+    "aliases": ["minum air", "air putih", "hidrasi", "minum", "minum air putih", "minum dulu", "isi botol minum"],
+    "canonicalKeyword": "minum air",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "midday", "evening"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "anytime"
+    },
+    "defaultTimeMinutes": 480,
+    "actionReasonKey": "hidrasiPagi"
+  },
+  {
+    "family": "makan",
+    "aliases": ["sarapan", "sarapan pagi", "breakfast", "makan pagi"],
+    "canonicalKeyword": "sarapan",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "morning"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "beforeStart"
+    },
+    "defaultTimeMinutes": 360,
+    "actionReasonKey": "sarapanPagi"
+  },
+  {
+    "family": "makan",
+    "aliases": ["makan siang", "lunch", "istirahat makan siang", "jam makan siang"],
+    "canonicalKeyword": "makan siang",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["midday"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 750,
+    "actionReasonKey": "makanSiang"
+  },
+  {
+    "family": "makan",
+    "aliases": ["makan malam", "dinner", "supper", "jam makan malam"],
+    "canonicalKeyword": "makan malam",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1140,
+    "actionReasonKey": "makanMalam"
+  },
+  {
+    "family": "makan",
+    "aliases": ["makan"],
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "midday", "evening"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "anytime"
+    },
+    "needsTitleDetail": true,
+    "detailPromptKey": "mealSpecificity"
+  },
+  {
+    "family": "perawatanDiri",
+    "aliases": ["mandi", "mandi pagi", "mandi malam", "mandi sore", "skincare", "cuci muka", "sikat gigi", "gosok gigi", "grooming", "shower"],
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "outsideRoutine"
+    },
+    "defaultTimeMinutes": 360,
+    "actionReasonKey": "perawatanPagi"
+  },
+  {
+    "family": "kesehatan",
+    "aliases": ["minum vitamin", "vitamin", "suplemen", "obat", "minum obat", "konsumsi vitamin", "multivitamin"],
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "outsideRoutine"
+    },
+    "defaultTimeMinutes": 360,
+    "actionReasonKey": "kesehatanPagi"
+  },
+  {
+    "family": "tidur",
+    "aliases": ["tidur siang", "nap", "power nap"],
+    "canonicalKeyword": "tidur siang",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["midday", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 780,
+    "actionReasonKey": "tidurSiang"
+  },
+  {
+    "family": "tidur",
+    "aliases": ["tidur", "tidur malam", "sleep", "tidur cepat", "tidur lebih awal", "istirahat malam", "bobo", "bobok"],
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1320,
+    "actionReasonKey": "tidurMalam"
+  },
+  {
+    "family": "rehat",
+    "aliases": ["istirahat", "break", "istirahat sejenak", "rehat", "jeda", "coffee break", "break kerja"],
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["midday", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 780,
+    "actionReasonKey": "rehatRingan"
+  },
+  {
+    "family": "rehat",
+    "aliases": ["meditasi", "breathing", "napas", "latihan napas", "pernapasan"],
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1290,
+    "actionReasonKey": "meditasiMalam"
+  },
+  {
+    "family": "rehat",
+    "aliases": ["rebahan", "santai", "healing", "me time"],
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 960,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["tugas", "kerjakan tugas", "tugas kampus", "tugas sekolah", "pr", "pekerjaan rumah sekolah", "latihan soal"],
+    "canonicalKeyword": "tugas",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "workdayFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "produktif",
+    "aliases": ["ngoding", "coding", "nulis kode", "pemrograman", "programming", "debugging", "debug code"],
+    "canonicalKeyword": "ngoding",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["baca buku", "membaca buku", "reading book"],
+    "canonicalKeyword": "baca buku",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 960,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "rehat",
+    "aliases": ["jurnal", "journaling", "menulis jurnal", "refleksi", "menulis refleksi"],
+    "canonicalKeyword": "jurnal",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1230,
+    "actionReasonKey": "meditasiMalam"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["review materi", "review pelajaran", "ulangi materi", "belajar ulang"],
+    "canonicalKeyword": "review materi",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 990,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["belajar", "membaca", "menulis", "review", "kursus", "study"],
+    "canonicalKeyword": "belajar",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "workdayFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "kerja",
+    "aliases": ["kerja", "rapat", "meeting", "fokus", "deep work", "proyek", "projek", "kelas", "kuliah", "sekolah"],
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 5,
+      "maxSessionsPerWeek": 6,
+      "minGapDays": 0,
+      "dayStrategy": "workdayFriendly",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 540,
+    "actionReasonKey": "kerjaPagi"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["beberes", "bersih bersih", "bersih", "nyapu", "ngepel", "cuci piring", "cuci baju", "laundry", "rapihin kamar", "beresin kamar"],
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "sosial",
+    "aliases": ["telepon", "nelpon", "chat", "ngobrol", "keluarga", "teman", "nongkrong", "silaturahmi", "main bareng", "quality time", "pasangan", "ketemu teman"],
+    "category": "sosial",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "sosialSore"
+  },
+  {
+    "family": "hiburan",
+    "aliases": ["nonton", "movie", "film", "series", "main game", "game", "gaming", "denger musik"],
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1170,
+    "actionReasonKey": "hiburanMalam"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["senam pagi", "morning exercise"],
+    "canonicalKeyword": "senam pagi",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 6,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "morning"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 360,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["jalan sore", "jalan santai sore", "evening walk"],
+    "canonicalKeyword": "jalan sore",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1050,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["peregangan pagi", "stretch pagi", "stretching pagi"],
+    "canonicalKeyword": "peregangan pagi",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "morning"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "beforeStart"
+    },
+    "defaultTimeMinutes": 360,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["peregangan malam", "stretch malam", "stretching malam"],
+    "canonicalKeyword": "peregangan malam",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1260,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["latihan mobilitas", "mobility drill"],
+    "canonicalKeyword": "latihan mobilitas",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 420,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["latihan inti tubuh", "core workout"],
+    "canonicalKeyword": "latihan inti tubuh",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 1,
+      "dayStrategy": "spaced",
+      "preferredTimeWindows": ["morning", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["latihan kaki", "leg day"],
+    "canonicalKeyword": "latihan kaki",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "spaced",
+      "preferredTimeWindows": ["morning", "evening"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "olahraga",
+    "aliases": ["latihan tangan", "upper body workout"],
+    "canonicalKeyword": "latihan tangan",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "spaced",
+      "preferredTimeWindows": ["morning", "evening"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "olahragaPagi"
+  },
+  {
+    "family": "makan",
+    "aliases": ["makan buah", "buah sore", "fruit break"],
+    "canonicalKeyword": "makan buah",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 5,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["midday", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 930,
+    "actionReasonKey": "makanSiang"
+  },
+  {
+    "family": "makan",
+    "aliases": ["camilan sehat", "snack sehat", "healthy snack"],
+    "canonicalKeyword": "camilan sehat",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["midday", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 900,
+    "actionReasonKey": "makanSiang"
+  },
+  {
+    "family": "kesehatan",
+    "aliases": ["minum teh herbal", "teh herbal", "herbal tea"],
+    "canonicalKeyword": "minum teh herbal",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1200,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "kesehatan",
+    "aliases": ["berjemur pagi", "jemur pagi", "sun bathing"],
+    "canonicalKeyword": "berjemur pagi",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "morning"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "beforeStart"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "kesehatanPagi"
+  },
+  {
+    "family": "perawatanDiri",
+    "aliases": ["cuci tangan", "wash hands"],
+    "canonicalKeyword": "cuci tangan",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "midday", "evening"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "anytime"
+    },
+    "defaultTimeMinutes": 720,
+    "actionReasonKey": "perawatanPagi"
+  },
+  {
+    "family": "perawatanDiri",
+    "aliases": ["flossing malam", "pakai benang gigi", "night flossing"],
+    "canonicalKeyword": "flossing malam",
+    "category": "kesehatan",
+    "localPlan": {
+      "minSessionsPerWeek": 5,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1260,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["baca artikel", "membaca artikel", "read article"],
+    "canonicalKeyword": "baca artikel",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 6,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["midday", "afternoon"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 900,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["belajar bahasa inggris", "english study", "english practice"],
+    "canonicalKeyword": "belajar bahasa inggris",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["belajar bahasa korea", "korean study", "korean practice"],
+    "canonicalKeyword": "belajar bahasa korea",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 6,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "belajar",
+    "aliases": ["kerjakan skripsi", "nulis skripsi", "skripsi"],
+    "canonicalKeyword": "skripsi",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 3,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "workdayFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "high"
+    },
+    "defaultTimeMinutes": 1050,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "kerja",
+    "aliases": ["latihan presentasi", "presentasi", "presentation practice"],
+    "canonicalKeyword": "latihan presentasi",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 0,
+      "dayStrategy": "workdayFriendly",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 600,
+    "actionReasonKey": "kerjaPagi"
+  },
+  {
+    "family": "produktif",
+    "aliases": ["desain konten", "desain poster", "content design"],
+    "canonicalKeyword": "desain konten",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "produktif",
+    "aliases": ["edit video", "editing video", "video editing"],
+    "canonicalKeyword": "edit video",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening", "night"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 1140,
+    "actionReasonKey": "belajarSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["atur keuangan", "catat pengeluaran", "budgeting"],
+    "canonicalKeyword": "atur keuangan",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1170,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["belanja kebutuhan rumah", "belanja bulanan", "grocery shopping"],
+    "canonicalKeyword": "belanja kebutuhan rumah",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 2,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 600,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["masak makan malam", "masak malam", "cook dinner"],
+    "canonicalKeyword": "masak makan malam",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening"],
+      "effortLevel": "medium",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1050,
+    "actionReasonKey": "makanMalam"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["meal prep mingguan", "siapkan bekal", "weekly meal prep"],
+    "canonicalKeyword": "meal prep mingguan",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 2,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 960,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["rapikan meja kerja", "bereskan meja kerja", "desk reset"],
+    "canonicalKeyword": "rapikan meja kerja",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "duringRoutine"
+    },
+    "defaultTimeMinutes": 600,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["buang sampah", "keluarkan sampah", "take out trash"],
+    "canonicalKeyword": "buang sampah",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 5,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "evening"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "outsideRoutine"
+    },
+    "defaultTimeMinutes": 1080,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["siram tanaman", "menyiram tanaman", "water plants"],
+    "canonicalKeyword": "siram tanaman",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "outsideRoutine"
+    },
+    "defaultTimeMinutes": 390,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "rumah",
+    "aliases": ["cuci motor", "cuci kendaraan", "wash motorbike"],
+    "canonicalKeyword": "cuci motor",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 2,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "medium"
+    },
+    "defaultTimeMinutes": 540,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "umum",
+    "aliases": ["doa pagi", "morning prayer", "doa subuh", "salat subuh", "sholat subuh"],
+    "canonicalKeyword": "doa pagi",
+    "category": "umum",
+    "localPlan": {
+      "minSessionsPerWeek": 7,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["earlyMorning", "morning"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "beforeStart"
+    },
+    "defaultTimeMinutes": 330,
+    "actionReasonKey": "kesehatanPagi"
+  },
+  {
+    "family": "umum",
+    "aliases": ["ibadah malam", "night prayer", "doa malam", "salat isya", "sholat isya"],
+    "canonicalKeyword": "ibadah malam",
+    "category": "umum",
+    "localPlan": {
+      "minSessionsPerWeek": 5,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1260,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "umum",
+    "aliases": ["mengaji", "baca alquran", "baca kitab suci", "tadarus"],
+    "canonicalKeyword": "mengaji",
+    "category": "umum",
+    "localPlan": {
+      "minSessionsPerWeek": 4,
+      "maxSessionsPerWeek": 7,
+      "minGapDays": 0,
+      "dayStrategy": "daily",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low",
+      "routineCompatible": true,
+      "routinePlacement": "afterEnd"
+    },
+    "defaultTimeMinutes": 1170,
+    "actionReasonKey": "rehatMalam"
+  },
+  {
+    "family": "hiburan",
+    "aliases": ["main gitar", "latihan gitar", "play guitar"],
+    "canonicalKeyword": "main gitar",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening", "night"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1140,
+    "actionReasonKey": "hiburanMalam"
+  },
+  {
+    "family": "hiburan",
+    "aliases": ["menggambar", "sketsa", "drawing practice"],
+    "canonicalKeyword": "menggambar",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 960,
+    "actionReasonKey": "hiburanMalam"
+  },
+  {
+    "family": "hiburan",
+    "aliases": ["fotografi", "hunting foto", "photo walk"],
+    "canonicalKeyword": "fotografi",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["morning", "afternoon"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 540,
+    "actionReasonKey": "hiburanMalam"
+  },
+  {
+    "family": "hiburan",
+    "aliases": ["karaoke", "nyanyi santai", "singing session"],
+    "canonicalKeyword": "karaoke",
+    "category": "istirahat",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1200,
+    "actionReasonKey": "hiburanMalam"
+  },
+  {
+    "family": "sosial",
+    "aliases": ["telepon orang tua", "call orang tua", "hubungi orang tua"],
+    "canonicalKeyword": "telepon orang tua",
+    "category": "sosial",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 4,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1110,
+    "actionReasonKey": "sosialSore"
+  },
+  {
+    "family": "sosial",
+    "aliases": ["quality time keluarga", "waktu keluarga", "family time"],
+    "canonicalKeyword": "quality time keluarga",
+    "category": "sosial",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 3,
+      "minGapDays": 1,
+      "dayStrategy": "weekendFriendly",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "sosialSore"
+  },
+  {
+    "family": "produktif",
+    "aliases": ["rapikan file", "bereskan file", "file cleanup"],
+    "canonicalKeyword": "rapikan file",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 2,
+      "maxSessionsPerWeek": 5,
+      "minGapDays": 0,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["afternoon", "evening"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1020,
+    "actionReasonKey": "rumahSore"
+  },
+  {
+    "family": "produktif",
+    "aliases": ["backup data", "cadangkan data", "data backup"],
+    "canonicalKeyword": "backup data",
+    "category": "produktif",
+    "localPlan": {
+      "minSessionsPerWeek": 1,
+      "maxSessionsPerWeek": 2,
+      "minGapDays": 1,
+      "dayStrategy": "flexible",
+      "preferredTimeWindows": ["evening", "night"],
+      "effortLevel": "low"
+    },
+    "defaultTimeMinutes": 1200,
+    "actionReasonKey": "rumahSore"
+  }
+]

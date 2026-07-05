@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "notes": "Mapping ini mengikuti asumsi LabelEncoder-style dari taxonomy app saat ini. Jika nanti kamu punya mapping asli dari script training, file ini tinggal diganti tanpa mengubah logika inference.",
+  "encoders": {
+    "family_enc": {
+      "belajar": 0,
+      "hiburan": 1,
+      "hidrasi": 2,
+      "kerja": 3,
+      "kesehatan": 4,
+      "makan": 5,
+      "olahraga": 6,
+      "perawatanDiri": 7,
+      "produktif": 8,
+      "rehat": 9,
+      "rumah": 10,
+      "sosial": 11,
+      "tidur": 12,
+      "umum": 13
+    },
+    "category_enc": {
+      "istirahat": 0,
+      "kesehatan": 1,
+      "produktif": 2,
+      "sosial": 3,
+      "umum": 4
+    },
+    "effort_enc": {
+      "high": 0,
+      "low": 1,
+      "medium": 2
+    },
+    "bestTimeSlot_enc": {
+      "afternoon": 0,
+      "sore": 0,
+      "midday": 1,
+      "siang": 1,
+      "morning": 2,
+      "pagi": 2,
+      "night": 3,
+      "malam": 3
+    },
+    "detail_day_label": {
+      "0": "tidak_cocok",
+      "1": "cocok"
+    },
+    "home_label": {
+      "0": "tidak_selesai",
+      "1": "selesai"
+    },
+    "stats_consistency_label": {
+      "0": "kurang_konsisten",
+      "1": "konsisten"
+    },
+    "activity_day_label": {
+      "0": "tidak_cocok",
+      "1": "cocok"
+    }
+  }
+}

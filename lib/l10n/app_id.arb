@@ -1,0 +1,351 @@
+{
+  "@@locale": "id",
+  "appName": "Reminder Schedule",
+  "homeTab": "Beranda",
+  "homeSegmentActivities": "Aktivitas",
+  "homeSegmentSchedules": "Jadwal",
+  "statsTab": "Statistik",
+  "settingsTab": "Pengaturan",
+  "greetingMorning": "Selamat pagi",
+  "greetingAfternoon": "Selamat siang",
+  "greetingEvening": "Selamat malam",
+  "todayActivities": "Aktivitas hari ini",
+  "emptyActivities": "Belum ada aktivitas. Tambahkan aktivitas pertama kamu.",
+  "photoTracking": "Tracking foto aktif",
+  "notScheduledToday": "Tidak dijadwalkan hari ini",
+  "todaySummary": "{completedCount}/{taskCount} aktivitas selesai hari ini",
+  "@todaySummary": {
+    "placeholders": {
+      "taskCount": {
+        "type": "int"
+      },
+      "completedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "globalStreakValue": "Streak global: {days} hari",
+  "@globalStreakValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "createActivity": "Buat aktivitas",
+  "editActivity": "Edit aktivitas",
+  "activityTitle": "Judul aktivitas",
+  "activityTitleHint": "Contoh: Olahraga pagi",
+  "selectedDays": "Hari terpilih",
+  "scheduledTime": "Jam aktivitas",
+  "weeklyGoalLabel": "Target mingguan",
+  "weeklyGoalHint": "Mau selesai berapa kali per minggu?",
+  "weeklyGoalValue": "{count} kali / minggu",
+  "@weeklyGoalValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "preReminderLabel": "Pengingat sebelum mulai",
+  "preReminderHint": "Pilih jeda pengingat",
+  "preReminderOff": "Tidak aktif",
+  "preReminderMinutesValue": "{minutes} menit sebelum mulai",
+  "@preReminderMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "enableNotifications": "Aktifkan notifikasi",
+  "enableMorningReminder": "Aktifkan reminder pagi",
+  "enableEndOfDayReminder": "Aktifkan reminder akhir hari",
+  "enablePhotoProgress": "Aktifkan progres foto",
+  "formValidationMessage": "Isi judul dan pilih minimal satu hari.",
+  "save": "Simpan",
+  "saving": "Menyimpan...",
+  "activityDetail": "Detail aktivitas",
+  "activityNotFound": "Aktivitas tidak ditemukan.",
+  "deleteActivity": "Hapus aktivitas",
+  "deleteActivityConfirm": "Hapus \"{title}\"?",
+  "@deleteActivityConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Batal",
+  "delete": "Hapus",
+  "completionRate": "Persentase selesai",
+  "currentStreak": "Streak saat ini",
+  "daysCount": "{count} hari",
+  "@daysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "weeklyProgress": "Progres mingguan",
+  "completeToday": "Selesaikan hari ini",
+  "oneTapComplete": "Satu tap untuk selesai",
+  "subActivitiesLabel": "Sub-aktivitas",
+  "subActivityHint": "Contoh: Leg day",
+  "addSubActivity": "Tambah sub",
+  "subActivitiesProgress": "Sub selesai: {completed}/{total}",
+  "@subActivitiesProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "checklistConfirmTitle": "Konfirmasi checklist",
+  "checklistConfirmMessage": "Yakin status ini sudah benar dan ingin diubah?",
+  "checklistConfirmAction": "Ya, ubah",
+  "journalNotesTitle": "Catatan harian",
+  "journalAddNote": "Tambah catatan",
+  "journalEditNote": "Edit catatan",
+  "journalDeleteNote": "Hapus catatan",
+  "journalDeleteConfirm": "Hapus catatan tanggal {date}?",
+  "@journalDeleteConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journalNoteSaved": "Catatan tersimpan.",
+  "journalNoteLockedDeleteFirst": "Catatan tanggal itu sudah ada. Hapus dulu kalau ingin ganti.",
+  "journalNoteDeleted": "Catatan dihapus.",
+  "journalEmpty": "Belum ada catatan.",
+  "journalNotesCount": "{count} catatan tersimpan",
+  "@journalNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noteDateLabel": "Tanggal catatan",
+  "noteInputHint": "Tulis catatanmu...",
+  "comparisonTimelineTitle": "Timeline progres",
+  "comparisonFilter7d": "7 hari",
+  "comparisonFilter30d": "30 hari",
+  "comparisonFilterAll": "Semua",
+  "comparisonEmpty": "Belum ada data untuk dibandingkan.",
+  "comparisonTapPhotoCompare": "Tap foto untuk pilih 2 foto pembanding",
+  "comparisonNoPreviousPhoto": "Belum ada foto sebelumnya untuk dibandingkan.",
+  "comparisonPhotoDialogTitle": "Perbandingan foto",
+  "comparisonCurrentPhoto": "Foto saat ini",
+  "comparisonPreviousPhoto": "Foto sebelumnya",
+  "comparisonFirstSelection": "Pilihan 1",
+  "comparisonSecondSelection": "Pilihan 2",
+  "comparisonNeedTwoPhotos": "Tambahkan minimal 2 foto untuk dibandingkan.",
+  "comparisonPhotoSwipeHint": "Geser thumbnail untuk lihat foto lain, tap untuk layar penuh.",
+  "photoUploadCommentTitle": "Komentar upload foto",
+  "comparisonTargetLabel": "Bandingkan dengan",
+  "comparisonTargetPrevious": "Foto sebelumnya",
+  "comparisonTarget1Week": "1 minggu",
+  "comparisonTarget2Weeks": "2 minggu",
+  "comparisonTarget1Month": "1 bulan",
+  "comparisonTargetCustomDate": "Pilih tanggal",
+  "comparisonDatePickerHelp": "Pilih tanggal pembanding",
+  "closeDialogAction": "Tutup",
+  "photoDatePickerHelp": "Pilih tanggal foto",
+  "viewAllPhotoAction": "Lihat",
+  "photoUploadOptionsTitle": "Pengaturan upload foto",
+  "photoCommentLabel": "Komentar foto (opsional)",
+  "photoCommentHint": "Tulis ulasan singkat untuk foto ini...",
+  "photoCommentApplyAll": "Komentar ini akan dipakai untuk semua foto yang dipilih.",
+  "deletePhotoComment": "Hapus komentar foto",
+  "deletePhotoCommentConfirm": "Hapus komentar upload foto tanggal {date}?",
+  "@deletePhotoCommentConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "photoCommentDeleted": "Komentar upload foto dihapus.",
+  "photoBatchImported": "{count} foto disimpan pada {startDate}.",
+  "@photoBatchImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
+  "testerModeTitle": "Mode tester",
+  "testerModeDescription": "Isi data simulasi cepat supaya fitur timeline/statistik bisa langsung dites tanpa menunggu hari berganti.",
+  "testerSeed14Days": "Isi 14 hari",
+  "testerSeed30Days": "Isi 30 hari",
+  "testerSeedConfirm": "Buat data simulasi {days} hari terakhir untuk aktivitas ini?",
+  "@testerSeedConfirm": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "testerSeedResult": "{count} entri simulasi ditambahkan.",
+  "@testerSeedResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressPhotos": "Foto progres",
+  "addPhoto": "Tambah foto",
+  "deletePhoto": "Hapus foto",
+  "deletePhotoConfirm": "Hapus foto progres tanggal {date}?",
+  "@deletePhotoConfirm": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "photoDeleted": "Foto berhasil dihapus.",
+  "historyLog": "Riwayat",
+  "noHistoryYet": "Belum ada riwayat.",
+  "completed": "Selesai",
+  "notCompleted": "Belum selesai",
+  "noPhotoYet": "Belum ada foto.",
+  "dataImmutableWarningTitle": "Konfirmasi simpan",
+  "noteSaveWarningMessage": "Catatan hanya bisa disimpan sekali per tanggal. Setelah tersimpan, tidak bisa diedit (hanya bisa dihapus). Lanjut?",
+  "photoSaveWarningMessage": "Foto dan komentar upload tidak bisa diedit setelah disimpan (hanya bisa dihapus). Lanjut?",
+  "overallCompletion": "Penyelesaian keseluruhan",
+  "last7DaysChart": "7 hari terakhir",
+  "last28DaysHeatmap": "Heatmap 28 hari",
+  "insightsTitle": "Insight otomatis",
+  "insightBestTimeEmpty": "Belum cukup data untuk melihat jam terbaik.",
+  "insightBestTimeValue": "Jam paling konsisten: {time}",
+  "@insightBestTimeValue": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "insightMostMissedEmpty": "Belum ada aktivitas yang sering terlewat.",
+  "insightMostMissedValue": "Paling sering terlewat: {title} ({count}x)",
+  "@insightMostMissedValue": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightTrendValue": "Tren mingguan: {sign}{percent}%",
+  "@insightTrendValue": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyGoalProgressLabel": "Goal minggu ini: {completed}/{goal}",
+  "@weeklyGoalProgressLabel": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "breakdownPerActivity": "Rincian per aktivitas",
+  "reminderSettings": "Pengaturan reminder",
+  "morningReminderTime": "Jam reminder pagi",
+  "endOfDayReminderTime": "Jam reminder akhir hari",
+  "testNotificationNow": "Kirim notifikasi test sekarang",
+  "testNotificationSent": "Notifikasi test sudah dikirim.",
+  "notificationHealthTitle": "Kesehatan notifikasi",
+  "healthStatusUnavailable": "Status device tidak tersedia.",
+  "timezoneLabel": "Timezone aktif",
+  "scheduleModeLabel": "Mode scheduling",
+  "notificationsPermissionLabel": "Izin notifikasi",
+  "exactAlarmLabel": "Exact alarm",
+  "batteryOptimizationLabel": "Lolos optimasi baterai",
+  "statusOn": "Aktif",
+  "statusOff": "Nonaktif",
+  "statusUnknown": "Unknown",
+  "openNotificationSettings": "Buka setelan notif",
+  "openExactAlarmSettings": "Buka setelan exact alarm",
+  "openBatterySettings": "Buka setelan baterai",
+  "openAutoStartSettings": "Buka setelan auto-start",
+  "refreshHealthStatus": "Refresh status",
+  "openedNotificationSettings": "Membuka setelan notifikasi.",
+  "openedExactAlarmSettings": "Membuka setelan exact alarm.",
+  "openedBatterySettings": "Membuka setelan baterai.",
+  "openedAutoStartSettings": "Membuka setelan auto-start / app info.",
+  "cannotOpenSettings": "Tidak bisa membuka setelan di device ini.",
+  "backupRestoreTitle": "Backup & restore",
+  "exportBackup": "Export backup",
+  "importBackup": "Import backup",
+  "chooseBackupFile": "Pilih file backup",
+  "noBackupFilesFound": "Belum ada file backup.",
+  "importBackupConfirm": "Import akan menimpa data saat ini. Lanjut?",
+  "backupShareText": "Backup Reminder Schedule",
+  "backupExported": "Backup berhasil dibuat: {path}",
+  "@backupExported": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "backupImported": "Backup berhasil di-import.",
+  "language": "Bahasa",
+  "languageId": "Bahasa Indonesia",
+  "languageEn": "English",
+  "addRecurringActivity": "Aktivitas berulang",
+  "addRecurringActivitySubtitle": "Jadwal harian/mingguan",
+  "addOneTimeReminder": "Jadwal tertentu",
+  "addOneTimeReminderSubtitle": "Satu kali di tanggal & jam tertentu",
+  "oneTimeRemindersSection": "Jadwal tertentu",
+  "oneTimeRemindersEmpty": "Belum ada jadwal tertentu.",
+  "notificationsDisabled": "Notifikasi nonaktif",
+  "createOneTimeReminder": "Buat jadwal tertentu",
+  "editOneTimeReminder": "Edit jadwal tertentu",
+  "oneTimeReminderDetail": "Detail jadwal tertentu",
+  "oneTimeReminderNotFound": "Jadwal tertentu tidak ditemukan.",
+  "deleteOneTimeReminder": "Hapus jadwal tertentu",
+  "deleteOneTimeReminderConfirm": "Hapus \"{title}\"?",
+  "@deleteOneTimeReminderConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "oneTimeTitleLabel": "Judul pengingat",
+  "oneTimeTitleHint": "Contoh: Bayar tagihan listrik",
+  "oneTimeDateLabel": "Tanggal",
+  "oneTimeTimeLabel": "Waktu",
+  "oneTimeValidationMessage": "Isi judul pengingat terlebih dahulu.",
+  "oneTimeStatusDone": "Selesai",
+  "oneTimeStatusPending": "Belum selesai",
+  "oneTimeStatusMissed": "Sudah lewat jadwal",
+  "oneTimeMarkDone": "Tandai selesai",
+  "oneTimeDoneSubtitle": "Jadwal ini sudah selesai.",
+  "oneTimePendingSubtitle": "Tandai saat sudah diselesaikan."
+}

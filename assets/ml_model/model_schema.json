@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "key": "activity_day",
+      "assetPath": "assets/ml_model/days_model.onnx",
+      "taskType": "classification",
+      "target": "prediksi_hari_cocok_tambah_aktivitas",
+      "input": {
+        "name": "float_input",
+        "size": 9,
+        "featureOrder": [
+          "category_enc",
+          "family_enc",
+          "effort_enc",
+          "recommendedTime",
+          "userWakeUp",
+          "userSleep",
+          "numWorkdays",
+          "avgRoutineStart",
+          "avgRoutineEnd"
+        ]
+      },
+      "output": {
+        "labelName": "output_label",
+        "probabilityName": "output_probability",
+        "labels": {
+          "0": "tidak_cocok",
+          "1": "cocok"
+        }
+      }
+    },
+    {
+      "key": "activity_time",
+      "assetPath": "assets/ml_model/time_model.onnx",
+      "taskType": "regression",
+      "target": "prediksi_waktu_tambah_aktivitas",
+      "input": {
+        "name": "float_input",
+        "size": 9,
+        "featureOrder": [
+          "category_enc",
+          "family_enc",
+          "effort_enc",
+          "recommendedTime",
+          "userWakeUp",
+          "userSleep",
+          "numWorkdays",
+          "avgRoutineStart",
+          "avgRoutineEnd"
+        ]
+      },
+      "output": {
+        "name": "variable",
+        "valueType": "minutes_or_score"
+      }
+    },
+    {
+      "key": "detail_day",
+      "assetPath": "assets/ml_model/detail_day_model.onnx",
+      "taskType": "classification",
+      "target": "prediksi_hari_cocok_detail_aktivitas",
+      "input": {
+        "name": "float_input",
+        "size": 10,
+        "featureOrder": [
+          "family_enc",
+          "category_enc",
+          "effort_enc",
+          "todayWeekday",
+          "streak",
+          "completionRate",
+          "totalScheduled",
+          "totalCompleted",
+          "isStable",
+          "bestTimeSlot_enc"
+        ]
+      },
+      "output": {
+        "labelName": "output_label",
+        "probabilityName": "output_probability",
+        "labels": {
+          "0": "tidak_cocok",
+          "1": "cocok"
+        }
+      }
+    },
+    {
+      "key": "detail_time",
+      "assetPath": "assets/ml_model/detail_time_model.onnx",
+      "taskType": "regression",
+      "target": "prediksi_waktu_detail_aktivitas",
+      "input": {
+        "name": "float_input",
+        "size": 10,
+        "featureOrder": [
+          "family_enc",
+          "category_enc",
+          "effort_enc",
+          "todayWeekday",
+          "streak",
+          "completionRate",
+          "totalScheduled",
+          "totalCompleted",
+          "isStable",
+          "bestTimeSlot_enc"
+        ]
+      },
+      "output": {
+        "name": "variable",
+        "valueType": "minutes_or_score"
+      }
+    },
+    {
+      "key": "home_completion",
+      "assetPath": "assets/ml_model/home_model.onnx",
+      "taskType": "classification",
+      "target": "prediksi_aktivitas_selesai_hari_ini",
+      "input": {
+        "name": "float_input",
+        "size": 9,
+        "featureOrder": [
+          "family_enc",
+          "category_enc",
+          "effort_enc",
+          "weekday",
+          "isWeekend",
+          "streak",
+          "completionRate",
+          "scheduledTime",
+          "numActivitiesToday"
+        ]
+      },
+      "output": {
+        "labelName": "output_label",
+        "probabilityName": "output_probability",
+        "labels": {
+          "0": "tidak_selesai",
+          "1": "selesai"
+        }
+      }
+    },
+    {
+      "key": "stats_consistency",
+      "assetPath": "assets/ml_model/statistik_consistent_model.onnx",
+      "taskType": "classification",
+      "target": "prediksi_konsistensi_statistik",
+      "input": {
+        "name": "float_input",
+        "size": 7,
+        "featureOrder": [
+          "family_enc",
+          "category_enc",
+          "effort_enc",
+          "totalScheduled",
+          "totalCompleted",
+          "completionRate",
+          "streak"
+        ]
+      },
+      "output": {
+        "labelName": "output_label",
+        "probabilityName": "output_probability",
+        "labels": {
+          "0": "kurang_konsisten",
+          "1": "konsisten"
+        }
+      }
+    },
+    {
+      "key": "stats_effective_slot",
+      "assetPath": "assets/ml_model/statistik_slot_model.onnx",
+      "taskType": "classification",
+      "target": "prediksi_slot_efektif_statistik",
+      "input": {
+        "name": "float_input",
+        "size": 7,
+        "featureOrder": [
+          "family_enc",
+          "category_enc",
+          "effort_enc",
+          "totalScheduled",
+          "totalCompleted",
+          "completionRate",
+          "streak"
+        ]
+      },
+      "output": {
+        "labelName": "output_label",
+        "probabilityName": "output_probability",
+        "labels": {
+          "0": "pagi",
+          "1": "siang",
+          "2": "sore",
+          "3": "malam"
+        }
+      }
+    }
+  ]
+}
