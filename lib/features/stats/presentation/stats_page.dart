@@ -864,7 +864,7 @@ class _StatsHeroSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F3FF),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
           width: 1,
@@ -1101,29 +1101,14 @@ class _WeeklyStatusSection extends StatelessWidget {
                   ],
                 ),
               ),
-              // Gradient badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
+                  horizontal: 12,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: <Color>[
-                      weekColor,
-                      weekColor.withValues(alpha: 0.72),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: weekColor.withValues(alpha: 0.28),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  color: weekColor,
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '$completionPercent%',
@@ -1230,7 +1215,7 @@ class _WeeklyStatusSection extends StatelessWidget {
                               ),
                               const SizedBox(height: pctToBarGap),
 
-                              // Bar: track + animated fill + cap dot
+                              // Bar: flat track and solid fill.
                               Stack(
                                 alignment: Alignment.bottomCenter,
                                 children: <Widget>[
@@ -1240,10 +1225,10 @@ class _WeeklyStatusSection extends StatelessWidget {
                                     height: maxBarH,
                                     decoration: BoxDecoration(
                                       color: isToday
-                                          ? barColor.withValues(alpha: 0.09)
+                                          ? barColor.withValues(alpha: 0.12)
                                           : theme.colorScheme.outlineVariant
-                                                .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(12),
+                                                .withValues(alpha: 0.16),
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
                                   // Animated fill
@@ -1265,60 +1250,11 @@ class _WeeklyStatusSection extends StatelessWidget {
                                         width: double.infinity,
                                         height: h,
                                         decoration: BoxDecoration(
-                                          gradient: rate > 0.05
-                                              ? LinearGradient(
-                                                  begin:
-                                                      Alignment.bottomCenter,
-                                                  end: Alignment.topCenter,
-                                                  colors: <Color>[
-                                                    barColor,
-                                                    barColor.withValues(
-                                                      alpha: 0.48,
-                                                    ),
-                                                  ],
-                                                )
-                                              : null,
                                           color: rate <= 0.05
-                                              ? barColor.withValues(alpha: 0.55)
-                                              : null,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          boxShadow:
-                                              isToday && rate > 0
-                                                  ? <BoxShadow>[
-                                                      BoxShadow(
-                                                        color: barColor
-                                                            .withValues(
-                                                              alpha: 0.42,
-                                                            ),
-                                                        blurRadius: 14,
-                                                        offset: const Offset(
-                                                          0,
-                                                          5,
-                                                        ),
-                                                      ),
-                                                    ]
-                                                  : null,
+                                              ? barColor.withValues(alpha: 0.72)
+                                              : barColor,
+                                          borderRadius: BorderRadius.circular(4),
                                         ),
-                                        // White cap dot
-                                        child: h > 18
-                                            ? Align(
-                                                alignment: Alignment.topCenter,
-                                                child: Padding(
-                                                  padding: const EdgeInsets.only(
-                                                    top: 6,
-                                                  ),
-                                                  child: Container(
-                                                    width: 5,
-                                                    height: 5,
-                                                    decoration: const BoxDecoration(
-                                                      color: Colors.white,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                            : null,
                                       );
                                     },
                                   ),
@@ -1342,7 +1278,7 @@ class _WeeklyStatusSection extends StatelessWidget {
                                               alpha: 0.1,
                                             ),
                                             borderRadius:
-                                                BorderRadius.circular(7),
+                                                BorderRadius.circular(4),
                                           ),
                                           child: Text(
                                             weekdayShortLabel(
