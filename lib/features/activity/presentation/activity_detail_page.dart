@@ -323,111 +323,121 @@ class ActivityDetailPage extends ConsumerWidget {
                   _ActivityHeroCard(
                     scheduleText: headerScheduleText,
                     summaryText: aiInsight.heroLine,
-                     progressPercent: headerProgress.percent,
-                     progressRate: headerProgress.rate,
-                     currentStreak: currentStreak,
-                     streakText: 'Streak ${t.daysCount(currentStreak)}',
-                     progressState: headerProgress.state,
-                     visualStatus: headerVisualStatus,
-                     localeCode: localeCode,
-                   ),
+                    progressPercent: headerProgress.percent,
+                    progressRate: headerProgress.rate,
+                    currentStreak: currentStreak,
+                    streakText: 'Streak ${t.daysCount(currentStreak)}',
+                    progressState: headerProgress.state,
+                    visualStatus: headerVisualStatus,
+                    localeCode: localeCode,
+                  ),
                   const SizedBox(height: 18),
                   _ActivityAiInsightSection(
                     data: aiInsight,
                     localeCode: localeCode,
                   ),
                   const SizedBox(height: 18),
-                   Text(
-                     activity.title,
-                     maxLines: 2,
-                     overflow: TextOverflow.ellipsis,
-                     style: theme.textTheme.headlineMedium?.copyWith(
-                       fontSize: 24,
-                       fontWeight: FontWeight.w700,
-                       letterSpacing: -0.02,
-                       color: theme.colorScheme.onSurface,
-                     ),
-                   ),
-                  const SizedBox(height: 12),
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: <Widget>[
-                       Text(
-                         localeCode == 'id' ? 'Progres mingguan' : 'Weekly progress',
-                         style: theme.textTheme.titleMedium?.copyWith(
-                           fontSize: 18,
-                           fontWeight: FontWeight.w700,
-                           color: theme.colorScheme.onSurface,
-                         ),
-                       ),
-                       Container(
-                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                         decoration: BoxDecoration(
-                           color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                           borderRadius: BorderRadius.circular(6),
-                         ),
-                         child: Text(
-                           localeCode == 'id' ? 'Minggu ini' : 'This week',
-                           style: theme.textTheme.labelMedium?.copyWith(
-                             color: theme.colorScheme.primary,
-                             fontWeight: FontWeight.w600,
-                             fontSize: 12,
-                           ),
-                         ),
-                       ),
-                     ],
-                   ),
-                  const SizedBox(height: 12),
-                   Container(
-                     padding: const EdgeInsets.all(24),
-                     decoration: BoxDecoration(
-                       color: Colors.white,
-                       borderRadius: BorderRadius.circular(28),
-                       border: Border.all(
-                         color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                         width: 1,
-                       ),
-                       boxShadow: <BoxShadow>[
-                         BoxShadow(
-                           color: Colors.black.withValues(alpha: 0.04),
-                           blurRadius: 24,
-                           offset: const Offset(0, 4),
-                         ),
-                       ],
-                     ),
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                         _CustomWeeklyBarChart(
-                           days: weeklyScheduledDays,
-                           localeCode: localeCode,
-                         ),
-                         const SizedBox(height: 20),
-                         Row(
-                           mainAxisAlignment: MainAxisAlignment.center,
-                           children: <Widget>[
-                             Container(
-                               width: 6,
-                               height: 6,
-                               decoration: const BoxDecoration(
-                                 color: Color(0xFFB4262C),
-                                 shape: BoxShape.circle,
-                               ),
-                             ),
-                             const SizedBox(width: 8),
-                             Text(
-                               weeklyHelperText,
-                               style: theme.textTheme.bodyMedium?.copyWith(
-                                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                                 fontSize: 14,
-                                 fontWeight: FontWeight.w500,
-                               ),
-                             ),
-                           ],
-                         ),
-                       ],
-                     ),
+                  Text(
+                    activity.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.02,
+                      color: theme.colorScheme.onSurface,
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        localeCode == 'id'
+                            ? 'Progres mingguan'
+                            : 'Weekly progress',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.05,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          localeCode == 'id' ? 'Minggu ini' : 'This week',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      ),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        _CustomWeeklyBarChart(
+                          days: weeklyScheduledDays,
+                          localeCode: localeCode,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFB4262C),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              weeklyHelperText,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Divider(
                     height: 1,
@@ -438,131 +448,140 @@ class ActivityDetailPage extends ConsumerWidget {
                     const SizedBox(height: 18),
                     Text(
                       t.subActivitiesLabel,
-                       style: theme.textTheme.titleMedium?.copyWith(
-                         fontSize: 18,
-                         fontWeight: FontWeight.w700,
-                         color: theme.colorScheme.onSurface,
-                       ),
-                     ),
-                     const SizedBox(height: 12),
-                     Container(
-                       padding: const EdgeInsets.all(24),
-                       width: double.infinity,
-                       decoration: BoxDecoration(
-                         color: Colors.white,
-                         borderRadius: BorderRadius.circular(28),
-                         border: Border.all(
-                           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                           width: 1,
-                         ),
-                         boxShadow: <BoxShadow>[
-                           BoxShadow(
-                             color: Colors.black.withValues(alpha: 0.04),
-                             blurRadius: 24,
-                             offset: const Offset(0, 4),
-                           ),
-                         ],
-                       ),
-                       child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                           Text(
-                             t.subActivitiesProgress(completedSubCount, totalSubCount),
-                             style: theme.textTheme.bodyMedium?.copyWith(
-                               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                               fontWeight: FontWeight.w500,
-                               fontSize: 14,
-                             ),
-                           ),
-                            const SizedBox(height: 16),
-                            Wrap(
-                              alignment: WrapAlignment.start,
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: <Widget>[
-                                ...visibleSubActivities.map(
-                                  (String subActivity) =>
-                                      _SubActivityChip(label: subActivity),
-                                ),
-                                if (hiddenSubActivitiesCount > 0)
-                                  _SubActivityChip(
-                                    label: hiddenSubActivitiesLabel,
-                                    isSummary: true,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
                       ),
-                    ],
-                    const SizedBox(height: 16),
+                    ),
+                    const SizedBox(height: 12),
                     Container(
+                      padding: const EdgeInsets.all(24),
+                      width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
+                          ),
                           width: 1,
                         ),
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 10,
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 24,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => _ActivityComparisonPage(
-                                activityId: activity.id,
-                                activityTitle: activity.title,
-                                localeCode: localeCode,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            t.subActivitiesProgress(
+                              completedSubCount,
+                              totalSubCount,
                             ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            alignment: WrapAlignment.start,
+                            spacing: 8,
+                            runSpacing: 8,
                             children: <Widget>[
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.timeline_rounded,
-                                  color: theme.colorScheme.primary,
-                                  size: 22,
-                                ),
+                              ...visibleSubActivities.map(
+                                (String subActivity) =>
+                                    _SubActivityChip(label: subActivity),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  t.comparisonTimelineTitle,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
+                              if (hiddenSubActivitiesCount > 0)
+                                _SubActivityChip(
+                                  label: hiddenSubActivitiesLabel,
+                                  isSummary: true,
                                 ),
-                              ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
                             ],
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      ),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => _ActivityComparisonPage(
+                              activityId: activity.id,
+                              activityTitle: activity.title,
+                              localeCode: localeCode,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: <Widget>[
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.timeline_rounded,
+                                color: theme.colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                t.comparisonTimelineTitle,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ],
                         ),
                       ),
                     ),
+                  ),
                   const SizedBox(height: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,41 +596,45 @@ class ActivityDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       if (!hasTodayUpdate) ...<Widget>[
-                         Container(
-                           padding: const EdgeInsets.all(24),
-                           width: double.infinity,
-                           decoration: BoxDecoration(
-                             color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
-                             borderRadius: BorderRadius.circular(28),
-                             border: Border.all(
-                               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-                               width: 2,
-                               style: BorderStyle.solid,
-                             ),
-                           ),
-                           child: Column(
-                             mainAxisSize: MainAxisSize.min,
-                             children: <Widget>[
-                               Container(
-                                 width: 64,
-                                 height: 64,
-                                 decoration: BoxDecoration(
-                                   color: Colors.white,
-                                   shape: BoxShape.circle,
-                                   boxShadow: <BoxShadow>[
-                                     BoxShadow(
-                                       color: Colors.black.withValues(alpha: 0.04),
-                                       blurRadius: 10,
-                                       offset: const Offset(0, 4),
-                                     ),
-                                   ],
-                                 ),
-                                 alignment: Alignment.center,
-                                 child: Icon(
-                                   Icons.edit_note_rounded,
-                                   size: 32,
-                                   color: theme.colorScheme.outline,
-                                 ),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerLow
+                                .withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.6),
+                              width: 2,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.edit_note_rounded,
+                                  size: 32,
+                                  color: theme.colorScheme.outline,
+                                ),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -631,7 +654,8 @@ class ActivityDetailPage extends ConsumerWidget {
                                     : 'Add notes or photos to document your progress.',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.7),
                                   fontSize: 14,
                                 ),
                               ),
@@ -641,13 +665,17 @@ class ActivityDetailPage extends ConsumerWidget {
                                 child: FilledButton.icon(
                                   style: FilledButton.styleFrom(
                                     backgroundColor: theme.colorScheme.primary,
-                                    foregroundColor: theme.colorScheme.onPrimary,
+                                    foregroundColor:
+                                        theme.colorScheme.onPrimary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
                                     elevation: 2,
-                                    shadowColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                                    shadowColor: theme.colorScheme.primary
+                                        .withValues(alpha: 0.2),
                                   ),
                                   onPressed: () async {
                                     await _addDailyLogUpdate(
@@ -661,7 +689,9 @@ class ActivityDetailPage extends ConsumerWidget {
                                   },
                                   icon: const Icon(Icons.add_rounded),
                                   label: Text(
-                                    localeCode == 'id' ? 'Tambah catatan' : 'Add note',
+                                    localeCode == 'id'
+                                        ? 'Tambah catatan'
+                                        : 'Add note',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
@@ -679,7 +709,8 @@ class ActivityDetailPage extends ConsumerWidget {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(28),
                             border: Border.all(
-                              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.3),
                               width: 1,
                             ),
                             boxShadow: <BoxShadow>[
@@ -854,18 +885,20 @@ class ActivityDetailPage extends ConsumerWidget {
                                                   context,
                                                 ).width,
                                             logicalCacheHeight: 220,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
-                                                color: theme
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                                alignment: Alignment.center,
-                                                child: const Icon(
-                                                  Icons.broken_image_rounded,
-                                                  size: 22,
-                                                ),
-                                              );
-                                            },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
+                                                    alignment: Alignment.center,
+                                                    child: const Icon(
+                                                      Icons
+                                                          .broken_image_rounded,
+                                                      size: 22,
+                                                    ),
+                                                  );
+                                                },
                                           ),
                                         ),
                                         if (todayPhotoCount > 1)
@@ -899,439 +932,6 @@ class ActivityDetailPage extends ConsumerWidget {
                                                       fontWeight:
                                                           FontWeight.w600,
                                                     ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (hasTodayNote) ...<Widget>[
-                                SizedBox(height: hasTodayPhoto ? 14 : 10),
-                                Text(
-                                  todayNote,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.86),
-                                    height: 1.4,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => _ActivityComparisonPage(
-                              activityId: activity.id,
-                              activityTitle: activity.title,
-                              localeCode: localeCode,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: <Widget>[
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.timeline_rounded,
-                                color: theme.colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                t.comparisonTimelineTitle,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        localeCode == 'id' ? 'Catatan harian' : 'Daily note',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (!hasTodayUpdate) ...<Widget>[
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerLow
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.6),
-                              width: 2,
-                              style: BorderStyle.solid,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: <BoxShadow>[
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.edit_note_rounded,
-                                  size: 32,
-                                  color: theme.colorScheme.outline,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                localeCode == 'id'
-                                    ? 'Belum ada catatan hari ini'
-                                    : 'No notes yet today',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                localeCode == 'id'
-                                    ? 'Tambahkan catatan atau foto untuk dokumentasi progres aktivitasmu.'
-                                    : 'Add notes or photos to document your progress.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: theme.colorScheme.primary,
-                                    foregroundColor:
-                                        theme.colorScheme.onPrimary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    elevation: 2,
-                                    shadowColor: theme.colorScheme.primary
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                  onPressed: () async {
-                                    await _addDailyLogUpdate(
-                                      context: context,
-                                      ref: ref,
-                                      t: t,
-                                      localeCode: localeCode,
-                                      activity: activity,
-                                      existingEntry: todayEntry,
-                                    );
-                                  },
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: Text(
-                                    localeCode == 'id'
-                                        ? 'Tambah catatan'
-                                        : 'Add note',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else ...<Widget>[
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 24,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Row(
-                                      children: <Widget>[
-                                        Icon(
-                                          activityStatusIcon(todayVisualStatus),
-                                          size: 16,
-                                          color: activityStatusColor(
-                                            theme: theme,
-                                            status: todayVisualStatus,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            formatDateLong(
-                                              todayEntry == null
-                                                  ? today
-                                                  : dateFromKey(
-                                                      todayEntry.dateKey,
-                                                    ),
-                                              localeCode,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: theme.colorScheme
-                                                  .onSurface
-                                                  .withValues(alpha: 0.74),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    tooltip: localeCode == 'id'
-                                        ? 'Opsi log'
-                                        : 'Log options',
-                                    icon: Icon(
-                                      Icons.more_horiz_rounded,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.74),
-                                    ),
-                                    onSelected: (String action) {
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) async {
-                                        if (!context.mounted) {
-                                          return;
-                                        }
-                                        if (action == 'edit') {
-                                          await _addDailyLogUpdate(
-                                            context: context,
-                                            ref: ref,
-                                            t: t,
-                                            localeCode: localeCode,
-                                            activity: activity,
-                                            existingEntry: todayEntry,
-                                          );
-                                        } else if (action == 'deleteLog' &&
-                                            todayEntry != null) {
-                                          await _deleteTodayLogText(
-                                            context: context,
-                                            ref: ref,
-                                            t: t,
-                                            localeCode: localeCode,
-                                            entry: todayEntry,
-                                          );
-                                        } else if (action == 'deletePhoto' &&
-                                            todayEntry != null) {
-                                          await _deleteTodayLogPhotos(
-                                            context: context,
-                                            ref: ref,
-                                            t: t,
-                                            localeCode: localeCode,
-                                            entry: todayEntry,
-                                            photoPaths: todayPhotoPaths,
-                                          );
-                                        }
-                                      });
-                                    },
-                                    itemBuilder: (BuildContext context) {
-                                      return <PopupMenuEntry<String>>[
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Text(
-                                            localeCode == 'id' ? 'Edit' : 'Edit',
-                                          ),
-                                        ),
-                                        if (todayEntry != null &&
-                                            (((todayEntry.notes ?? '')
-                                                        .trim()
-                                                        .isNotEmpty) ||
-                                                    ((todayEntry.photoNote ?? '')
-                                                        .trim()
-                                                        .isNotEmpty)))
-                                          PopupMenuItem<String>(
-                                            value: 'deleteLog',
-                                            child: Text(
-                                              localeCode == 'id'
-                                                  ? 'Hapus log'
-                                                  : 'Delete log',
-                                            ),
-                                          ),
-                                        if (todayEntry != null &&
-                                            todayPhotoPaths.isNotEmpty)
-                                          PopupMenuItem<String>(
-                                            value: 'deletePhoto',
-                                            child: Text(
-                                              localeCode == 'id'
-                                                  ? 'Hapus foto'
-                                                  : 'Delete photo',
-                                            ),
-                                          ),
-                                      ];
-                                    },
-                                  ),
-                                ],
-                              ),
-                              if (hasTodayPhoto) ...<Widget>[
-                                const SizedBox(height: 12),
-                                GestureDetector(
-                                  onTap: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => _PhotoGalleryViewerPage(
-                                          paths: todayPhotoPaths,
-                                          localeCode: localeCode,
-                                          dateKey:
-                                              todayEntry?.dateKey ?? todayKey,
-                                          initialIndex: 0,
-                                          compareCandidates:
-                                              const <_GalleryPhotoCandidate>[],
-                                        ),
-                                        fullscreenDialog: true,
-                                      ),
-                                    );
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Stack(
-                                      children: <Widget>[
-                                        AspectRatio(
-                                          aspectRatio: 16 / 10,
-                                          child: OptimizedFileImage(
-                                            path: todayPhotoPaths.first,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                            logicalCacheWidth:
-                                                MediaQuery.sizeOf(
-                                              context,
-                                            ).width,
-                                            logicalCacheHeight: 220,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
-                                                color: theme.colorScheme
-                                                    .surfaceContainerHighest,
-                                                alignment: Alignment.center,
-                                                child: const Icon(
-                                                  Icons.broken_image_rounded,
-                                                  size: 22,
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        if (todayPhotoCount > 1)
-                                          Positioned(
-                                            right: 10,
-                                            bottom: 10,
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.52,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                  AppRadius.pill,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                localeCode == 'id'
-                                                    ? '$todayPhotoCount foto'
-                                                    : '$todayPhotoCount photos',
-                                                style: theme
-                                                    .textTheme.labelSmall
-                                                    ?.copyWith(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
                                               ),
                                             ),
                                           ),
@@ -1413,11 +1013,11 @@ class ActivityDetailPage extends ConsumerWidget {
         activity.scheduleUpdatedAt ?? activity.createdAt;
     final Map<String, ProgressEntryModel> entryByDateKey =
         <String, ProgressEntryModel>{
-      for (final ProgressEntryModel entry in entries)
-        if (!dateOnly(entry.date).isBefore(weekStart) &&
-            !dateOnly(entry.date).isAfter(weekEnd))
-          entry.dateKey: entry,
-    };
+          for (final ProgressEntryModel entry in entries)
+            if (!dateOnly(entry.date).isBefore(weekStart) &&
+                !dateOnly(entry.date).isAfter(weekEnd))
+              entry.dateKey: entry,
+        };
 
     final List<_ScheduledDaySnapshot> snapshots = <_ScheduledDaySnapshot>[];
     for (int weekday = 1; weekday <= 7; weekday++) {
@@ -1428,18 +1028,20 @@ class ActivityDetailPage extends ConsumerWidget {
         entry: entry,
         subActivities: activity.subActivities,
       );
-      final bool isActiveScheduledDay = isScheduledDay &&
+      final bool isActiveScheduledDay =
+          isScheduledDay &&
           !dateOnly(day).isBefore(dateOnly(scheduleUpdatedAt));
       final WeeklyProgressDayVisualState visualState =
           _resolveWeeklySnapshotVisualState(
-        isScheduledDay: isScheduledDay,
-        day: day,
-        today: endDate,
-        scheduleUpdatedAt: scheduleUpdatedAt,
-        entry: entry,
-        progressRate: progressRate,
-      );
-      final bool countsTowardWeeklyCompletion = isActiveScheduledDay &&
+            isScheduledDay: isScheduledDay,
+            day: day,
+            today: endDate,
+            scheduleUpdatedAt: scheduleUpdatedAt,
+            entry: entry,
+            progressRate: progressRate,
+          );
+      final bool countsTowardWeeklyCompletion =
+          isActiveScheduledDay &&
           !dateOnly(day).isAfter(endDate) &&
           entry?.status != ActivityDayStatus.skipped;
       snapshots.add(
@@ -1515,12 +1117,13 @@ class ActivityDetailPage extends ConsumerWidget {
     final DateTime lookbackStart = normalizedToday.subtract(
       const Duration(days: 27),
     );
-    final DateTime start =
-        lookbackStart.isAfter(scheduleStart) ? lookbackStart : scheduleStart;
+    final DateTime start = lookbackStart.isAfter(scheduleStart)
+        ? lookbackStart
+        : scheduleStart;
     final Map<String, ProgressEntryModel> entryByDateKey =
         <String, ProgressEntryModel>{
-      for (final ProgressEntryModel entry in entries) entry.dateKey: entry,
-    };
+          for (final ProgressEntryModel entry in entries) entry.dateKey: entry,
+        };
     final Map<int, _ActivityDayPatternStat> weekdayStats =
         <int, _ActivityDayPatternStat>{};
     int scheduled = 0;
@@ -1532,8 +1135,7 @@ class ActivityDetailPage extends ConsumerWidget {
         final ProgressEntryModel? entry =
             entryByDateKey[dateKeyFromDate(cursor)];
         final bool isToday = dateOnly(cursor) == normalizedToday;
-        final ActivityProgressSummary progress =
-            resolveActivityProgressSummary(
+        final ActivityProgressSummary progress = resolveActivityProgressSummary(
           subActivities: activity.subActivities,
           entry: entry,
         );
@@ -1547,12 +1149,12 @@ class ActivityDetailPage extends ConsumerWidget {
           }
           final _ActivityDayPatternStat previous =
               weekdayStats[cursor.weekday] ??
-                  _ActivityDayPatternStat(
-                    weekday: cursor.weekday,
-                    scheduled: 0,
-                    completed: 0,
-                    incomplete: 0,
-                  );
+              _ActivityDayPatternStat(
+                weekday: cursor.weekday,
+                scheduled: 0,
+                completed: 0,
+                incomplete: 0,
+              );
           weekdayStats[cursor.weekday] = _ActivityDayPatternStat(
             weekday: cursor.weekday,
             scheduled: previous.scheduled + 1,
@@ -1567,32 +1169,35 @@ class ActivityDetailPage extends ConsumerWidget {
     final double overallRate = scheduled == 0
         ? (breakdown?.completionRate ?? 0)
         : completed / scheduled;
-    final List<_ActivityDayPatternStat> bestDayCandidates = weekdayStats.values
-        .where((_ActivityDayPatternStat item) => item.completed > 0)
-        .toList()
-      ..sort((_ActivityDayPatternStat a, _ActivityDayPatternStat b) {
-        final int byRate = b.completionRate.compareTo(a.completionRate);
-        if (byRate != 0) {
-          return byRate;
-        }
-        return b.completed.compareTo(a.completed);
-      });
-    final List<_ActivityDayPatternStat> weakestDayCandidates = weekdayStats
-        .values
-        .where((_ActivityDayPatternStat item) => item.incomplete > 0)
-        .toList()
-      ..sort((_ActivityDayPatternStat a, _ActivityDayPatternStat b) {
-        final int byIncomplete = b.incomplete.compareTo(a.incomplete);
-        if (byIncomplete != 0) {
-          return byIncomplete;
-        }
-        return a.completionRate.compareTo(b.completionRate);
-      });
+    final List<_ActivityDayPatternStat> bestDayCandidates =
+        weekdayStats.values
+            .where((_ActivityDayPatternStat item) => item.completed > 0)
+            .toList()
+          ..sort((_ActivityDayPatternStat a, _ActivityDayPatternStat b) {
+            final int byRate = b.completionRate.compareTo(a.completionRate);
+            if (byRate != 0) {
+              return byRate;
+            }
+            return b.completed.compareTo(a.completed);
+          });
+    final List<_ActivityDayPatternStat> weakestDayCandidates =
+        weekdayStats.values
+            .where((_ActivityDayPatternStat item) => item.incomplete > 0)
+            .toList()
+          ..sort((_ActivityDayPatternStat a, _ActivityDayPatternStat b) {
+            final int byIncomplete = b.incomplete.compareTo(a.incomplete);
+            if (byIncomplete != 0) {
+              return byIncomplete;
+            }
+            return a.completionRate.compareTo(b.completionRate);
+          });
 
-    final _ActivityDayPatternStat? strongestDay =
-        bestDayCandidates.isEmpty ? null : bestDayCandidates.first;
-    final _ActivityDayPatternStat? weakestDay =
-        weakestDayCandidates.isEmpty ? null : weakestDayCandidates.first;
+    final _ActivityDayPatternStat? strongestDay = bestDayCandidates.isEmpty
+        ? null
+        : bestDayCandidates.first;
+    final _ActivityDayPatternStat? weakestDay = weakestDayCandidates.isEmpty
+        ? null
+        : weakestDayCandidates.first;
 
     final Map<String, int> timeBucketCounts = <String, int>{};
     for (final ProgressEntryModel entry in entries) {
@@ -1614,16 +1219,17 @@ class ActivityDetailPage extends ConsumerWidget {
       bestTimeLabel =
           '${_timeBucketLabel(activity.timeMinutes, localeCode)} • ${formatMinutesAsTime(activity.timeMinutes)}';
     } else {
-      final String strongestBucket = ([...timeBucketCounts.entries]
-            ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
-              final int byCount = b.value.compareTo(a.value);
-              if (byCount != 0) {
-                return byCount;
-              }
-              return a.key.compareTo(b.key);
-            }))
-          .first
-          .key;
+      final String strongestBucket =
+          ([...timeBucketCounts.entries]
+                ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
+                  final int byCount = b.value.compareTo(a.value);
+                  if (byCount != 0) {
+                    return byCount;
+                  }
+                  return a.key.compareTo(b.key);
+                }))
+              .first
+              .key;
       bestTimeLabel = _timeBucketLabelFromKey(strongestBucket, localeCode);
     }
     bestTimeLabel = bestTimeLabel.replaceAll('â€¢', '-');
@@ -1645,55 +1251,58 @@ class ActivityDetailPage extends ConsumerWidget {
           : 'This activity has a strong pattern';
       body = strongestDayLabel == null
           ? (isId
-              ? 'Ritmenya sudah cukup konsisten di periode terakhir.'
-              : 'Its rhythm has been quite consistent lately.')
+                ? 'Ritmenya sudah cukup konsisten di periode terakhir.'
+                : 'Its rhythm has been quite consistent lately.')
           : (isId
-              ? 'Hari paling kuat saat ini ada di $strongestDayLabel.'
-              : 'Your strongest day right now is $strongestDayLabel.');
+                ? 'Hari paling kuat saat ini ada di $strongestDayLabel.'
+                : 'Your strongest day right now is $strongestDayLabel.');
     } else if (overallRate >= 0.5) {
-      heroLine =
-          isId ? 'Aktivitas ini mulai terbentuk' : 'This activity is taking shape';
-      headline =
-          isId ? 'Aktivitas ini sudah punya pola' : 'This activity already has a pattern';
+      heroLine = isId
+          ? 'Aktivitas ini mulai terbentuk'
+          : 'This activity is taking shape';
+      headline = isId
+          ? 'Aktivitas ini sudah punya pola'
+          : 'This activity already has a pattern';
       body = strongestDayLabel != null
           ? (isId
-              ? 'Paling sering selesai saat dijalankan di $strongestDayLabel.'
-              : 'It gets completed most often on $strongestDayLabel.')
+                ? 'Paling sering selesai saat dijalankan di $strongestDayLabel.'
+                : 'It gets completed most often on $strongestDayLabel.')
           : (isId
-              ? 'Progress-nya sudah mulai kebaca dari beberapa minggu terakhir.'
-              : 'Its progress is starting to emerge from the past few weeks.');
+                ? 'Progress-nya sudah mulai kebaca dari beberapa minggu terakhir.'
+                : 'Its progress is starting to emerge from the past few weeks.');
     } else {
-      heroLine =
-          isId ? 'Aktivitas ini belum stabil' : 'This activity is not stable yet';
+      heroLine = isId
+          ? 'Aktivitas ini belum stabil'
+          : 'This activity is not stable yet';
       headline = isId
           ? 'Aktivitas ini masih perlu dirapikan'
           : 'This activity still needs tuning';
       body = weakestDayLabel != null
           ? (isId
-              ? 'Paling sering tertunda saat jatuh di $weakestDayLabel.'
-              : 'It gets postponed the most on $weakestDayLabel.')
+                ? 'Paling sering tertunda saat jatuh di $weakestDayLabel.'
+                : 'It gets postponed the most on $weakestDayLabel.')
           : (isId
-              ? 'Belum cukup banyak progres untuk membaca pola yang kuat.'
-              : 'There is not enough progress yet to read a strong pattern.');
+                ? 'Belum cukup banyak progres untuk membaca pola yang kuat.'
+                : 'There is not enough progress yet to read a strong pattern.');
     }
 
     String caution = weakestDayLabel == null
         ? (isId
-            ? 'Belum ada pola hambatan yang benar-benar kuat.'
-            : 'There is no clearly strong friction pattern yet.')
+              ? 'Belum ada pola hambatan yang benar-benar kuat.'
+              : 'There is no clearly strong friction pattern yet.')
         : (isId
-            ? 'Hari yang paling sering berat: $weakestDayLabel'
-            : 'The hardest day so far: $weakestDayLabel');
+              ? 'Hari yang paling sering berat: $weakestDayLabel'
+              : 'The hardest day so far: $weakestDayLabel');
 
     String recommendation;
     if (overallRate < 0.35) {
       recommendation = strongestDayLabel == null
           ? (isId
-              ? 'Mulai dari target kecil dulu agar ritmenya lebih realistis.'
-              : 'Start with a smaller target first so the rhythm feels realistic.')
+                ? 'Mulai dari target kecil dulu agar ritmenya lebih realistis.'
+                : 'Start with a smaller target first so the rhythm feels realistic.')
           : (isId
-              ? 'Kalau minggu terasa padat, prioritaskan dulu $strongestDayLabel.'
-              : 'When the week feels packed, prioritize $strongestDayLabel first.');
+                ? 'Kalau minggu terasa padat, prioritaskan dulu $strongestDayLabel.'
+                : 'When the week feels packed, prioritize $strongestDayLabel first.');
     } else if (strongestDayLabel != null &&
         weakestDayLabel != null &&
         strongestDayLabel != weakestDayLabel) {
@@ -1708,7 +1317,8 @@ class ActivityDetailPage extends ConsumerWidget {
 
     String dayMetricTitle = isId ? 'Hari Cocok' : 'Best day';
     String timeMetricTitle = isId ? 'Saran Waktu' : 'Best time';
-    String bestDayLabel = strongestDayLabel ??
+    String bestDayLabel =
+        strongestDayLabel ??
         (isId ? 'Pola hari belum terbaca' : 'Best day is not clear yet');
     String bestTimeMetricLabel = bestTimeLabel;
 
@@ -1851,15 +1461,16 @@ class ActivityDetailPage extends ConsumerWidget {
     final Set<String> sessionPickedPaths = <String>{};
     bool pickingPhoto = false;
 
-    final _DailyLogUpdateDraft? draft =
-        await showModalBottomSheet<_DailyLogUpdateDraft>(
+    final _DailyLogUpdateDraft?
+    draft = await showModalBottomSheet<_DailyLogUpdateDraft>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (BuildContext sheetContext) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setSheetState) {
-            final bool canSave = saveAsSkipped ||
+            final bool canSave =
+                saveAsSkipped ||
                 noteController.text.trim().isNotEmpty ||
                 draftPhotoPaths.isNotEmpty;
             final double bottomInset = MediaQuery.viewInsetsOf(context).bottom;
@@ -1874,9 +1485,7 @@ class ActivityDetailPage extends ConsumerWidget {
                     children: <Widget>[
                       Text(
                         localeCode == 'id' ? 'Catatan harian' : 'Daily note',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
+                        style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 12),
@@ -1885,9 +1494,7 @@ class ActivityDetailPage extends ConsumerWidget {
                         minLines: 4,
                         maxLines: 6,
                         onChanged: (_) => setSheetState(() {}),
-                        decoration: InputDecoration(
-                          hintText: t.noteInputHint,
-                        ),
+                        decoration: InputDecoration(hintText: t.noteInputHint),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -1899,10 +1506,10 @@ class ActivityDetailPage extends ConsumerWidget {
                                 });
                                 final List<String> newPaths =
                                     await _pickDailyLogPhotoPaths(
-                                  context: sheetContext,
-                                  ref: ref,
-                                  localeCode: localeCode,
-                                );
+                                      context: sheetContext,
+                                      ref: ref,
+                                      localeCode: localeCode,
+                                    );
                                 if (!sheetContext.mounted) {
                                   return;
                                 }
@@ -1924,9 +1531,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                 });
                               },
                         icon: const Icon(Icons.camera_alt_rounded),
-                        label: Text(
-                          t.addPhoto,
-                        ),
+                        label: Text(t.addPhoto),
                       ),
                       if (draftPhotoPaths.isNotEmpty) ...<Widget>[
                         const SizedBox(height: 10),
@@ -1935,7 +1540,8 @@ class ActivityDetailPage extends ConsumerWidget {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: draftPhotoPaths.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 8),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 8),
                             itemBuilder: (BuildContext context, int index) {
                               final String path = draftPhotoPaths[index];
                               return Stack(
@@ -1947,20 +1553,21 @@ class ActivityDetailPage extends ConsumerWidget {
                                       width: 54,
                                       height: 54,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          width: 54,
-                                          height: 54,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                          alignment: Alignment.center,
-                                          child: const Icon(
-                                            Icons.broken_image_rounded,
-                                            size: 16,
-                                          ),
-                                        );
-                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              width: 54,
+                                              height: 54,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest,
+                                              alignment: Alignment.center,
+                                              child: const Icon(
+                                                Icons.broken_image_rounded,
+                                                size: 16,
+                                              ),
+                                            );
+                                          },
                                     ),
                                   ),
                                   Positioned(
@@ -2046,8 +1653,8 @@ class ActivityDetailPage extends ConsumerWidget {
       message: saveAsSkipped
           ? skipSaveWarningMessage
           : (draft.photoPaths.isNotEmpty
-              ? t.photoSaveWarningMessage
-              : t.noteSaveWarningMessage),
+                ? t.photoSaveWarningMessage
+                : t.noteSaveWarningMessage),
       cancelLabel: t.cancel,
       confirmLabel: localeCode == 'id' ? 'Simpan' : 'Save',
     );
@@ -2056,7 +1663,8 @@ class ActivityDetailPage extends ConsumerWidget {
       return;
     }
 
-    final bool hasDraftChanges = draft.note.trim() != initialNote ||
+    final bool hasDraftChanges =
+        draft.note.trim() != initialNote ||
         !_haveSamePathSet(initialPhotoPaths, draft.photoPaths);
     _DailyLogSaveResult saveResult = _DailyLogSaveResult(
       noteProvided: initialNote.isNotEmpty,
@@ -2075,7 +1683,9 @@ class ActivityDetailPage extends ConsumerWidget {
       );
     }
     if (saveAsSkipped) {
-      await ref.read(activityActionsProvider).skipToday(
+      await ref
+          .read(activityActionsProvider)
+          .skipToday(
             activity: activity,
             note: draft.note.trim().isEmpty ? null : draft.note.trim(),
           );
@@ -2126,7 +1736,9 @@ class ActivityDetailPage extends ConsumerWidget {
       return const <String>[];
     }
 
-    final bool allowed = await ref.read(photoAccessServiceProvider).ensureAccess(
+    final bool allowed = await ref
+        .read(photoAccessServiceProvider)
+        .ensureAccess(
           context: context,
           localeCode: localeCode,
           source: source == _DailyLogPhotoSource.camera
@@ -2140,11 +1752,12 @@ class ActivityDetailPage extends ConsumerWidget {
     final imageStorage = ref.read(imageStorageServiceProvider);
     return switch (source) {
       _DailyLogPhotoSource.camera => <String>[
-          if (await imageStorage.pickAndSaveImageFromCamera()
-              case final String path)
-            path,
-        ],
-      _DailyLogPhotoSource.gallery => imageStorage.pickAndSaveImagesFromGallery(),
+        if (await imageStorage.pickAndSaveImageFromCamera()
+            case final String path)
+          path,
+      ],
+      _DailyLogPhotoSource.gallery =>
+        imageStorage.pickAndSaveImagesFromGallery(),
     };
   }
 
@@ -2249,19 +1862,22 @@ class ActivityDetailPage extends ConsumerWidget {
     bool noteSaved = true;
     if (noteProvided &&
         (existingEntry == null || noteChanged || initialNote.isEmpty)) {
-      noteSaved =
-          await ref.read(activityActionsProvider).upsertNoteForDate(
-                activity: activity,
-                date: targetDate,
-                notes: nextNote,
-              );
+      noteSaved = await ref
+          .read(activityActionsProvider)
+          .upsertNoteForDate(
+            activity: activity,
+            date: targetDate,
+            notes: nextNote,
+          );
     }
 
     int savedPhotoCount = 0;
     if (nextPhotoPaths.isNotEmpty &&
         (existingEntry == null || photosChanged || initialPhotoPaths.isEmpty)) {
       for (final String path in nextPhotoPaths) {
-        await ref.read(activityActionsProvider).upsertPhotoForDate(
+        await ref
+            .read(activityActionsProvider)
+            .upsertPhotoForDate(
               activity: activity,
               date: targetDate,
               photoPath: path,
@@ -2359,19 +1975,21 @@ class ActivityDetailPage extends ConsumerWidget {
       return;
     }
 
-    final bool deletePhotoAndComment =
-        (entry.photoNote ?? '').trim().isNotEmpty;
+    final bool deletePhotoAndComment = (entry.photoNote ?? '')
+        .trim()
+        .isNotEmpty;
     final bool confirm = await _showImmutableSaveWarningDialog(
       context: context,
-      title:
-          localeCode == 'id' ? 'Hapus foto hari ini?' : 'Delete today photo?',
+      title: localeCode == 'id'
+          ? 'Hapus foto hari ini?'
+          : 'Delete today photo?',
       message: deletePhotoAndComment
           ? (localeCode == 'id'
-              ? 'Foto dan komentar foto hari ini akan dihapus.'
-              : 'Today photo and photo comment will be removed.')
+                ? 'Foto dan komentar foto hari ini akan dihapus.'
+                : 'Today photo and photo comment will be removed.')
           : (localeCode == 'id'
-              ? 'Foto hari ini akan dihapus.'
-              : 'Today photo will be removed.'),
+                ? 'Foto hari ini akan dihapus.'
+                : 'Today photo will be removed.'),
       cancelLabel: t.cancel,
       confirmLabel: t.delete,
     );
@@ -2390,8 +2008,8 @@ class ActivityDetailPage extends ConsumerWidget {
         content: Text(
           deletePhotoAndComment
               ? (localeCode == 'id'
-                  ? 'Foto dihapus - Komentar foto dihapus.'
-                  : 'Photo deleted - Photo comment deleted.')
+                    ? 'Foto dihapus - Komentar foto dihapus.'
+                    : 'Photo deleted - Photo comment deleted.')
               : (localeCode == 'id' ? 'Foto dihapus.' : 'Photo deleted.'),
         ),
       ),
@@ -2407,11 +2025,11 @@ class ActivityDetailPage extends ConsumerWidget {
     if (noteProvided && savedPhotoCount > 0) {
       return noteSaved
           ? (localeCode == 'id'
-              ? 'Update harian tersimpan.'
-              : 'Daily update saved.')
+                ? 'Update harian tersimpan.'
+                : 'Daily update saved.')
           : (localeCode == 'id'
-              ? 'Foto tersimpan. Catatan hari ini sudah ada.'
-              : 'Photos saved. A note for today already exists.');
+                ? 'Foto tersimpan. Catatan hari ini sudah ada.'
+                : 'Photos saved. A note for today already exists.');
     }
     if (savedPhotoCount > 0) {
       return localeCode == 'id'
@@ -2421,11 +2039,11 @@ class ActivityDetailPage extends ConsumerWidget {
     if (noteProvided) {
       return noteSaved
           ? (localeCode == 'id'
-              ? 'Catatan harian tersimpan.'
-              : 'Daily note saved.')
+                ? 'Catatan harian tersimpan.'
+                : 'Daily note saved.')
           : (localeCode == 'id'
-              ? 'Catatan hari ini sudah ada.'
-              : 'A note for today already exists.');
+                ? 'Catatan hari ini sudah ada.'
+                : 'A note for today already exists.');
     }
     return localeCode == 'id' ? 'Update tersimpan.' : 'Update saved.';
   }
@@ -2589,14 +2207,17 @@ class _ComparisonTimelineSectionState
     }
     final List<ProgressEntryModel> entries =
         ref.watch(progressByActivityProvider(widget.activityId)).value ??
-            const <ProgressEntryModel>[];
+        const <ProgressEntryModel>[];
     final List<ProgressEntryModel> orderedEntries = _orderedEntries(entries);
-    final List<_DailyLogTimelineEntry> orderedLogs =
-        _buildDailyLogEntries(orderedEntries);
-    final List<_DailyLogTimelineEntry> filteredLogs =
-        _filteredLogEntries(orderedLogs);
-    final int totalPages =
-        filteredLogs.isEmpty ? 1 : (filteredLogs.length / _entriesPerPage).ceil();
+    final List<_DailyLogTimelineEntry> orderedLogs = _buildDailyLogEntries(
+      orderedEntries,
+    );
+    final List<_DailyLogTimelineEntry> filteredLogs = _filteredLogEntries(
+      orderedLogs,
+    );
+    final int totalPages = filteredLogs.isEmpty
+        ? 1
+        : (filteredLogs.length / _entriesPerPage).ceil();
     final int currentPage = _pageIndex.clamp(0, totalPages - 1);
     final int pageStart = currentPage * _entriesPerPage;
     final int pageEnd = filteredLogs.isEmpty
@@ -2635,23 +2256,21 @@ class _ComparisonTimelineSectionState
             if (filteredLogs.isEmpty)
               Text(t.comparisonEmpty)
             else
-              ...pagedLogs.asMap().entries.map(
-                (
-                  MapEntry<int, _DailyLogTimelineEntry> item,
-                ) {
-                  final int index = item.key;
-                  final _DailyLogTimelineEntry logEntry = item.value;
-                  return _buildLogTimelineCard(
-                    context: context,
-                    ref: ref,
-                    t: t,
-                    logEntry: logEntry,
-                    compareCandidates: comparisonCandidates,
-                    activity: activity,
-                    showConnector: index < pagedLogs.length - 1,
-                  );
-                },
-              ),
+              ...pagedLogs.asMap().entries.map((
+                MapEntry<int, _DailyLogTimelineEntry> item,
+              ) {
+                final int index = item.key;
+                final _DailyLogTimelineEntry logEntry = item.value;
+                return _buildLogTimelineCard(
+                  context: context,
+                  ref: ref,
+                  t: t,
+                  logEntry: logEntry,
+                  compareCandidates: comparisonCandidates,
+                  activity: activity,
+                  showConnector: index < pagedLogs.length - 1,
+                );
+              }),
             if (filteredLogs.isNotEmpty && totalPages > 1) ...<Widget>[
               const SizedBox(height: AppSpacing.xs / 2),
               Container(
@@ -2723,14 +2342,15 @@ class _ComparisonTimelineSectionState
     final DateTime entryDate = dateFromKey(logEntry.dateKey);
     final DateTime scheduleUpdatedAt =
         activity?.scheduleUpdatedAt ?? activity?.createdAt ?? entryDate;
-    final ActivityDailyProgressStatus status = resolveActivityDailyProgressStatus(
-      scheduledDate: entryDate,
-      today: dateOnly(DateTime.now()),
-      scheduleUpdatedAt: scheduleUpdatedAt,
-      subActivities: activity?.subActivities ?? const <String>[],
-      scheduledTimeMinutes: activity?.timeMinutes,
-      entry: entry,
-    );
+    final ActivityDailyProgressStatus status =
+        resolveActivityDailyProgressStatus(
+          scheduledDate: entryDate,
+          today: dateOnly(DateTime.now()),
+          scheduleUpdatedAt: scheduleUpdatedAt,
+          subActivities: activity?.subActivities ?? const <String>[],
+          scheduledTimeMinutes: activity?.timeMinutes,
+          entry: entry,
+        );
     final String statusLabel = activityStatusLabel(
       status: status,
       localeCode: widget.localeCode,
@@ -2812,8 +2432,9 @@ class _ComparisonTimelineSectionState
                         ),
                       ),
                       PopupMenuButton<_TimelineLogMenuAction>(
-                        tooltip:
-                            widget.localeCode == 'id' ? 'Opsi log' : 'Log options',
+                        tooltip: widget.localeCode == 'id'
+                            ? 'Opsi log'
+                            : 'Log options',
                         icon: Icon(
                           Icons.more_horiz_rounded,
                           color: localTheme.colorScheme.onSurface.withValues(
@@ -2821,31 +2442,29 @@ class _ComparisonTimelineSectionState
                           ),
                         ),
                         onSelected: (_TimelineLogMenuAction action) {
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (
-                              _,
-                            ) async {
-                              if (!mounted || !context.mounted) {
-                                return;
-                              }
-                              if (action == _TimelineLogMenuAction.edit) {
-                                await _editTimelineLogEntry(
-                                  context: context,
-                                  ref: ref,
-                                  t: t,
-                                  logEntry: logEntry,
-                                );
-                              } else if (action ==
-                                  _TimelineLogMenuAction.delete) {
-                                await _deleteTimelineEntry(
-                                  context: context,
-                                  ref: ref,
-                                  t: t,
-                                  logEntry: logEntry,
-                                );
-                              }
-                            },
-                          );
+                          WidgetsBinding.instance.addPostFrameCallback((
+                            _,
+                          ) async {
+                            if (!mounted || !context.mounted) {
+                              return;
+                            }
+                            if (action == _TimelineLogMenuAction.edit) {
+                              await _editTimelineLogEntry(
+                                context: context,
+                                ref: ref,
+                                t: t,
+                                logEntry: logEntry,
+                              );
+                            } else if (action ==
+                                _TimelineLogMenuAction.delete) {
+                              await _deleteTimelineEntry(
+                                context: context,
+                                ref: ref,
+                                t: t,
+                                logEntry: logEntry,
+                              );
+                            }
+                          });
                         },
                         itemBuilder: (BuildContext context) {
                           return <PopupMenuEntry<_TimelineLogMenuAction>>[
@@ -2994,12 +2613,13 @@ class _ComparisonTimelineSectionState
 
     bool noteSaved = true;
     if (nextText.isNotEmpty) {
-      noteSaved =
-          await ref.read(activityActionsProvider).upsertNoteForDate(
-                activity: activity,
-                date: dateFromKey(logEntry.dateKey),
-                notes: nextText,
-              );
+      noteSaved = await ref
+          .read(activityActionsProvider)
+          .upsertNoteForDate(
+            activity: activity,
+            date: dateFromKey(logEntry.dateKey),
+            notes: nextText,
+          );
     }
 
     if (!context.mounted) {
@@ -3007,15 +2627,15 @@ class _ComparisonTimelineSectionState
     }
     final String message = nextText.isEmpty
         ? (widget.localeCode == 'id'
-            ? 'Catatan harian dihapus.'
-            : 'Daily note deleted.')
+              ? 'Catatan harian dihapus.'
+              : 'Daily note deleted.')
         : (noteSaved
-            ? (widget.localeCode == 'id'
-                ? 'Catatan harian diperbarui.'
-                : 'Daily note updated.')
-            : (widget.localeCode == 'id'
-                ? 'Catatan tidak bisa diperbarui.'
-                : 'Note could not be updated.'));
+              ? (widget.localeCode == 'id'
+                    ? 'Catatan harian diperbarui.'
+                    : 'Daily note updated.')
+              : (widget.localeCode == 'id'
+                    ? 'Catatan tidak bisa diperbarui.'
+                    : 'Note could not be updated.'));
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -3029,7 +2649,9 @@ class _ComparisonTimelineSectionState
   }) async {
     final bool hasNote = logEntry.logText.trim().isNotEmpty;
     final bool hasPhotos = logEntry.photoPaths.isNotEmpty;
-    final bool hasPhotoNote = (logEntry.entry.photoNote ?? '').trim().isNotEmpty;
+    final bool hasPhotoNote = (logEntry.entry.photoNote ?? '')
+        .trim()
+        .isNotEmpty;
     if (!hasNote && !hasPhotos && !hasPhotoNote) {
       return;
     }
@@ -3150,8 +2772,9 @@ class _ComparisonTimelineSectionState
       _ComparisonRange.last30 => 30,
       _ComparisonRange.all => null,
     };
-    final DateTime? threshold =
-        dayCount == null ? null : today.subtract(Duration(days: dayCount - 1));
+    final DateTime? threshold = dayCount == null
+        ? null
+        : today.subtract(Duration(days: dayCount - 1));
 
     return orderedLogs.where((_DailyLogTimelineEntry logEntry) {
       final bool hasSignal =
@@ -3584,11 +3207,12 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
                       maxScale: PhotoViewComputedScale.covered * 4.2,
                     );
                   },
-                  loadingBuilder: (BuildContext context, ImageChunkEvent? event) {
-                    return const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    );
-                  },
+                  loadingBuilder:
+                      (BuildContext context, ImageChunkEvent? event) {
+                        return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        );
+                      },
                 ),
                 if (widget.paths.length > 1)
                   Positioned(
@@ -3664,55 +3288,56 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
 
     final _GalleryPhotoCandidate? target =
         await showModalBottomSheet<_GalleryPhotoCandidate>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (BuildContext bottomSheetContext) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              ListTile(
-                title: Text(t.comparisonSecondSelection),
-                subtitle: Text(t.comparisonTargetLabel),
-              ),
-              ...candidates.map((_GalleryPhotoCandidate candidate) {
-                final String dateLabel = formatDateLong(
-                  dateFromKey(candidate.dateKey),
-                  widget.localeCode,
-                );
-                final String firstFile = candidate.paths.first;
-                final String fileName = firstFile.contains('\\')
-                    ? firstFile.split('\\').last
-                    : firstFile.split('/').last;
-                return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.small),
-                    child: SizedBox(
-                      width: 42,
-                      height: 42,
-                      child: OptimizedFileImage(
-                        path: firstFile,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image_rounded),
+          context: context,
+          useRootNavigator: true,
+          showDragHandle: true,
+          builder: (BuildContext bottomSheetContext) {
+            return SafeArea(
+              child: ListView(
+                shrinkWrap: true,
+                children: <Widget>[
+                  ListTile(
+                    title: Text(t.comparisonSecondSelection),
+                    subtitle: Text(t.comparisonTargetLabel),
+                  ),
+                  ...candidates.map((_GalleryPhotoCandidate candidate) {
+                    final String dateLabel = formatDateLong(
+                      dateFromKey(candidate.dateKey),
+                      widget.localeCode,
+                    );
+                    final String firstFile = candidate.paths.first;
+                    final String fileName = firstFile.contains('\\')
+                        ? firstFile.split('\\').last
+                        : firstFile.split('/').last;
+                    return ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.small),
+                        child: SizedBox(
+                          width: 42,
+                          height: 42,
+                          child: OptimizedFileImage(
+                            path: firstFile,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.broken_image_rounded),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  title: Text(dateLabel),
-                  subtitle: Text(
-                    '${candidate.paths.length} • $fileName',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () => Navigator.of(bottomSheetContext).pop(candidate),
-                );
-              }),
-            ],
-          ),
+                      title: Text(dateLabel),
+                      subtitle: Text(
+                        '${candidate.paths.length} • $fileName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () =>
+                          Navigator.of(bottomSheetContext).pop(candidate),
+                    );
+                  }),
+                ],
+              ),
+            );
+          },
         );
-      },
-    );
     if (!mounted || target == null) {
       return;
     }
@@ -3958,8 +3583,7 @@ class _ZoomableComparePaneState extends State<_ZoomableComparePane> {
                           path: widget.paths[_index],
                           fit: BoxFit.cover,
                           logicalCacheWidth: MediaQuery.sizeOf(context).width,
-                          logicalCacheHeight:
-                              MediaQuery.sizeOf(context).height,
+                          logicalCacheHeight: MediaQuery.sizeOf(context).height,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(color: Colors.grey.shade900);
                           },
@@ -3988,12 +3612,12 @@ class _ZoomableComparePaneState extends State<_ZoomableComparePane> {
                         },
                         loadingBuilder:
                             (BuildContext context, ImageChunkEvent? event) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          );
-                        },
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              );
+                            },
                       ),
                     ],
                   ),
@@ -4008,10 +3632,7 @@ class _ZoomableComparePaneState extends State<_ZoomableComparePane> {
 }
 
 class _CustomWeeklyBarChart extends StatelessWidget {
-  const _CustomWeeklyBarChart({
-    required this.days,
-    required this.localeCode,
-  });
+  const _CustomWeeklyBarChart({required this.days, required this.localeCode});
 
   final List<_ScheduledDaySnapshot> days;
   final String localeCode;
@@ -4050,8 +3671,9 @@ class _CustomWeeklyBarChart extends StatelessWidget {
             barColor = const Color(0xFF1A5BAD);
           }
 
-          final double fillH =
-              rate > 0 ? maxBarH * rate.clamp(0.05, 1.0) : (hasData ? 4.0 : 0.0);
+          final double fillH = rate > 0
+              ? maxBarH * rate.clamp(0.05, 1.0)
+              : (hasData ? 4.0 : 0.0);
           final int pct = (rate * 100).round();
 
           return Expanded(
@@ -4068,8 +3690,9 @@ class _CustomWeeklyBarChart extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontSize: 9,
-                              fontWeight:
-                                  isToday ? FontWeight.w800 : FontWeight.w600,
+                              fontWeight: isToday
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
                               color: isToday
                                   ? barColor
                                   : barColor.withValues(alpha: 0.68),
@@ -4122,8 +3745,7 @@ class _CustomWeeklyBarChart extends StatelessWidget {
                               boxShadow: isToday && rate > 0
                                   ? <BoxShadow>[
                                       BoxShadow(
-                                        color:
-                                            barColor.withValues(alpha: 0.42),
+                                        color: barColor.withValues(alpha: 0.42),
                                         blurRadius: 14,
                                         offset: const Offset(0, 5),
                                       ),
@@ -4166,8 +3788,7 @@ class _CustomWeeklyBarChart extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(7),
                               ),
                               child: Text(
-                                weekdayShortLabel(
-                                    day.date.weekday, localeCode),
+                                weekdayShortLabel(day.date.weekday, localeCode),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -4226,25 +3847,25 @@ class _ActivityHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isMissed = visualStatus == ActivityDailyProgressStatus.missed;
-    final bool isNotStarted = visualStatus == ActivityDailyProgressStatus.future;
+    final bool isNotStarted =
+        visualStatus == ActivityDailyProgressStatus.future;
     final bool isCompleted = visualStatus == ActivityDailyProgressStatus.done;
     final bool isPartial = visualStatus == ActivityDailyProgressStatus.partial;
-    final Color statusColor =
-        activityStatusColor(theme: theme, status: visualStatus);
+    final Color statusColor = activityStatusColor(
+      theme: theme,
+      status: visualStatus,
+    );
     final String displayStatusText = isMissed
         ? (localeCode == 'id' ? 'Tidak selesai' : 'Not completed')
         : isNotStarted
-            ? (localeCode == 'id' ? 'Belum mulai' : 'Not started')
-            : isCompleted
-                ? (localeCode == 'id' ? 'Selesai' : 'Completed')
-                : isPartial
-                    ? (progressPercent <= 0
-                        ? (localeCode == 'id'
-                            ? 'Sedang berlangsung'
-                            : 'In progress')
-                        : '$progressPercent%')
-                    : activityStatusLabel(
-                        status: visualStatus, localeCode: localeCode);
+        ? (localeCode == 'id' ? 'Belum mulai' : 'Not started')
+        : isCompleted
+        ? (localeCode == 'id' ? 'Selesai' : 'Completed')
+        : isPartial
+        ? (progressPercent <= 0
+              ? (localeCode == 'id' ? 'Sedang berlangsung' : 'In progress')
+              : '$progressPercent%')
+        : activityStatusLabel(status: visualStatus, localeCode: localeCode);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -4252,10 +3873,7 @@ class _ActivityHeroCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[
-            Colors.white,
-            Color(0xFFF1F3FF),
-          ],
+          colors: <Color>[Colors.white, Color(0xFFF1F3FF)],
         ),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
@@ -4310,8 +3928,9 @@ class _ActivityHeroCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: theme.colorScheme.outlineVariant
-                                .withValues(alpha: 0.25),
+                            color: theme.colorScheme.outlineVariant.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 32,
                             spreadRadius: 8,
                           ),
@@ -4342,7 +3961,9 @@ class _ActivityHeroCard extends StatelessWidget {
                           value: progressRate,
                           backgroundColor: theme.colorScheme.outlineVariant
                               .withValues(alpha: 0.2),
-                          valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            statusColor,
+                          ),
                         ),
                       ),
                     ),
@@ -4360,14 +3981,17 @@ class _ActivityHeroCard extends StatelessWidget {
               runSpacing: 12,
               children: <Widget>[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.2),
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.2,
+                      ),
                     ),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
@@ -4398,8 +4022,10 @@ class _ActivityHeroCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(999),
@@ -4450,10 +4076,14 @@ class _ActivityAiInsightSection extends StatelessWidget {
     String displayCautionText = data.caution;
     if (displayCautionText.startsWith('Hari yang paling sering berat:')) {
       displayCautionText = displayCautionText.replaceAll(
-          'Hari yang paling sering berat:', 'Hari paling berat:');
+        'Hari yang paling sering berat:',
+        'Hari paling berat:',
+      );
     } else if (displayCautionText.startsWith('The hardest day so far:')) {
-      displayCautionText =
-          displayCautionText.replaceAll('The hardest day so far:', 'Hardest day:');
+      displayCautionText = displayCautionText.replaceAll(
+        'The hardest day so far:',
+        'Hardest day:',
+      );
     }
 
     return Container(
@@ -4554,10 +4184,7 @@ class _ActivityAiInsightSection extends StatelessWidget {
 }
 
 class _ActivityInsightMetricCard extends StatelessWidget {
-  const _ActivityInsightMetricCard({
-    required this.title,
-    required this.value,
-  });
+  const _ActivityInsightMetricCard({required this.title, required this.value});
 
   final String title;
   final String value;
@@ -4626,11 +4253,7 @@ class _ActivityInsightSuggestion extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Icon(
-          icon,
-          size: 20,
-          color: color,
-        ),
+        Icon(icon, size: 20, color: color),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -4647,7 +4270,9 @@ class _ActivityInsightSuggestion extends StatelessWidget {
               Text(
                 body,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.8,
+                  ),
                   height: 1.4,
                   fontSize: 14,
                 ),
@@ -4661,10 +4286,7 @@ class _ActivityInsightSuggestion extends StatelessWidget {
 }
 
 class _SubActivityChip extends StatelessWidget {
-  const _SubActivityChip({
-    required this.label,
-    this.isSummary = false,
-  });
+  const _SubActivityChip({required this.label, this.isSummary = false});
 
   final String label;
   final bool isSummary;
@@ -4780,4 +4402,3 @@ class _GalleryPhotoCandidate {
     return trimmed;
   }
 }
- 
