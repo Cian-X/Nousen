@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
@@ -32,42 +33,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     return '${formatDateShort(start, localeCode)} - ${formatDateShort(end, localeCode)}';
   }
 
-  ThemeData _pickerTheme(BuildContext context) {
-    final ThemeData base = Theme.of(context);
-    final Color softSurface = base.colorScheme.surface.withValues(alpha: 0.98);
-    final Color softPrimaryTint = base.colorScheme.primary.withValues(
-      alpha: 0.12,
-    );
-    return base.copyWith(
-      colorScheme: base.colorScheme.copyWith(
-        primaryContainer: softPrimaryTint,
-        onPrimaryContainer: base.colorScheme.onSurface.withValues(alpha: 0.9),
-      ),
-      dialogTheme: base.dialogTheme.copyWith(
-        backgroundColor: softSurface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-        ),
-      ),
-      datePickerTheme: base.datePickerTheme.copyWith(
-        backgroundColor: softSurface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-        ),
-        headerBackgroundColor: softPrimaryTint,
-        headerForegroundColor: base.colorScheme.onSurface.withValues(
-          alpha: 0.88,
-        ),
-      ),
-    );
-  }
-
   ({DateTime start, DateTime end}) _resolveActiveRange() {
     final DateTime today = dateOnly(DateTime.now());
     if (_selectedFilter == _StatsFilterMode.custom && _customRange != null) {
@@ -89,18 +54,22 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           end: today,
         );
 
-    final DateTimeRange? picked = await showDateRangePicker(
+    if (!mounted) {
+      return;
+    }
+    final String localeCode =
+        ref.read(settingsStreamProvider).value?.localeCode ?? 'id';
+    final DateTimeRange? picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
-      firstDate: DateTime(today.year - 5, 1, 1),
-      lastDate: DateTime(today.year + 1, 12, 31),
-      initialDateRange: initialRange,
-      saveText: Localizations.localeOf(context).languageCode == 'id'
-          ? 'Simpan'
-          : 'Save',
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: _pickerTheme(context),
-          child: child ?? const SizedBox.shrink(),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return _StatsDateRangeSheet(
+          initialRange: initialRange,
+          firstDate: DateTime(today.year - 5, 1, 1),
+          lastDate: DateTime(today.year + 1, 12, 31),
+          localeCode: localeCode,
         );
       },
     );
@@ -160,12 +129,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final bool hasActiveScheduleInPeriod = dailyStats.any(
       (DailyStat item) => item.totalScheduled > 0,
     );
-    final List<_PeriodActivityStat> periodActivityStats = _buildPeriodActivityStats(
-      activities: activities,
-      progressEntries: progressEntries,
-      start: start,
-      end: end,
-    );
+    final List<_PeriodActivityStat> periodActivityStats =
+        _buildPeriodActivityStats(
+          activities: activities,
+          progressEntries: progressEntries,
+          start: start,
+          end: end,
+        );
     final List<_TimeBucketStat> timeBucketStats = _buildTimeBucketStats(
       periodActivityStats,
       localeCode: localeCode,
@@ -191,12 +161,12 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     );
     final List<_HighlightCardData> fallbackMainInsightCards =
         <_HighlightCardData>[
-      if (dayHighlights.isNotEmpty) dayHighlights.first,
-      if (timeHighlight != null)
-        timeHighlight
-      else if (dayHighlights.length > 1)
-        dayHighlights[1],
-    ];
+          if (dayHighlights.isNotEmpty) dayHighlights.first,
+          if (timeHighlight != null)
+            timeHighlight
+          else if (dayHighlights.length > 1)
+            dayHighlights[1],
+        ];
     final StatsMlRequest? statsMlRequest = _buildStatsMlRequest(
       periodActivityStats: periodActivityStats,
       globalStats: globalStats,
@@ -306,6 +276,447 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   }
 }
 
+enum _StatsRangePreset { last7, last30, thisMonth, custom }
+
+class _StatsDateRangeSheet extends StatefulWidget {
+  const _StatsDateRangeSheet({
+    required this.initialRange,
+    required this.firstDate,
+    required this.lastDate,
+    required this.localeCode,
+  });
+
+  final DateTimeRange initialRange;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final String localeCode;
+
+  @override
+  State<_StatsDateRangeSheet> createState() => _StatsDateRangeSheetState();
+}
+
+class _StatsDateRangeSheetState extends State<_StatsDateRangeSheet> {
+  late DateTime _start;
+  late DateTime _end;
+  late DateTime _visibleMonth;
+  late _StatsRangePreset _preset;
+  bool _selectingEnd = false;
+
+  bool get _isId => widget.localeCode == 'id';
+
+  @override
+  void initState() {
+    super.initState();
+    _start = dateOnly(widget.initialRange.start);
+    _end = dateOnly(widget.initialRange.end);
+    _visibleMonth = DateTime(_end.year, _end.month);
+    _preset = _detectPreset(_start, _end);
+  }
+
+  _StatsRangePreset _detectPreset(DateTime start, DateTime end) {
+    final DateTime today = dateOnly(DateTime.now());
+    if (_sameDay(end, today) && end.difference(start).inDays == 6) {
+      return _StatsRangePreset.last7;
+    }
+    if (_sameDay(end, today) && end.difference(start).inDays == 29) {
+      return _StatsRangePreset.last30;
+    }
+    if (start.day == 1 &&
+        end.year == start.year &&
+        end.month == start.month &&
+        end.day == DateTime(start.year, start.month + 1, 0).day) {
+      return _StatsRangePreset.thisMonth;
+    }
+    return _StatsRangePreset.custom;
+  }
+
+  void _selectPreset(_StatsRangePreset preset) {
+    final DateTime today = dateOnly(DateTime.now());
+    setState(() {
+      _preset = preset;
+      _selectingEnd = false;
+      switch (preset) {
+        case _StatsRangePreset.last7:
+          _start = today.subtract(const Duration(days: 6));
+          _end = today;
+        case _StatsRangePreset.last30:
+          _start = today.subtract(const Duration(days: 29));
+          _end = today;
+        case _StatsRangePreset.thisMonth:
+          _start = DateTime(today.year, today.month);
+          _end = DateTime(today.year, today.month + 1, 0);
+        case _StatsRangePreset.custom:
+          _selectingEnd = true;
+      }
+      _visibleMonth = DateTime(_end.year, _end.month);
+    });
+  }
+
+  void _selectDay(DateTime day) {
+    final DateTime selected = dateOnly(day);
+    if (selected.isBefore(widget.firstDate) ||
+        selected.isAfter(widget.lastDate)) {
+      return;
+    }
+    setState(() {
+      _preset = _StatsRangePreset.custom;
+      if (!_selectingEnd) {
+        _start = selected;
+        _end = selected;
+        _selectingEnd = true;
+      } else if (selected.isBefore(_start)) {
+        _end = _start;
+        _start = selected;
+        _selectingEnd = false;
+      } else {
+        _end = selected;
+        _selectingEnd = false;
+      }
+    });
+  }
+
+  void _changeMonth(int offset) {
+    final DateTime next = DateTime(
+      _visibleMonth.year,
+      _visibleMonth.month + offset,
+    );
+    final DateTime firstMonth = DateTime(
+      widget.firstDate.year,
+      widget.firstDate.month,
+    );
+    final DateTime lastMonth = DateTime(
+      widget.lastDate.year,
+      widget.lastDate.month,
+    );
+    if (next.isBefore(firstMonth) || next.isAfter(lastMonth)) {
+      return;
+    }
+    setState(() => _visibleMonth = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color accent = theme.colorScheme.primary;
+    final int dayCount = _end.difference(_start).inDays + 1;
+    final String rangeLabel =
+        '${formatDateShort(_start, widget.localeCode)} - '
+        '${formatDateShort(_end, widget.localeCode)}';
+
+    return FractionallySizedBox(
+      heightFactor: 0.9,
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          child: Column(
+            children: <Widget>[
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      _isId ? 'Pilih periode' : 'Select period',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _isId ? 'Tutup' : 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: accent.withValues(alpha: 0.18)),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Icon(Icons.date_range_rounded, color: accent, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            rangeLabel,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            _isId
+                                ? '$dayCount hari dipilih'
+                                : '$dayCount days selected',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _StatsRangePreset.values
+                      .map((preset) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(_presetLabel(preset)),
+                            selected: _preset == preset,
+                            showCheckmark: false,
+                            selectedColor: accent,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerLowest,
+                            side: BorderSide(
+                              color: _preset == preset
+                                  ? accent
+                                  : theme.colorScheme.outlineVariant,
+                            ),
+                            labelStyle: theme.textTheme.labelMedium?.copyWith(
+                              color: _preset == preset
+                                  ? Colors.white
+                                  : theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            onSelected: (_) => _selectPreset(preset),
+                          ),
+                        );
+                      })
+                      .toList(growable: false),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  IconButton(
+                    tooltip: _isId ? 'Bulan sebelumnya' : 'Previous month',
+                    onPressed: () => _changeMonth(-1),
+                    icon: const Icon(Icons.chevron_left_rounded),
+                  ),
+                  Expanded(
+                    child: Text(
+                      DateFormat(
+                        'MMMM yyyy',
+                        widget.localeCode,
+                      ).format(_visibleMonth),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _isId ? 'Bulan berikutnya' : 'Next month',
+                    onPressed: () => _changeMonth(1),
+                    icon: const Icon(Icons.chevron_right_rounded),
+                  ),
+                ],
+              ),
+              _WeekdayHeader(isId: _isId),
+              Expanded(
+                child: _RangeCalendarGrid(
+                  visibleMonth: _visibleMonth,
+                  start: _start,
+                  end: _end,
+                  firstDate: widget.firstDate,
+                  lastDate: widget.lastDate,
+                  accent: accent,
+                  onDayTap: _selectDay,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).pop(DateTimeRange(start: _start, end: _end)),
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(_isId ? 'Terapkan periode' : 'Apply period'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _presetLabel(_StatsRangePreset preset) {
+    return switch (preset) {
+      _StatsRangePreset.last7 => _isId ? '7 Hari' : '7 Days',
+      _StatsRangePreset.last30 => _isId ? '30 Hari' : '30 Days',
+      _StatsRangePreset.thisMonth => _isId ? 'Bulan Ini' : 'This Month',
+      _StatsRangePreset.custom => 'Custom',
+    };
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+}
+
+class _WeekdayHeader extends StatelessWidget {
+  const _WeekdayHeader({required this.isId});
+
+  final bool isId;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<String> labels = isId
+        ? const <String>['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+        : const <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Row(
+      children: labels
+          .map((label) {
+            return Expanded(
+              child: SizedBox(
+                height: 28,
+                child: Center(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          })
+          .toList(growable: false),
+    );
+  }
+}
+
+class _RangeCalendarGrid extends StatelessWidget {
+  const _RangeCalendarGrid({
+    required this.visibleMonth,
+    required this.start,
+    required this.end,
+    required this.firstDate,
+    required this.lastDate,
+    required this.accent,
+    required this.onDayTap,
+  });
+
+  final DateTime visibleMonth;
+  final DateTime start;
+  final DateTime end;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final Color accent;
+  final ValueChanged<DateTime> onDayTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final DateTime monthStart = DateTime(visibleMonth.year, visibleMonth.month);
+    final DateTime gridStart = monthStart.subtract(
+      Duration(days: monthStart.weekday - 1),
+    );
+
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1,
+      ),
+      itemCount: 42,
+      itemBuilder: (BuildContext context, int index) {
+        final DateTime day = gridStart.add(Duration(days: index));
+        final bool inVisibleMonth = day.month == visibleMonth.month;
+        final bool enabled =
+            !day.isBefore(dateOnly(firstDate)) &&
+            !day.isAfter(dateOnly(lastDate));
+        final bool isStart = _isSameDate(day, start);
+        final bool isEnd = _isSameDate(day, end);
+        final bool isEndpoint = isStart || isEnd;
+        final bool inRange =
+            !day.isBefore(dateOnly(start)) && !day.isAfter(dateOnly(end));
+
+        return InkWell(
+          onTap: enabled ? () => onDayTap(day) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: inRange ? accent.withValues(alpha: 0.1) : null,
+              borderRadius: BorderRadius.horizontal(
+                left: isStart ? const Radius.circular(8) : Radius.zero,
+                right: isEnd ? const Radius.circular(8) : Radius.zero,
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isEndpoint ? accent : null,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${day.day}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isEndpoint
+                        ? Colors.white
+                        : enabled && inVisibleMonth
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                    fontWeight: isEndpoint ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+}
+
 _StatsAiSummaryData _buildStatsAiSummary({
   required String localeCode,
   required List<DailyStat> currentStats,
@@ -332,32 +743,35 @@ _StatsAiSummaryData _buildStatsAiSummary({
     );
   }
 
-  final DailyStat best = ([...activeDays]..sort((DailyStat a, DailyStat b) {
-    final int byRate = b.completionRate.compareTo(a.completionRate);
-    if (byRate != 0) {
-      return byRate;
-    }
-    return b.totalCompleted.compareTo(a.totalCompleted);
-  })).first;
+  final DailyStat best =
+      ([...activeDays]..sort((DailyStat a, DailyStat b) {
+            final int byRate = b.completionRate.compareTo(a.completionRate);
+            if (byRate != 0) {
+              return byRate;
+            }
+            return b.totalCompleted.compareTo(a.totalCompleted);
+          }))
+          .first;
   final String bestDayLabel = _weekdayLongLabel(best.date.weekday, localeCode);
   final int bestPercent = (best.completionRate * 100).round();
 
   final _TimeBucketStat? strongestTime = timeBucketStats.isEmpty
       ? null
       : ([...timeBucketStats]..sort((_TimeBucketStat a, _TimeBucketStat b) {
-          final int byRate = b.completionRate.compareTo(a.completionRate);
-          if (byRate != 0) {
-            return byRate;
-          }
-          return b.completed.compareTo(a.completed);
-        })).first;
+              final int byRate = b.completionRate.compareTo(a.completionRate);
+              if (byRate != 0) {
+                return byRate;
+              }
+              return b.completed.compareTo(a.completed);
+            }))
+            .first;
 
   final _PeriodActivityStat? strugglingActivity = _findStrugglingActivity(
     periodActivityStats,
   );
   final int averagePercent = (averageDailyRate * 100).round();
-  final int deltaPercent = ((currentGlobalRate - previousGlobalRate).abs() * 100)
-      .round();
+  final int deltaPercent =
+      ((currentGlobalRate - previousGlobalRate).abs() * 100).round();
 
   String headline;
   String body;
@@ -367,7 +781,9 @@ _StatsAiSummaryData _buildStatsAiSummary({
         ? 'Puncaknya ada di $bestDayLabel ($bestPercent%)${strongestTime == null ? '' : ', dan paling enak dijaga saat ${strongestTime.label.toLowerCase()}.'}'
         : 'Your peak lands on $bestDayLabel ($bestPercent%)${strongestTime == null ? '.' : ', and ${strongestTime.label.toLowerCase()} works best for you.'}';
   } else if (currentGlobalRate >= 0.55) {
-    headline = isId ? 'Minggu ini lumayan terjaga' : 'This week is fairly steady';
+    headline = isId
+        ? 'Minggu ini lumayan terjaga'
+        : 'This week is fairly steady';
     body = isId
         ? 'Hari terkuatmu $bestDayLabel, dengan rata-rata $averagePercent% di hari aktif.'
         : 'Your strongest day is $bestDayLabel, with an average of $averagePercent% on active days.';
@@ -377,21 +793,21 @@ _StatsAiSummaryData _buildStatsAiSummary({
         : 'This week still needs some tuning';
     body = strugglingActivity != null
         ? (isId
-            ? '${strugglingActivity.activity.title} paling sering tertunda. ${strongestTime == null ? '' : 'Coba dorong ke ${strongestTime.label.toLowerCase()}.'}'
-            : '${strugglingActivity.activity.title} is getting postponed the most. ${strongestTime == null ? '' : 'Try moving it to ${strongestTime.label.toLowerCase()}.'}')
+              ? '${strugglingActivity.activity.title} paling sering tertunda. ${strongestTime == null ? '' : 'Coba dorong ke ${strongestTime.label.toLowerCase()}.'}'
+              : '${strugglingActivity.activity.title} is getting postponed the most. ${strongestTime == null ? '' : 'Try moving it to ${strongestTime.label.toLowerCase()}.'}')
         : (isId
-            ? 'Hari terbaikmu tetap $bestDayLabel, tapi ritme minggu ini masih belum stabil.'
-            : 'Your best day is still $bestDayLabel, but the weekly rhythm is not stable yet.');
+              ? 'Hari terbaikmu tetap $bestDayLabel, tapi ritme minggu ini masih belum stabil.'
+              : 'Your best day is still $bestDayLabel, but the weekly rhythm is not stable yet.');
   }
 
   final String? support = previousGlobalRate > 0
       ? (isId
-          ? (currentGlobalRate >= previousGlobalRate
-              ? 'Naik $deltaPercent% dari periode sebelumnya.'
-              : 'Turun $deltaPercent% dari periode sebelumnya.')
-          : (currentGlobalRate >= previousGlobalRate
-              ? 'Up $deltaPercent% from the previous period.'
-              : 'Down $deltaPercent% from the previous period.'))
+            ? (currentGlobalRate >= previousGlobalRate
+                  ? 'Naik $deltaPercent% dari periode sebelumnya.'
+                  : 'Turun $deltaPercent% dari periode sebelumnya.')
+            : (currentGlobalRate >= previousGlobalRate
+                  ? 'Up $deltaPercent% from the previous period.'
+                  : 'Down $deltaPercent% from the previous period.'))
       : null;
 
   return _StatsAiSummaryData(
@@ -513,13 +929,17 @@ List<_HighlightCardData> _buildDayHighlights({
     ];
   }
 
-  final DailyStat busiestDay = ([...activeDays]..sort((DailyStat a, DailyStat b) {
-    final int byScheduled = b.totalScheduled.compareTo(a.totalScheduled);
-    if (byScheduled != 0) {
-      return byScheduled;
-    }
-    return b.totalCompleted.compareTo(a.totalCompleted);
-  })).first;
+  final DailyStat busiestDay =
+      ([...activeDays]..sort((DailyStat a, DailyStat b) {
+            final int byScheduled = b.totalScheduled.compareTo(
+              a.totalScheduled,
+            );
+            if (byScheduled != 0) {
+              return byScheduled;
+            }
+            return b.totalCompleted.compareTo(a.totalCompleted);
+          }))
+          .first;
 
   return <_HighlightCardData>[
     _HighlightCardData(
@@ -541,15 +961,15 @@ _HighlightCardData? _buildTimeHighlight(
     return null;
   }
 
-  final _TimeBucketStat strongest = ([...timeBucketStats]
-        ..sort((_TimeBucketStat a, _TimeBucketStat b) {
-          final int byRate = b.completionRate.compareTo(a.completionRate);
-          if (byRate != 0) {
-            return byRate;
-          }
-          return b.completed.compareTo(a.completed);
-        }))
-      .first;
+  final _TimeBucketStat strongest =
+      ([...timeBucketStats]..sort((_TimeBucketStat a, _TimeBucketStat b) {
+            final int byRate = b.completionRate.compareTo(a.completionRate);
+            if (byRate != 0) {
+              return byRate;
+            }
+            return b.completed.compareTo(a.completed);
+          }))
+          .first;
 
   return _HighlightCardData(
     title: localeCode == 'id' ? 'Slot paling efektif' : 'Best time slot',
@@ -621,7 +1041,9 @@ List<_HighlightCardData> _resolveMainInsightCards({
       ),
     );
   } else if (mlRequest != null) {
-    cards.add(_buildThinMlSignalCard(request: mlRequest, localeCode: localeCode));
+    cards.add(
+      _buildThinMlSignalCard(request: mlRequest, localeCode: localeCode),
+    );
   }
 
   for (final _HighlightCardData fallback in fallbackCards) {
@@ -671,11 +1093,11 @@ List<_HighlightCardData> _buildMlInsightCards({
             : (isId ? 'Masih berubah' : 'Still fluctuating'),
         detail: insight.isConsistent!
             ? (isId
-                ? '${insight.referenceActivityTitle} mulai menunjukkan pola yang lebih rapi.'
-                : '${insight.referenceActivityTitle} is starting to show a steadier pattern.')
+                  ? '${insight.referenceActivityTitle} mulai menunjukkan pola yang lebih rapi.'
+                  : '${insight.referenceActivityTitle} is starting to show a steadier pattern.')
             : (isId
-                ? '${insight.referenceActivityTitle} masih butuh ritme yang lebih konsisten.'
-                : '${insight.referenceActivityTitle} still needs a more consistent rhythm.'),
+                  ? '${insight.referenceActivityTitle} masih butuh ritme yang lebih konsisten.'
+                  : '${insight.referenceActivityTitle} still needs a more consistent rhythm.'),
         icon: Icons.show_chart_rounded,
       ),
     );
@@ -738,7 +1160,9 @@ _ActivityHighlightsData _buildActivityHighlights(
       return b.completed.compareTo(a.completed);
     });
   final _PeriodActivityStat strongest = sortedByStrength.first;
-  final _PeriodActivityStat? struggling = _findStrugglingActivity(activityStats);
+  final _PeriodActivityStat? struggling = _findStrugglingActivity(
+    activityStats,
+  );
 
   return _ActivityHighlightsData(
     strongestTitle: strongest.activity.title,
@@ -748,11 +1172,11 @@ _ActivityHighlightsData _buildActivityHighlights(
     strugglingTitle: struggling?.activity.title ?? '-',
     strugglingDetail: struggling == null
         ? (localeCode == 'id'
-            ? 'Belum ada aktivitas yang benar-benar tertinggal.'
-            : 'No activity is clearly lagging behind yet.')
+              ? 'Belum ada aktivitas yang benar-benar tertinggal.'
+              : 'No activity is clearly lagging behind yet.')
         : (localeCode == 'id'
-            ? '${struggling.incomplete} kali belum selesai pada periode ini.'
-            : '${struggling.incomplete} incomplete occurrences in this period.'),
+              ? '${struggling.incomplete} kali belum selesai pada periode ini.'
+              : '${struggling.incomplete} incomplete occurrences in this period.'),
   );
 }
 
@@ -893,9 +1317,13 @@ class _StatsHeroSection extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      isId ? 'COMPLETION RATE GLOBAL' : 'GLOBAL COMPLETION RATE',
+                      isId
+                          ? 'COMPLETION RATE GLOBAL'
+                          : 'GLOBAL COMPLETION RATE',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.74),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.74,
+                        ),
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
                         fontSize: 11,
@@ -906,12 +1334,17 @@ class _StatsHeroSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     onTap: onPeriodTap,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.2,
+                          ),
                         ),
                       ),
                       child: Row(
@@ -963,7 +1396,8 @@ class _StatsHeroSection extends StatelessWidget {
                                     ? 'Belum ada aktivitas pada periode ini'
                                     : 'No activities in this period'),
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
                             fontSize: 14,
                           ),
@@ -985,8 +1419,11 @@ class _StatsHeroSection extends StatelessWidget {
                           child: CircularProgressIndicator(
                             value: rate.clamp(0, 1),
                             strokeWidth: 5,
-                            backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                            backgroundColor: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
                           ),
                         ),
                         Icon(
@@ -1021,16 +1458,27 @@ class _WeeklyStatusSection extends StatelessWidget {
 
     // Sort points Sen-Min
     final List<DailyStat> orderedPoints = [...points]
-      ..sort((DailyStat a, DailyStat b) => a.date.weekday.compareTo(b.date.weekday));
+      ..sort(
+        (DailyStat a, DailyStat b) => a.date.weekday.compareTo(b.date.weekday),
+      );
 
     // Calculate global completion rate for the period
-    final int totalScheduled = orderedPoints.fold<int>(0, (sum, p) => sum + p.totalScheduled);
-    final int totalCompleted = orderedPoints.fold<int>(0, (sum, p) => sum + p.totalCompleted);
-    final double completionRate = totalScheduled > 0 ? totalCompleted / totalScheduled : 0;
+    final int totalScheduled = orderedPoints.fold<int>(
+      0,
+      (sum, p) => sum + p.totalScheduled,
+    );
+    final int totalCompleted = orderedPoints.fold<int>(
+      0,
+      (sum, p) => sum + p.totalCompleted,
+    );
+    final double completionRate = totalScheduled > 0
+        ? totalCompleted / totalScheduled
+        : 0;
     final int completionPercent = (completionRate * 100).round();
 
-    final int activeDays =
-        orderedPoints.where((DailyStat p) => p.totalScheduled > 0).length;
+    final int activeDays = orderedPoints
+        .where((DailyStat p) => p.totalScheduled > 0)
+        .length;
 
     // Warna badge header sesuai completion rate
     final Color weekColor;
@@ -1093,8 +1541,9 @@ class _WeeklyStatusSection extends StatelessWidget {
                           ? '$activeDays hari aktif minggu ini'
                           : '$activeDays active days this week',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.42),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.42,
+                        ),
                         fontSize: 12,
                       ),
                     ),
@@ -1141,8 +1590,9 @@ class _WeeklyStatusSection extends StatelessWidget {
                         child: Container(
                           height: 1,
                           color: show
-                              ? theme.colorScheme.outlineVariant
-                                    .withValues(alpha: 0.28)
+                              ? theme.colorScheme.outlineVariant.withValues(
+                                  alpha: 0.28,
+                                )
                               : Colors.transparent,
                         ),
                       );
@@ -1152,149 +1602,132 @@ class _WeeklyStatusSection extends StatelessWidget {
                 // Bars
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List<Widget>.generate(
-                    orderedPoints.length,
-                    (int index) {
-                      final DailyStat point = orderedPoints[index];
-                      final double rate = point.completionRate;
-                      final bool isToday = dateOnly(point.date) == today;
-                      final bool hasData = point.totalScheduled > 0;
+                  children: List<Widget>.generate(orderedPoints.length, (
+                    int index,
+                  ) {
+                    final DailyStat point = orderedPoints[index];
+                    final double rate = point.completionRate;
+                    final bool isToday = dateOnly(point.date) == today;
+                    final bool hasData = point.totalScheduled > 0;
 
-                      // Warna berdasarkan status proses
-                      final Color barColor;
-                      if (!hasData) {
-                        // Abu-abu: tidak ada jadwal
-                        barColor = theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.2);
-                      } else if (rate == 0) {
-                        // Merah: dijadwalkan tapi tidak dikerjakan
-                        barColor = const Color(0xFFBA1A1A);
-                      } else if (rate < 1.0) {
-                        // Orange: sudah proses tapi belum selesai
-                        barColor = const Color(0xFFF59E0B);
-                      } else {
-                        // Biru: selesai sempurna (default success)
-                        barColor = const Color(0xFF1A5BAD);
-                      }
+                    // Warna berdasarkan status proses
+                    final Color barColor;
+                    if (!hasData) {
+                      // Abu-abu: tidak ada jadwal
+                      barColor = theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.2,
+                      );
+                    } else if (rate == 0) {
+                      // Merah: dijadwalkan tapi tidak dikerjakan
+                      barColor = const Color(0xFFBA1A1A);
+                    } else if (rate < 1.0) {
+                      // Orange: sudah proses tapi belum selesai
+                      barColor = const Color(0xFFF59E0B);
+                    } else {
+                      // Biru: selesai sempurna (default success)
+                      barColor = const Color(0xFF1A5BAD);
+                    }
 
-                      // fill: minimum 5% height when data exists
-                      final double fillH = rate > 0
-                          ? maxBarH * rate.clamp(0.05, 1.0)
-                          : (hasData ? 4.0 : 0.0);
-                      final int pct = (rate * 100).round();
+                    // fill: minimum 5% height when data exists
+                    final double fillH = rate > 0
+                        ? maxBarH * rate.clamp(0.05, 1.0)
+                        : (hasData ? 4.0 : 0.0);
+                    final int pct = (rate * 100).round();
 
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isToday ? 1.0 : 2.5,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              // % label
-                              SizedBox(
-                                height: pctLabelH,
-                                child: hasData && rate > 0
-                                    ? Text(
-                                        '$pct%',
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          fontSize: 9,
-                                          fontWeight: isToday
-                                              ? FontWeight.w800
-                                              : FontWeight.w600,
-                                          color: isToday
-                                              ? barColor
-                                              : barColor.withValues(
-                                                  alpha: 0.68,
-                                                ),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(height: pctToBarGap),
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isToday ? 1.0 : 2.5,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            // % label
+                            SizedBox(
+                              height: pctLabelH,
+                              child: hasData && rate > 0
+                                  ? Text(
+                                      '$pct%',
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            fontSize: 9,
+                                            fontWeight: isToday
+                                                ? FontWeight.w800
+                                                : FontWeight.w600,
+                                            color: isToday
+                                                ? barColor
+                                                : barColor.withValues(
+                                                    alpha: 0.68,
+                                                  ),
+                                          ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(height: pctToBarGap),
 
-                              // Bar: flat track and solid fill.
-                              Stack(
-                                alignment: Alignment.bottomCenter,
-                                children: <Widget>[
-                                  // Track
-                                  Container(
-                                    width: double.infinity,
-                                    height: maxBarH,
-                                    decoration: BoxDecoration(
-                                      color: isToday
-                                          ? barColor.withValues(alpha: 0.12)
-                                          : theme.colorScheme.outlineVariant
-                                                .withValues(alpha: 0.16),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
+                            // Bar: flat track and solid fill.
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: <Widget>[
+                                // Track
+                                Container(
+                                  width: double.infinity,
+                                  height: maxBarH,
+                                  decoration: BoxDecoration(
+                                    color: isToday
+                                        ? barColor.withValues(alpha: 0.12)
+                                        : theme.colorScheme.outlineVariant
+                                              .withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  // Animated fill
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween<double>(begin: 0, end: fillH),
-                                    duration: Duration(
-                                      milliseconds: 450 + (index * 60),
-                                    ),
-                                    curve: Curves.easeOutCubic,
-                                    builder: (
-                                      BuildContext ctx,
-                                      double h,
-                                      _,
-                                    ) {
-                                      if (h < 1) {
-                                        return const SizedBox.shrink();
-                                      }
-                                      return Container(
-                                        width: double.infinity,
-                                        height: h,
+                                ),
+                                // Animated fill
+                                TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0, end: fillH),
+                                  duration: Duration(
+                                    milliseconds: 450 + (index * 60),
+                                  ),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (BuildContext ctx, double h, _) {
+                                    if (h < 1) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Container(
+                                      width: double.infinity,
+                                      height: h,
+                                      decoration: BoxDecoration(
+                                        color: rate <= 0.05
+                                            ? barColor.withValues(alpha: 0.72)
+                                            : barColor,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: barToDayGap),
+
+                            // Day label — pill for today, plain for others
+                            SizedBox(
+                              height: dayLabelH,
+                              child: isToday
+                                  ? Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 5,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: rate <= 0.05
-                                              ? barColor.withValues(alpha: 0.72)
-                                              : barColor,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: barToDayGap),
-
-                              // Day label — pill for today, plain for others
-                              SizedBox(
-                                height: dayLabelH,
-                                child: isToday
-                                    ? Center(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 5,
-                                            vertical: 3,
+                                          color: barColor.withValues(
+                                            alpha: 0.1,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: barColor.withValues(
-                                              alpha: 0.1,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            weekdayShortLabel(
-                                              point.date.weekday,
-                                              localeCode,
-                                            ),
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w800,
-                                              color: barColor,
-                                            ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
                                           ),
                                         ),
-                                      )
-                                    : Center(
                                         child: Text(
                                           weekdayShortLabel(
                                             point.date.weekday,
@@ -1302,21 +1735,34 @@ class _WeeklyStatusSection extends StatelessWidget {
                                           ),
                                           style: theme.textTheme.labelSmall
                                               ?.copyWith(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w500,
-                                            color:
-                                                theme.colorScheme.onSurface
-                                                    .withValues(alpha: 0.38),
-                                          ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: barColor,
+                                              ),
                                         ),
                                       ),
-                              ),
-                            ],
-                          ),
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        weekdayShortLabel(
+                                          point.date.weekday,
+                                          localeCode,
+                                        ),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w500,
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.38),
+                                            ),
+                                      ),
+                                    ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -1432,8 +1878,6 @@ class _StatsSmartSummarySection extends StatelessWidget {
   }
 }
 
-
-
 class _StatsSectionHeader extends StatelessWidget {
   const _StatsSectionHeader({required this.title, required this.subtitle});
 
@@ -1467,8 +1911,6 @@ class _StatsSectionHeader extends StatelessWidget {
     );
   }
 }
-
-
 
 class _ActivityHighlightRow extends StatelessWidget {
   const _ActivityHighlightRow({
@@ -1553,7 +1995,9 @@ class _ActivityHighlightRow extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: isWarning
                         ? color.withValues(alpha: 0.78)
-                        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.64),
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.64,
+                          ),
                     height: 1.3,
                   ),
                 ),
@@ -1581,14 +2025,21 @@ class _AdditionalSummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isId = Localizations.localeOf(context).languageCode == 'id';
     final int averagePercent = (averageDailyRate * 100).round();
-    final int incomplete = (totalScheduled - totalCompleted).clamp(0, totalScheduled);
+    final int incomplete = (totalScheduled - totalCompleted).clamp(
+      0,
+      totalScheduled,
+    );
 
-    final List<({String label, String value})> metrics = <({String label, String value})>[
-      (label: isId ? 'Terjadwal' : 'Scheduled', value: '$totalScheduled'),
-      (label: isId ? 'Selesai' : 'Completed', value: '$totalCompleted'),
-      (label: isId ? 'Belum selesai' : 'Incomplete', value: '$incomplete'),
-      (label: isId ? 'Rata-rata harian' : 'Daily average', value: '$averagePercent%'),
-    ];
+    final List<({String label, String value})> metrics =
+        <({String label, String value})>[
+          (label: isId ? 'Terjadwal' : 'Scheduled', value: '$totalScheduled'),
+          (label: isId ? 'Selesai' : 'Completed', value: '$totalCompleted'),
+          (label: isId ? 'Belum selesai' : 'Incomplete', value: '$incomplete'),
+          (
+            label: isId ? 'Rata-rata harian' : 'Daily average',
+            value: '$averagePercent%',
+          ),
+        ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1613,10 +2064,7 @@ class _AdditionalSummarySection extends StatelessWidget {
               children: metrics.map((item) {
                 return SizedBox(
                   width: itemWidth,
-                  child: _SummaryCell(
-                    label: item.label,
-                    value: item.value,
-                  ),
+                  child: _SummaryCell(label: item.label, value: item.value),
                 );
               }).toList(),
             );
@@ -1628,10 +2076,7 @@ class _AdditionalSummarySection extends StatelessWidget {
 }
 
 class _SummaryCell extends StatelessWidget {
-  const _SummaryCell({
-    required this.label,
-    required this.value,
-  });
+  const _SummaryCell({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1680,8 +2125,6 @@ class _SummaryCell extends StatelessWidget {
     );
   }
 }
-
-
 
 class _StatsAiSummaryData {
   const _StatsAiSummaryData({
@@ -1783,21 +2226,27 @@ class _HighlightCard extends StatelessWidget {
             card.value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: (compact
-                    ? theme.textTheme.titleMedium
-                    : theme.textTheme.titleLarge)
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style:
+                (compact
+                        ? theme.textTheme.titleMedium
+                        : theme.textTheme.titleLarge)
+                    ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             card.detail,
             maxLines: compact ? 2 : 3,
             overflow: TextOverflow.ellipsis,
-            style: (compact ? theme.textTheme.labelSmall : theme.textTheme.bodySmall)
-                ?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
-                  height: 1.35,
-                ),
+            style:
+                (compact
+                        ? theme.textTheme.labelSmall
+                        : theme.textTheme.bodySmall)
+                    ?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.62,
+                      ),
+                      height: 1.35,
+                    ),
           ),
         ],
       ),
@@ -1860,10 +2309,7 @@ class _TimeBucketStat {
     return completed / scheduled;
   }
 
-  _TimeBucketStat copyWith({
-    int? scheduled,
-    int? completed,
-  }) {
+  _TimeBucketStat copyWith({int? scheduled, int? completed}) {
     return _TimeBucketStat(
       key: key,
       label: label,

@@ -24,10 +24,6 @@ import 'package:liburan_create/features/settings/presentation/settings_page.dart
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 
-const double _kFabMenuButtonHeight = 48;
-const double _kFabMenuButtonRadius = 24;
-const double _kFabMenuButtonWidth = 184;
-
 class HomeShellPage extends ConsumerStatefulWidget {
   const HomeShellPage({super.key});
 
@@ -37,18 +33,7 @@ class HomeShellPage extends ConsumerStatefulWidget {
 
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
-  static const Duration _stateTransitionDuration = Duration(milliseconds: 150);
-  static const Duration _fabStackTransitionDuration = Duration(
-    milliseconds: 260,
-  );
-  static const int _fabActionItemStaggerMs = 40;
-  static const int _fabActionItemDurationMs = 180;
-  static const double _fabMenuItemGap = 10;
-  static const double _fabPrimaryGap = 14;
-  static const double _fabBottomMargin = 16;
-  static const double _fabSize = 44;
   Timer? _countdownTimer;
-  bool _isFabStackOpen = false;
 
   @override
   void initState() {
@@ -125,198 +110,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       totalProgress += completedSub / subActivities.length;
     }
     return (totalProgress / activityItems.length).clamp(0, 1).toDouble();
-  }
-
-  Future<void> _openFabActionStack({
-    required String localeCode,
-    required bool hasActivities,
-  }) async {
-    if (_isFabStackOpen) {
-      return;
-    }
-    setState(() {
-      _isFabStackOpen = true;
-    });
-    final double maxStackHeight = MediaQuery.sizeOf(context).height * 0.4;
-    try {
-      await showGeneralDialog<void>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'fab_action_stack',
-        barrierColor: Colors.transparent,
-        transitionDuration: _fabStackTransitionDuration,
-        pageBuilder:
-            (
-              BuildContext dialogContext,
-              Animation<double> animation,
-              Animation<double> secondaryAnimation,
-            ) {
-              Future<void> runAndClose(Future<void> Function() action) async {
-                if (mounted) {
-                  setState(() {
-                    _isFabStackOpen = false;
-                  });
-                }
-                Navigator.of(dialogContext).pop();
-                await Future<void>.delayed(_fabStackTransitionDuration);
-                if (!mounted) {
-                  return;
-                }
-                await action();
-              }
-
-              final List<Widget> actionButtons = <Widget>[
-                _FabStackActionButton(
-                  label: localeCode == 'id' ? 'Statistik' : 'Stats',
-                  onTap: () => runAndClose(_openStatsSummary),
-                ),
-                if (hasActivities)
-                  _FabStackActionButton(
-                    label: localeCode == 'id'
-                        ? 'Tambah aktivitas'
-                        : 'Add activity',
-                    onTap: () => runAndClose(_openActivityForm),
-                    isPrimary: true,
-                  ),
-              ];
-
-              Widget buildStaggeredAction({
-                required int index,
-                required Widget child,
-              }) {
-                final int totalMs = _fabStackTransitionDuration.inMilliseconds;
-                final int animationOrder = (actionButtons.length - 1) - index;
-                final double start =
-                    ((animationOrder * _fabActionItemStaggerMs) / totalMs)
-                        .clamp(0, 1)
-                        .toDouble();
-                final double end =
-                    (((animationOrder * _fabActionItemStaggerMs) +
-                                _fabActionItemDurationMs) /
-                            totalMs)
-                        .clamp(0, 1)
-                        .toDouble();
-                final Animation<double> itemAnimation = CurvedAnimation(
-                  parent: animation,
-                  curve: Interval(start, end, curve: Curves.easeOut),
-                  reverseCurve: Interval(start, end, curve: Curves.easeIn),
-                );
-
-                return AnimatedBuilder(
-                  animation: itemAnimation,
-                  child: child,
-                  builder: (BuildContext context, Widget? animatedChild) {
-                    final double t = itemAnimation.value;
-                    final bool isReversing =
-                        animation.status == AnimationStatus.reverse;
-                    if (isReversing) {
-                      final double reverseProgress = (1 - t)
-                          .clamp(0, 1)
-                          .toDouble();
-                      final double fadeFraction =
-                          (120 / _fabActionItemDurationMs).clamp(0.0, 1.0);
-                      final double fadeProgress =
-                          (reverseProgress / fadeFraction)
-                              .clamp(0, 1)
-                              .toDouble();
-                      final double slideProgress =
-                          ((reverseProgress - fadeFraction) /
-                                  (1 - fadeFraction))
-                              .clamp(0, 1)
-                              .toDouble();
-                      return Opacity(
-                        opacity: 1 - fadeProgress,
-                        child: Transform.translate(
-                          offset: Offset(0, slideProgress * 12),
-                          child: animatedChild,
-                        ),
-                      );
-                    }
-                    return Opacity(
-                      opacity: t,
-                      child: Transform.translate(
-                        offset: Offset(0, (1 - t) * 16),
-                        child: animatedChild,
-                      ),
-                    );
-                  },
-                );
-              }
-
-              return SafeArea(
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      right: 16,
-                      bottom: _fabBottomMargin + _fabSize + _fabPrimaryGap,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: maxStackHeight),
-                      child: SingleChildScrollView(
-                        reverse: true,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            for (
-                              int i = 0;
-                              i < actionButtons.length;
-                              i++
-                            ) ...<Widget>[
-                              if (i > 0)
-                                const SizedBox(height: _fabMenuItemGap),
-                              buildStaggeredAction(
-                                index: i,
-                                child: actionButtons[i],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-        transitionBuilder:
-            (
-              BuildContext context,
-              Animation<double> animation,
-              Animation<double> secondaryAnimation,
-              Widget child,
-            ) {
-              final CurvedAnimation curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-                reverseCurve: Curves.easeIn,
-              );
-              final Animation<double> slideY = Tween<double>(
-                begin: 6,
-                end: 0,
-              ).animate(curved);
-              return FadeTransition(
-                opacity: curved,
-                child: AnimatedBuilder(
-                  animation: slideY,
-                  child: child,
-                  builder: (BuildContext context, Widget? animatedChild) {
-                    return Transform.translate(
-                      offset: Offset(0, slideY.value),
-                      child: animatedChild,
-                    );
-                  },
-                ),
-              );
-            },
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isFabStackOpen = false;
-        });
-      }
-    }
   }
 
   @override
@@ -398,15 +191,16 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     }
     final bool hasActivities = activityItems.isNotEmpty;
 
-    final int skippedCount = selectedIsToday
-        ? activityItems.where((item) => item.isSkipped).length
-        : 0;
-    final int effectiveScheduledCount = selectedIsToday
-        ? math.max(0, activityItems.length - skippedCount)
-        : activityItems.length;
-    final int completedCount = selectedIsToday
-        ? activityItems.where((item) => item.isCompleted).length
-        : 0;
+    final int skippedCount = activityItems
+        .where((item) => item.isSkipped)
+        .length;
+    final int effectiveScheduledCount = math.max(
+      0,
+      activityItems.length - skippedCount,
+    );
+    final int completedCount = activityItems
+        .where((item) => item.isCompleted)
+        .length;
     final int scheduledCount = effectiveScheduledCount;
     _ActivityTileData? focusItem;
     for (final _ActivityTileData item in activityItems) {
@@ -424,17 +218,27 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     // Warna indikator untuk card insight HS
     final Color heroProgressColor;
     if (scheduledCount <= 0) {
-      heroProgressColor = const Color(0xFF9E9E9E); // abu-abu
+      heroProgressColor = activityStatusColor(
+        theme: theme,
+        status: ActivityDailyProgressStatus.future,
+      );
     } else if (completedCount <= 0) {
-      heroProgressColor = selectedDate.isBefore(today)
-          ? const Color(0xFFBA1A1A) // merah: terlewat (hari lalu)
-          : const Color(
-              0xFF9E9E9E,
-            ); // abu-abu: belum mulai (hari ini/masa depan)
+      heroProgressColor = activityStatusColor(
+        theme: theme,
+        status: selectedDate.isBefore(today)
+            ? ActivityDailyProgressStatus.missed
+            : ActivityDailyProgressStatus.future,
+      );
     } else if (completedCount < scheduledCount) {
-      heroProgressColor = const Color(0xFFF59E0B); // orange
+      heroProgressColor = activityStatusColor(
+        theme: theme,
+        status: ActivityDailyProgressStatus.partial,
+      );
     } else {
-      heroProgressColor = const Color(0xFF1A5BAD); // biru
+      heroProgressColor = activityStatusColor(
+        theme: theme,
+        status: ActivityDailyProgressStatus.done,
+      );
     }
 
     final String todayHeroTitle = localeCode == 'id' ? 'HARI INI' : 'TODAY';
@@ -490,21 +294,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     );
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openFabActionStack(
-          localeCode: localeCode,
-          hasActivities: hasActivities,
-        ),
-        tooltip: localeCode == 'id' ? 'Menu cepat' : 'Quick menu',
+        onPressed: _openActivityForm,
+        tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         shape: const CircleBorder(),
         elevation: 6,
-        child: AnimatedRotation(
-          turns: _isFabStackOpen ? 0.125 : 0,
-          duration: _stateTransitionDuration,
-          curve: Curves.easeOut,
-          child: const Icon(Icons.add, size: 28),
-        ),
+        child: const Icon(Icons.add, size: 28),
       ),
       bottomNavigationBar: Container(
         height: 72,
@@ -1965,88 +1761,6 @@ class _EmptyActivitiesPanel extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FabStackActionButton extends StatelessWidget {
-  const _FabStackActionButton({
-    required this.label,
-    required this.onTap,
-    this.isPrimary = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool isPrimary;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final double maxButtonWidth = MediaQuery.sizeOf(context).width - 32;
-    final double buttonWidth = _kFabMenuButtonWidth > maxButtonWidth
-        ? maxButtonWidth
-        : _kFabMenuButtonWidth;
-    final ButtonStyle style =
-        (isPrimary
-                ? FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                  )
-                : FilledButton.styleFrom(
-                    backgroundColor: Color.alphaBlend(
-                      theme.colorScheme.surface.withValues(alpha: 0.94),
-                      theme.colorScheme.surfaceContainerHigh,
-                    ),
-                    foregroundColor: theme.colorScheme.onSurface.withValues(
-                      alpha: 0.82,
-                    ),
-                  ))
-            .copyWith(
-              elevation: WidgetStateProperty.all(0),
-              shadowColor: WidgetStateProperty.all(Colors.transparent),
-              overlayColor: WidgetStateProperty.all(
-                theme.colorScheme.primary.withValues(alpha: 0.08),
-              ),
-              minimumSize: WidgetStateProperty.all(
-                const Size(0, _kFabMenuButtonHeight),
-              ),
-              padding: WidgetStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              ),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_kFabMenuButtonRadius),
-                  side: isPrimary
-                      ? BorderSide.none
-                      : BorderSide(
-                          color: theme.colorScheme.outlineVariant,
-                          width: 1,
-                        ),
-                ),
-              ),
-              textStyle: WidgetStateProperty.all(
-                theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-    return SizedBox(
-      width: buttonWidth,
-      child: FilledButton(
-        onPressed: onTap,
-        style: style,
-        child: isPrimary
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(Icons.add, size: 13, color: theme.colorScheme.onPrimary),
-                  const SizedBox(width: 4),
-                  Text(label),
-                ],
-              )
-            : Text(label, textAlign: TextAlign.center),
       ),
     );
   }
