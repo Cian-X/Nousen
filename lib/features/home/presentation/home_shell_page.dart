@@ -247,6 +247,18 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       );
     }
 
+    final _HeroMascotMood heroMascotMood = _heroMascotMood(
+      isToday: selectedIsToday,
+      selectedDate: selectedDate,
+      today: today,
+      completedCount: completedCount,
+      scheduledCount: scheduledCount,
+    );
+    final Color heroMascotColor = _heroMascotColor(
+      theme: theme,
+      mood: heroMascotMood,
+    );
+
     final String todayHeroTitle = localeCode == 'id' ? 'HARI INI' : 'TODAY';
     final String todayHeroMain = '$completedCount / $scheduledCount';
     final double todayHeroProgress = selectedIsToday
@@ -298,6 +310,14 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       selectedIsToday: selectedIsToday,
       focusItem: focusItem,
     );
+
+    // HeroMascotMood for non-today cards (fallback)
+    final _HeroMascotMood nonTodayHeroMascotMood = _HeroMascotMood.neutral;
+    final Color nonTodayHeroMascotColor = _heroMascotColor(
+      theme: theme,
+      mood: nonTodayHeroMascotMood,
+    );
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _openActivityForm,
@@ -419,6 +439,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           heroActionCue: heroActionCue,
                           heroProgress: todayHeroProgress,
                           heroProgressColor: heroProgressColor,
+                          heroMascotMood: heroMascotMood,
+                          heroMascotColor: heroMascotColor,
                           showHeroProgress: selectedIsToday,
                           selectedWeekday: selectedWeekday,
                           localeCode: localeCode,
@@ -759,102 +781,101 @@ class _HeroActionCue {
   final String timeLabel;
 }
 
-class _HomeAiBriefIllustrationPainter extends CustomPainter {
-  _HomeAiBriefIllustrationPainter({
-    required this.primary,
-    required this.accent,
-    required this.surface,
+enum _HeroMascotMood { happy, encouraging, disappointed, neutral }
+
+class _HeroReactionMascot extends StatelessWidget {
+  const _HeroReactionMascot({
+    required this.mood,
+    required this.color,
   });
 
-  final Color primary;
-  final Color accent;
-  final Color surface;
+  final _HeroMascotMood mood;
+  final Color color;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
+  Widget build(BuildContext context) {
+    final bool isHappy = mood == _HeroMascotMood.happy;
+    final bool isEncouraging = mood == _HeroMascotMood.encouraging;
+    final bool isDisappointed = mood == _HeroMascotMood.disappointed;
+    final double offsetY = isHappy ? -3 : (isDisappointed ? 2 : 0);
 
-    // Background circle
-    canvas.drawCircle(
-      Offset(w * 0.75, h * 0.25),
-      w * 0.35,
-      Paint()..color = surface,
-    );
-
-    // Main brain shape
-    final Path brainPath = Path()
-      ..moveTo(w * 0.55, h * 0.20)
-      ..quadraticBezierTo(w * 0.65, h * 0.05, w * 0.85, h * 0.15)
-      ..quadraticBezierTo(w * 0.95, h * 0.25, w * 0.88, h * 0.45)
-      ..quadraticBezierTo(w * 0.80, h * 0.60, w * 0.60, h * 0.55)
-      ..quadraticBezierTo(w * 0.45, h * 0.45, w * 0.55, h * 0.20)
-      ..close();
-    canvas.drawPath(brainPath, Paint()..color = primary);
-
-    // Brain folds
-    final Paint foldPaint = Paint()
-      ..color = primary.withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(w * 0.68, h * 0.22)
-        ..quadraticBezierTo(w * 0.75, h * 0.15, w * 0.80, h * 0.25),
-      foldPaint,
-    );
-    canvas.drawPath(
-      Path()
-        ..moveTo(w * 0.60, h * 0.35)
-        ..quadraticBezierTo(w * 0.65, h * 0.30, w * 0.75, h * 0.35),
-      foldPaint,
-    );
-    canvas.drawPath(
-      Path()
-        ..moveTo(w * 0.70, h * 0.45)
-        ..quadraticBezierTo(w * 0.75, h * 0.40, w * 0.80, h * 0.50),
-      foldPaint,
-    );
-
-    // Lightbulb icon
-    final Path bulbPath = Path()
-      ..moveTo(w * 0.25, h * 0.70)
-      ..arcToPoint(
-        Offset(w * 0.45, h * 0.70),
-        radius: Radius.circular(w * 0.1),
-        rotation: 0,
-        largeArc: true,
-      )
-      ..quadraticBezierTo(w * 0.50, h * 0.75, w * 0.45, h * 0.80)
-      ..lineTo(w * 0.25, h * 0.80)
-      ..quadraticBezierTo(w * 0.20, h * 0.75, w * 0.25, h * 0.70)
-      ..close();
-    canvas.drawPath(bulbPath, Paint()..color = accent);
-
-    // Filaments
-    canvas.drawLine(
-      Offset(w * 0.35, h * 0.72),
-      Offset(w * 0.35, h * 0.78),
-      Paint()
-        ..color = primary
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawLine(
-      Offset(w * 0.32, h * 0.74),
-      Offset(w * 0.38, h * 0.74),
-      Paint()
-        ..color = primary
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round,
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeInOut,
+      tween: Tween<double>(begin: 0.92, end: 1),
+      builder: (BuildContext context, double scale, Widget? child) {
+        return Transform.translate(
+          offset: Offset(0, offsetY),
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.13),
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            Icon(Icons.face_rounded, size: 35, color: color),
+            Positioned(
+              bottom: 6,
+              child: Icon(
+                isHappy
+                    ? Icons.sentiment_very_satisfied_rounded
+                    : isEncouraging
+                    ? Icons.sentiment_satisfied_alt_rounded
+                    : isDisappointed
+                    ? Icons.sentiment_dissatisfied_rounded
+                    : Icons.sentiment_neutral_rounded,
+                size: 20,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+_HeroMascotMood _heroMascotMood({
+  required bool isToday,
+  required DateTime selectedDate,
+  required DateTime today,
+  required int completedCount,
+  required int scheduledCount,
+}) {
+  if (scheduledCount <= 0) {
+    return _HeroMascotMood.neutral;
+  }
+  if (completedCount >= scheduledCount) {
+    return _HeroMascotMood.happy;
+  }
+  if (selectedDate.isBefore(today) && completedCount <= 0) {
+    return _HeroMascotMood.disappointed;
+  }
+  if (completedCount > 0 || isToday) {
+    return _HeroMascotMood.encouraging;
+  }
+  return _HeroMascotMood.neutral;
+}
+
+Color _heroMascotColor({
+  required ThemeData theme,
+  required _HeroMascotMood mood,
+}) {
+  return switch (mood) {
+    _HeroMascotMood.happy => theme.colorScheme.primary,
+    _HeroMascotMood.encouraging => const Color(0xFFF59E0B),
+    _HeroMascotMood.disappointed => theme.colorScheme.error,
+    _HeroMascotMood.neutral => theme.colorScheme.onSurfaceVariant,
+  };
+}
+
 
 class _TodayHeroCard extends StatelessWidget {
   const _TodayHeroCard({
@@ -867,6 +888,8 @@ class _TodayHeroCard extends StatelessWidget {
     required this.progressColor,
     required this.brief,
     this.showProgress = true,
+    required this.heroMascotMood,
+    required this.heroMascotColor,
   });
 
   final String localeCode;
@@ -878,6 +901,8 @@ class _TodayHeroCard extends StatelessWidget {
   final Color progressColor;
   final HomeAiBrief brief;
   final bool showProgress;
+  final _HeroMascotMood heroMascotMood;
+  final Color heroMascotColor;
 
   @override
   Widget build(BuildContext context) {
@@ -906,16 +931,9 @@ class _TodayHeroCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: CustomPaint(
-                  painter: _HomeAiBriefIllustrationPainter(
-                    primary: theme.colorScheme.primary,
-                    surface: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                    accent: theme.colorScheme.tertiary,
-                  ),
-                ),
+              _HeroReactionMascot(
+                mood: heroMascotMood,
+                color: heroMascotColor,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -935,13 +953,13 @@ class _TodayHeroCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6EEFF), // bg-surface-container
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  isMlBrief
-                      ? (localeCode == 'id' ? 'ASISTEN ML' : 'ML ASSISTANT')
-                      : (localeCode == 'id' ? 'ASISTEN' : 'ASSISTANT'),
+                  brief.source == HomeAiBriefSource.ml
+                      ? (localeCode == 'id' ? 'ML' : 'ML')
+                      : (localeCode == 'id' ? 'AI' : 'AI'),
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -1185,6 +1203,8 @@ class _HomeTopContent extends StatelessWidget {
     required this.heroActionCue,
     required this.heroProgress,
     required this.heroProgressColor,
+    required this.heroMascotMood,
+    required this.heroMascotColor,
     required this.showHeroProgress,
     required this.selectedWeekday,
     required this.localeCode,
@@ -1204,6 +1224,8 @@ class _HomeTopContent extends StatelessWidget {
   final _HeroActionCue? heroActionCue;
   final double heroProgress;
   final Color heroProgressColor;
+  final _HeroMascotMood heroMascotMood;
+  final Color heroMascotColor;
   final bool showHeroProgress;
   final int selectedWeekday;
   final String localeCode;
@@ -1302,6 +1324,8 @@ class _HomeTopContent extends StatelessWidget {
             progress: heroProgress,
             progressColor: heroProgressColor,
             brief: brief,
+            heroMascotMood: heroMascotMood,
+            heroMascotColor: heroMascotColor,
             showProgress: showHeroProgress,
           ),
         ),
