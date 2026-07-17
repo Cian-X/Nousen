@@ -422,8 +422,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           showHeroProgress: selectedIsToday,
                           selectedWeekday: selectedWeekday,
                           localeCode: localeCode,
-                          brief: homeAiBrief,
+                          brief: brief,
                           sidePadding: sidePadding,
+                          currentStreak: globalStats.globalStreak,
                           onDaySelected: (int weekday) {
                             ref
                                     .read(homeSelectedWeekdayProvider.notifier)
@@ -1082,6 +1083,7 @@ class _HomeTopContent extends StatelessWidget {
     required this.sidePadding,
     required this.onDaySelected,
     required this.onSettingsTap,
+    required this.currentStreak,
   });
 
   final String profileName;
@@ -1100,6 +1102,7 @@ class _HomeTopContent extends StatelessWidget {
   final double sidePadding;
   final ValueChanged<int> onDaySelected;
   final VoidCallback onSettingsTap;
+  final int currentStreak;
 
   @override
   Widget build(BuildContext context) {
@@ -1132,13 +1135,34 @@ class _HomeTopContent extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      toBeginningOfSentenceCase(formattedDate) ?? formattedDate,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          toBeginningOfSentenceCase(formattedDate) ?? formattedDate,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        if (currentStreak > 0) ...<Widget>[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            size: 16,
+                            color: theme.colorScheme.tertiary, // Use tertiary for a "fire" color
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            currentStreak.toString(),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.tertiary,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
