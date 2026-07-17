@@ -31,6 +31,7 @@ class _InitialSetupOnboardingPageState
 
   int _currentPage = 0;
   double _dragDx = 0;
+  static const int _totalPages = 4;
   _OnboardingActivityOption _activityOption =
       _OnboardingActivityOption.noFixedSchedule;
   _DayPreset _dayPreset = _DayPreset.weekdays;
@@ -78,49 +79,51 @@ class _InitialSetupOnboardingPageState
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 24,
-        title: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: (_currentPage + 1) / 3),
-            duration: const Duration(milliseconds: 300),
-            builder: (BuildContext context, double value, Widget? child) {
-              return LinearProgressIndicator(
-                value: value,
-                minHeight: 8,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                color: Theme.of(context).colorScheme.primary,
-              );
-            },
-          ),
-        ),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: OutlinedButton(
-              onPressed: _isSaving ? null : () => _skip(settings, localeCode),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+      appBar: _currentPage == 0
+          ? null
+          : AppBar(
+              automaticallyImplyLeading: false,
+              titleSpacing: 24,
+              title: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: _currentPage / (_totalPages - 1)),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (BuildContext context, double value, Widget? child) {
+                    return LinearProgressIndicator(
+                      value: value,
+                      minHeight: 8,
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      color: Theme.of(context).colorScheme.primary,
+                    );
+                  },
                 ),
               ),
-              child: Text(
-                isId ? 'Lewati' : 'Skip',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              actions: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: OutlinedButton(
+                    onPressed: _isSaving ? null : () => _skip(settings, localeCode),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      ),
+                    ),
+                    child: Text(
+                      isId ? 'Lewati' : 'Skip',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -161,6 +164,7 @@ class _InitialSetupOnboardingPageState
                       });
                     },
                     children: <Widget>[
+                      _buildWelcomeSlide(context, localeCode: localeCode),
                       _buildUserSlide(context, localeCode: localeCode),
                       _buildRoutineSlide(context, localeCode: localeCode),
                       _buildExtraInfoSlide(context, localeCode: localeCode),
@@ -168,39 +172,68 @@ class _InitialSetupOnboardingPageState
                   ),
                 ),
               ),
-              if (_currentPage == 2) ...<Widget>[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
-                    ),
-                    onPressed: _isSaving ? null : () => _finish(settings),
-                    child: Text(
-                      isId ? 'Simpan & mulai' : 'Save & start',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              const SizedBox(height: 12),
+              _OnboardingActions(
+                isFirst: _currentPage == 0,
+                isLast: _currentPage == _totalPages - 1,
+                isBusy: _isSaving,
+                backLabel: isId ? 'Kembali' : 'Back',
+                nextLabel: _currentPage == 0
+                    ? (isId ? 'Mulai' : 'Get Started')
+                    : (isId ? 'Lanjut' : 'Next'),
+                finishLabel: isId ? 'Simpan & mulai' : 'Save & start',
+                onBack: () => _moveToPage(_currentPage - 1),
+                onNext: () => _moveToPage(_currentPage + 1),
+                onFinish: () => _finish(settings),
+              ),
               const SizedBox(height: 20),
               _OnboardingDots(
                 currentIndex: _currentPage,
-                total: 3,
+                total: _totalPages,
               ),
               const SizedBox(height: 12),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildWelcomeSlide(
+    BuildContext context, {
+    required String localeCode,
+  }) {
+    final bool isId = localeCode == AppConstants.localeId;
+    final ThemeData theme = Theme.of(context);
+    return _OnboardingSlideShell(
+      title: isId ? 'Selamat datang!' : 'Welcome!',
+      subtitle: isId
+          ? 'Yuk kenalan dulu, biar kami bisa bantu atur jadwal liburanmu.'
+          : "Let's get to know you so we can help organize your schedule.",
+      centerContent: true,
+      centerHeader: true,
+      topWidget: Column(
+        children: <Widget>[
+          const _GengarMascot(),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Nousen',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.primary,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+      child: const SizedBox.shrink(),
     );
   }
 
@@ -211,9 +244,16 @@ class _InitialSetupOnboardingPageState
     final bool isId = localeCode == AppConstants.localeId;
     return _OnboardingSlideShell(
       title: isId ? 'Kamu ingin dipanggil apa?' : 'What should we call you?',
+      subtitle: isId
+          ? 'Nama ini akan kami pakai untuk menyapa kamu setiap hari.'
+          : "We'll use this name to greet you every day.",
       centerContent: true,
       centerHeader: true,
-      topWidget: const _GengarMascot(),
+      topWidget: Icon(
+        Icons.person_rounded,
+        size: 64,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
@@ -270,7 +310,15 @@ class _InitialSetupOnboardingPageState
 
     return _OnboardingSlideShell(
       title: isId ? 'Apa aktivitas utama kamu?' : 'What is your main activity?',
+      subtitle: isId
+          ? 'Ini membantu kami menyesuaikan jadwal dan pengingat untukmu.'
+          : 'This helps us tailor your schedule and reminders.',
       centerContent: true,
+      topWidget: Icon(
+        Icons.calendar_month_rounded,
+        size: 56,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -438,20 +486,29 @@ class _InitialSetupOnboardingPageState
     final bool isId = localeCode == AppConstants.localeId;
     return _OnboardingSlideShell(
       title: isId ? 'Ada aktivitas lain?' : 'Any other activities?',
+      subtitle: isId
+          ? 'Opsional. Ceritakan aktivitas lainnya agar kami lebih mengenal rutinitasmu.'
+          : 'Optional. Tell us about other activities so we understand your routine better.',
       centerContent: true,
+      topWidget: Icon(
+        Icons.edit_note_rounded,
+        size: 56,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           TextField(
             controller: _extraNoteController,
-            minLines: 8,
-            maxLines: 12,
+            minLines: 6,
+            maxLines: 10,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.newline,
             decoration: InputDecoration(
               hintText: isId
-                  ? 'Tuliskan aktivitas lainmu'
-                  : 'Tell us your other activities',
+                  ? 'Contoh:\n- Gym setiap Selasa & Kamis sore\n- Les bahasa Inggris Sabtu pagi\n- Jalan-jalan sore hari Minggu'
+                  : 'Example:\n- Gym every Tuesday & Thursday evening\n- English class Saturday morning\n- Sunday afternoon walks',
+              hintMaxLines: 6,
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               contentPadding: const EdgeInsets.symmetric(
@@ -658,7 +715,7 @@ class _InitialSetupOnboardingPageState
   }
 
   void _moveToPage(int page) {
-    if (page < 0 || page > 2 || page == _currentPage) {
+    if (page < 0 || page > _totalPages - 1 || page == _currentPage) {
       return;
     }
     _pageController.animateToPage(
@@ -760,12 +817,14 @@ class _OnboardingSlideShell extends StatelessWidget {
   const _OnboardingSlideShell({
     required this.title,
     required this.child,
+    this.subtitle,
     this.centerContent = false,
     this.centerHeader = false,
     this.topWidget,
   });
 
   final String title;
+  final String? subtitle;
   final Widget child;
   final bool centerContent;
   final bool centerHeader;
@@ -804,6 +863,23 @@ class _OnboardingSlideShell extends StatelessWidget {
                               letterSpacing: -0.5,
                             ),
                       ),
+                      if (subtitle != null) ...<Widget>[
+                        const SizedBox(height: 10),
+                        Text(
+                          subtitle!,
+                          textAlign:
+                              centerHeader ? TextAlign.center : TextAlign.start,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       child,
                     ],
@@ -830,6 +906,16 @@ class _OnboardingSlideShell extends StatelessWidget {
             letterSpacing: -0.5,
           ),
         ),
+        if (subtitle != null) ...<Widget>[
+          const SizedBox(height: 10),
+          Text(
+            subtitle!,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         Expanded(
           child: SingleChildScrollView(
