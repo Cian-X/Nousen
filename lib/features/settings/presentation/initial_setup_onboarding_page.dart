@@ -321,14 +321,16 @@ class _InitialSetupOnboardingPageState
           ? 'Ini membantu kami menyesuaikan jadwal dan pengingat untukmu.'
           : 'This helps us tailor your schedule and reminders.',
       centerContent: true,
-      topWidget: SizedBox(
-        width: 100,
-        height: 100,
-        child: CustomPaint(
-          painter: _CalendarIllustrationPainter(
-            primary: Theme.of(context).colorScheme.primary,
-            surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-            accent: Theme.of(context).colorScheme.tertiary,
+      topWidget: AspectRatio(
+        aspectRatio: 16 / 7,
+        child: SizedBox(
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _CalendarIllustrationPainter(
+              primary: Theme.of(context).colorScheme.primary,
+              surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+              accent: Theme.of(context).colorScheme.tertiary,
+            ),
           ),
         ),
       ),
@@ -503,14 +505,16 @@ class _InitialSetupOnboardingPageState
           ? 'Opsional. Ceritakan aktivitas lainnya agar kami lebih mengenal rutinitasmu.'
           : 'Optional. Tell us about other activities so we understand your routine better.',
       centerContent: true,
-      topWidget: SizedBox(
-        width: 100,
-        height: 100,
-        child: CustomPaint(
-          painter: _NotepadIllustrationPainter(
-            primary: Theme.of(context).colorScheme.primary,
-            surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-            accent: Theme.of(context).colorScheme.tertiary,
+      topWidget: AspectRatio(
+        aspectRatio: 16 / 7,
+        child: SizedBox(
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _NotepadIllustrationPainter(
+              primary: Theme.of(context).colorScheme.primary,
+              surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+              accent: Theme.of(context).colorScheme.tertiary,
+            ),
           ),
         ),
       ),
