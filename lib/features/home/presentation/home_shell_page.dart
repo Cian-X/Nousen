@@ -759,6 +759,103 @@ class _HeroActionCue {
   final String timeLabel;
 }
 
+class _HomeAiBriefIllustrationPainter extends CustomPainter {
+  _HomeAiBriefIllustrationPainter({
+    required this.primary,
+    required this.accent,
+    required this.surface,
+  });
+
+  final Color primary;
+  final Color accent;
+  final Color surface;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    // Background circle
+    canvas.drawCircle(
+      Offset(w * 0.75, h * 0.25),
+      w * 0.35,
+      Paint()..color = surface,
+    );
+
+    // Main brain shape
+    final Path brainPath = Path()
+      ..moveTo(w * 0.55, h * 0.20)
+      ..quadraticBezierTo(w * 0.65, h * 0.05, w * 0.85, h * 0.15)
+      ..quadraticBezierTo(w * 0.95, h * 0.25, w * 0.88, h * 0.45)
+      ..quadraticBezierTo(w * 0.80, h * 0.60, w * 0.60, h * 0.55)
+      ..quadraticBezierTo(w * 0.45, h * 0.45, w * 0.55, h * 0.20)
+      ..close();
+    canvas.drawPath(brainPath, Paint()..color = primary);
+
+    // Brain folds
+    final Paint foldPaint = Paint()
+      ..color = primary.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.68, h * 0.22)
+        ..quadraticBezierTo(w * 0.75, h * 0.15, w * 0.80, h * 0.25),
+      foldPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.60, h * 0.35)
+        ..quadraticBezierTo(w * 0.65, h * 0.30, w * 0.75, h * 0.35),
+      foldPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.70, h * 0.45)
+        ..quadraticBezierTo(w * 0.75, h * 0.40, w * 0.80, h * 0.50),
+      foldPaint,
+    );
+
+    // Lightbulb icon
+    final Path bulbPath = Path()
+      ..moveTo(w * 0.25, h * 0.70)
+      ..arcToPoint(
+        Offset(w * 0.45, h * 0.70),
+        radius: Radius.circular(w * 0.1),
+        rotation: 0,
+        largeArc: true,
+      )
+      ..quadraticBezierTo(w * 0.50, h * 0.75, w * 0.45, h * 0.80)
+      ..lineTo(w * 0.25, h * 0.80)
+      ..quadraticBezierTo(w * 0.20, h * 0.75, w * 0.25, h * 0.70)
+      ..close();
+    canvas.drawPath(bulbPath, Paint()..color = accent);
+
+    // Filaments
+    canvas.drawLine(
+      Offset(w * 0.35, h * 0.72),
+      Offset(w * 0.35, h * 0.78),
+      Paint()
+        ..color = primary
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawLine(
+      Offset(w * 0.32, h * 0.74),
+      Offset(w * 0.38, h * 0.74),
+      Paint()
+        ..color = primary
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _TodayHeroCard extends StatelessWidget {
   const _TodayHeroCard({
     required this.localeCode,
@@ -809,6 +906,18 @@ class _TodayHeroCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: CustomPaint(
+                  painter: _HomeAiBriefIllustrationPainter(
+                    primary: theme.colorScheme.primary,
+                    surface: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    accent: theme.colorScheme.tertiary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   brief.headline,
@@ -819,7 +928,7 @@ class _TodayHeroCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -1204,6 +1313,14 @@ class _HomeTopContent extends StatelessWidget {
             localeCode: localeCode,
             selectedDayColor: heroProgressColor,
             onSelected: onDaySelected,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: sidePadding),
+          child: Divider(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+            height: 1,
           ),
         ),
         const SizedBox(height: 24),
