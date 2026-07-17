@@ -123,16 +123,17 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           localeCode: AppConstants.localeId,
         );
     final String localeCode = settings.localeCode;
+
+    final DateTime now = DateTime.now();
+    final DateTime today = dateOnly(now);
+    final int selectedWeekday = ref.watch(homeSelectedWeekdayProvider);
+
     final String profileName = _resolvedHomeProfileName(settings.profileName);
     final String contextualGreeting = _contextualGreeting(
       localeCode: localeCode,
       hour: now.hour,
       profileName: profileName,
     );
-
-    final int selectedWeekday = ref.watch(homeSelectedWeekdayProvider);
-    final DateTime now = DateTime.now();
-    final DateTime today = dateOnly(now);
     final bool selectedIsToday = selectedWeekday == today.weekday;
     final DateTime selectedDate = today.add(
       Duration(days: selectedWeekday - today.weekday),
