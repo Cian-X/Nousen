@@ -422,7 +422,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           showHeroProgress: selectedIsToday,
                           selectedWeekday: selectedWeekday,
                           localeCode: localeCode,
-                          brief: brief,
+                          brief: homeAiBrief,
                           sidePadding: sidePadding,
                           currentStreak: globalStats.globalStreak,
                           onDaySelected: (int weekday) {
