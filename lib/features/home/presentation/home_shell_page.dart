@@ -124,6 +124,11 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         );
     final String localeCode = settings.localeCode;
     final String profileName = _resolvedHomeProfileName(settings.profileName);
+    final String contextualGreeting = _contextualGreeting(
+      localeCode: localeCode,
+      hour: now.hour,
+      profileName: profileName,
+    );
 
     final int selectedWeekday = ref.watch(homeSelectedWeekdayProvider);
     final DateTime now = DateTime.now();
@@ -367,7 +372,27 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                 ? constraints.maxWidth
                 : contentMaxWidth;
 
-            return Center(
+            return Stack(
+              children: <Widget>[
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 260,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: <Color>[
+                          theme.colorScheme.primary.withValues(alpha: 0.06),
+                          theme.colorScheme.surface.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Center(
               child: SizedBox(
                 width: contentWidth,
                 child: ListView.builder(
@@ -379,6 +404,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                       return RepaintBoundary(
                         child: _HomeTopContent(
                           profileName: profileName,
+                          contextualGreeting: contextualGreeting,
+                          todayDate: today,
                           heroTitle: selectedIsToday
                               ? todayHeroTitle
                               : nonTodayHeroTitle,
@@ -470,6 +497,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                   },
                 ),
               ),
+            ),
+            ],
             );
           },
         ),
@@ -483,6 +512,29 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       return 'Pengguna';
     }
     return trimmed;
+  }
+
+  String _contextualGreeting({
+    required String localeCode,
+    required int hour,
+    required String profileName,
+  }) {
+    if (localeCode == 'id') {
+      if (hour < 11) {
+        return 'Selamat pagi, $profileName';
+      } else if (hour < 15) {
+        return 'Selamat siang, $profileName';
+      } else if (hour < 18) {
+        return 'Selamat sore, $profileName';
+      }
+      return 'Selamat malam, $profileName';
+    }
+    if (hour < 12) {
+      return 'Good morning, $profileName';
+    } else if (hour < 17) {
+      return 'Good afternoon, $profileName';
+    }
+    return 'Good evening, $profileName';
   }
 
   _HeroActionCue? _buildHeroActionCue({
@@ -1014,6 +1066,8 @@ class _TodayHeroCard extends StatelessWidget {
 class _HomeTopContent extends StatelessWidget {
   const _HomeTopContent({
     required this.profileName,
+    required this.contextualGreeting,
+    required this.todayDate,
     required this.heroTitle,
     required this.heroValue,
     required this.heroSummary,
@@ -1030,6 +1084,8 @@ class _HomeTopContent extends StatelessWidget {
   });
 
   final String profileName;
+  final String contextualGreeting;
+  final DateTime todayDate;
   final String heroTitle;
   final String heroValue;
   final String heroSummary;
@@ -1047,6 +1103,10 @@ class _HomeTopContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final String formattedDate = DateFormat(
+      'EEEE, d MMMM',
+      localeCode,
+    ).format(todayDate);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -1057,24 +1117,26 @@ class _HomeTopContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(
-                      Icons.account_circle_rounded,
-                      color: theme.colorScheme.primary,
-                      size: 32, // account_circle icon size
+                    Text(
+                      contextualGreeting,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Halo, $profileName',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 24, // headline-lg-mobile
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      toBeginningOfSentenceCase(formattedDate) ?? formattedDate,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -1409,7 +1471,9 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
         ? theme.colorScheme.primary.withValues(alpha: 0.24)
         : theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
 
-    final Color cardBg = theme.colorScheme.surface; // bg-white
+    final Color cardBg = highlightFocus
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
+        : theme.colorScheme.surface; // bg-white
 
     return Opacity(
       opacity: item.isCompleted ? 0.5 : 1.0,
@@ -1425,9 +1489,11 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
             ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: const Color(0x141A5BAD), // soft-elevation
-                blurRadius: 20,
-                spreadRadius: -4,
+                color: highlightFocus
+                    ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                    : const Color(0x141A5BAD), // soft-elevation
+                blurRadius: highlightFocus ? 24 : 20,
+                spreadRadius: highlightFocus ? 0 : -4,
                 offset: const Offset(0, 4),
               ),
             ],
