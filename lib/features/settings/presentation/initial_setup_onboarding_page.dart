@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,46 +84,47 @@ class _InitialSetupOnboardingPageState
           ? null
           : AppBar(
               automaticallyImplyLeading: false,
-              titleSpacing: 24,
-              title: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0, end: _currentPage / (_totalPages - 1)),
-                  duration: const Duration(milliseconds: 300),
-                  builder: (BuildContext context, double value, Widget? child) {
-                    return LinearProgressIndicator(
-                      value: value,
-                      minHeight: 8,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                      color: Theme.of(context).colorScheme.primary,
-                    );
-                  },
+              titleSpacing: 0,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              toolbarHeight: 48,
+              title: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: _currentPage / (_totalPages - 1)),
+                          duration: const Duration(milliseconds: 300),
+                          builder: (BuildContext context, double value, Widget? child) {
+                            return LinearProgressIndicator(
+                              value: value,
+                              minHeight: 3,
+                              backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+                              color: Theme.of(context).colorScheme.primary,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    GestureDetector(
+                      onTap: _isSaving ? null : () => _skip(settings, localeCode),
+                      child: Text(
+                        isId ? 'Lewati' : 'Skip',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              actions: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: OutlinedButton(
-                    onPressed: _isSaving ? null : () => _skip(settings, localeCode),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                      ),
-                    ),
-                    child: Text(
-                      isId ? 'Lewati' : 'Skip',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
       body: SafeArea(
         child: Padding(
@@ -249,10 +251,15 @@ class _InitialSetupOnboardingPageState
           : "We'll use this name to greet you every day.",
       centerContent: true,
       centerHeader: true,
-      topWidget: Icon(
-        Icons.person_rounded,
-        size: 64,
-        color: Theme.of(context).colorScheme.primary,
+      topWidget: SizedBox(
+        width: 100,
+        height: 100,
+        child: CustomPaint(
+          painter: _UserAvatarPainter(
+            primary: Theme.of(context).colorScheme.primary,
+            surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -314,10 +321,16 @@ class _InitialSetupOnboardingPageState
           ? 'Ini membantu kami menyesuaikan jadwal dan pengingat untukmu.'
           : 'This helps us tailor your schedule and reminders.',
       centerContent: true,
-      topWidget: Icon(
-        Icons.calendar_month_rounded,
-        size: 56,
-        color: Theme.of(context).colorScheme.primary,
+      topWidget: SizedBox(
+        width: 100,
+        height: 100,
+        child: CustomPaint(
+          painter: _CalendarIllustrationPainter(
+            primary: Theme.of(context).colorScheme.primary,
+            surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+            accent: Theme.of(context).colorScheme.tertiary,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,10 +503,16 @@ class _InitialSetupOnboardingPageState
           ? 'Opsional. Ceritakan aktivitas lainnya agar kami lebih mengenal rutinitasmu.'
           : 'Optional. Tell us about other activities so we understand your routine better.',
       centerContent: true,
-      topWidget: Icon(
-        Icons.edit_note_rounded,
-        size: 56,
-        color: Theme.of(context).colorScheme.primary,
+      topWidget: SizedBox(
+        width: 100,
+        height: 100,
+        child: CustomPaint(
+          painter: _NotepadIllustrationPainter(
+            primary: Theme.of(context).colorScheme.primary,
+            surface: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+            accent: Theme.of(context).colorScheme.tertiary,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1178,7 +1197,7 @@ class _OnboardingDots extends StatelessWidget {
     final Color activeColor = Theme.of(context).colorScheme.primary;
     final Color inactiveColor = Theme.of(
       context,
-    ).colorScheme.outline.withValues(alpha: 0.22);
+    ).colorScheme.outlineVariant.withValues(alpha: 0.35);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1187,9 +1206,9 @@ class _OnboardingDots extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: isActive ? 32 : 8,
-          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: isActive ? 24 : 6,
+          height: 6,
           decoration: BoxDecoration(
             color: isActive ? activeColor : inactiveColor,
             borderRadius: BorderRadius.circular(999),
@@ -1225,54 +1244,277 @@ class _OnboardingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ButtonStyle filledStyle = FilledButton.styleFrom(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      textStyle: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-    );
-    final ButtonStyle outlinedStyle = OutlinedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      side: BorderSide(
-        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-      ),
-      textStyle: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-    );
+    final ThemeData theme = Theme.of(context);
 
     return SizedBox(
-      height: 56,
+      height: 52,
       child: Row(
         children: <Widget>[
-          if (!isFirst)
-            Expanded(
-              child: OutlinedButton(
+          if (!isFirst) ...<Widget>[
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: IconButton(
                 onPressed: isBusy ? null : onBack,
-                style: outlinedStyle,
-                child: Text(backLabel),
+                style: IconButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
               ),
             ),
-          if (!isFirst) const SizedBox(width: 12),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: FilledButton(
               onPressed: isBusy ? null : (isLast ? onFinish : onNext),
-              style: filledStyle,
-              child: Text(isLast ? finishLabel : nextLabel),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(isLast ? finishLabel : nextLabel),
+                  if (!isLast) ...<Widget>[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.arrow_forward_rounded, size: 18),
+                  ],
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _UserAvatarPainter extends CustomPainter {
+  _UserAvatarPainter({
+    required this.primary,
+    required this.surface,
+  });
+
+  final Color primary;
+  final Color surface;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width / 2;
+    final double cy = size.height / 2;
+    final double r = size.width * 0.45;
+
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r,
+      Paint()..color = surface,
+    );
+
+    canvas.drawCircle(
+      Offset(cx, cy - r * 0.18),
+      r * 0.32,
+      Paint()..color = primary,
+    );
+
+    final Path bodyPath = Path()
+      ..moveTo(cx - r * 0.55, cy + r * 0.72)
+      ..quadraticBezierTo(cx - r * 0.55, cy + r * 0.20, cx, cy + r * 0.20)
+      ..quadraticBezierTo(cx + r * 0.55, cy + r * 0.20, cx + r * 0.55, cy + r * 0.72);
+    canvas.drawPath(
+      bodyPath,
+      Paint()
+        ..color = primary
+        ..style = PaintingStyle.fill,
+    );
+
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r,
+      Paint()
+        ..color = primary.withValues(alpha: 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CalendarIllustrationPainter extends CustomPainter {
+  _CalendarIllustrationPainter({
+    required this.primary,
+    required this.surface,
+    required this.accent,
+  });
+
+  final Color primary;
+  final Color surface;
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    final RRect calBody = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.10, h * 0.18, w * 0.80, h * 0.72),
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(calBody, Paint()..color = surface);
+    canvas.drawRRect(
+      calBody,
+      Paint()
+        ..color = primary.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    final RRect header = RRect.fromRectAndCorners(
+      Rect.fromLTWH(w * 0.10, h * 0.18, w * 0.80, h * 0.18),
+      topLeft: const Radius.circular(12),
+      topRight: const Radius.circular(12),
+    );
+    canvas.drawRRect(header, Paint()..color = primary);
+
+    final Paint ringPaint = Paint()
+      ..color = primary
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    for (final double xFrac in <double>[0.32, 0.50, 0.68]) {
+      canvas.drawLine(
+        Offset(w * xFrac, h * 0.12),
+        Offset(w * xFrac, h * 0.24),
+        ringPaint,
+      );
+    }
+
+    final Paint dotPaint = Paint()..color = primary.withValues(alpha: 0.35);
+    final Paint activeDot = Paint()..color = accent;
+    final double dotR = w * 0.035;
+    for (int row = 0; row < 3; row++) {
+      for (int col = 0; col < 5; col++) {
+        final double dx = w * 0.22 + col * (w * 0.14);
+        final double dy = h * 0.48 + row * (h * 0.14);
+        final bool isHighlight = (row == 1 && col == 2);
+        canvas.drawCircle(
+          Offset(dx, dy),
+          isHighlight ? dotR * 1.8 : dotR,
+          isHighlight ? activeDot : dotPaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _NotepadIllustrationPainter extends CustomPainter {
+  _NotepadIllustrationPainter({
+    required this.primary,
+    required this.surface,
+    required this.accent,
+  });
+
+  final Color primary;
+  final Color surface;
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    final RRect page = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.15, h * 0.08, w * 0.70, h * 0.84),
+      const Radius.circular(10),
+    );
+    canvas.drawRRect(page, Paint()..color = surface);
+    canvas.drawRRect(
+      page,
+      Paint()
+        ..color = primary.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    final Paint spiralPaint = Paint()
+      ..color = primary.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    for (int i = 0; i < 5; i++) {
+      final double y = h * 0.18 + i * (h * 0.14);
+      canvas.drawCircle(Offset(w * 0.18, y), 3, spiralPaint);
+    }
+
+    final Paint linePaint = Paint()
+      ..color = primary.withValues(alpha: 0.25)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    final List<double> lineLengths = <double>[0.50, 0.42, 0.55, 0.35, 0.48];
+    for (int i = 0; i < 5; i++) {
+      final double y = h * 0.18 + i * (h * 0.14);
+      canvas.drawLine(
+        Offset(w * 0.28, y),
+        Offset(w * 0.28 + w * lineLengths[i], y),
+        linePaint,
+      );
+    }
+
+    final Paint checkPaint = Paint()
+      ..color = accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final Path checkPath = Path()
+      ..moveTo(w * 0.28, h * 0.18)
+      ..lineTo(w * 0.32, h * 0.21)
+      ..lineTo(w * 0.40, h * 0.14);
+    canvas.drawPath(checkPath, checkPaint);
+
+    final Path checkPath2 = Path()
+      ..moveTo(w * 0.28, h * 0.32)
+      ..lineTo(w * 0.32, h * 0.35)
+      ..lineTo(w * 0.40, h * 0.28);
+    canvas.drawPath(checkPath2, checkPaint);
+
+    final Path pencilBody = Path()
+      ..moveTo(w * 0.72, h * 0.62)
+      ..lineTo(w * 0.88, h * 0.78)
+      ..lineTo(w * 0.84, h * 0.82)
+      ..lineTo(w * 0.68, h * 0.66)
+      ..close();
+    canvas.drawPath(pencilBody, Paint()..color = primary);
+
+    final Path pencilTip = Path()
+      ..moveTo(w * 0.68, h * 0.66)
+      ..lineTo(w * 0.84, h * 0.82)
+      ..lineTo(w * 0.65, h * 0.72)
+      ..close();
+    canvas.drawPath(pencilTip, Paint()..color = accent);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 String _weekdayShortLabel(int weekday, String localeCode) {
