@@ -189,6 +189,15 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         : dailyStats.sublist(dailyStats.length - 7);
     final String periodLabel = _periodLabel(localeCode, start, end);
 
+    final _StatsMascotMood statsMascotMood = _statsMascotMood(
+      rate: globalRate,
+      totalScheduled: totalScheduled,
+    );
+    final Color statsMascotColor = _statsMascotColor(
+      theme: theme,
+      mood: statsMascotMood,
+    );
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
@@ -248,6 +257,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       totalScheduled: totalScheduled,
                       periodLabel: periodLabel,
                       onPeriodTap: _pickCustomRange,
+                      statsMascotMood: statsMascotMood,
+                      statsMascotColor: statsMascotColor,
                     ),
                     const SizedBox(height: _heroToInsightSpacing),
                     _StatsSmartSummarySection(
@@ -1261,6 +1272,104 @@ String _weekdayLongLabel(int weekday, String localeCode) {
 
 enum _StatsFilterMode { last7, custom }
 
+enum _StatsMascotMood { proud, good, meh, sad, neutral }
+
+class _StatsReactionMascot extends StatelessWidget {
+  const _StatsReactionMascot({
+    required this.mood,
+    required this.color,
+  });
+
+  final _StatsMascotMood mood;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isProud = mood == _StatsMascotMood.proud;
+    final bool isGood = mood == _StatsMascotMood.good;
+    final bool isMeh = mood == _StatsMascotMood.meh;
+    final bool isSad = mood == _StatsMascotMood.sad;
+
+    final IconData faceIcon = isProud
+        ? Icons.sentiment_very_satisfied_rounded
+        : isGood
+        ? Icons.sentiment_satisfied_alt_rounded
+        : isMeh
+        ? Icons.sentiment_neutral_rounded
+        : Icons.sentiment_dissatisfied_rounded;
+
+    final double offsetY = isProud ? -3 : (isSad ? 2 : 0);
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeInOut,
+      tween: Tween<double>(begin: 0.92, end: 1),
+      builder: (BuildContext context, double scale, Widget? child) {
+        return Transform.translate(
+          offset: Offset(0, offsetY),
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.13),
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            Icon(Icons.tag_faces_rounded, size: 35, color: color), // General face outline
+            Positioned(
+              bottom: 6,
+              child: Icon(
+                faceIcon,
+                size: 20,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+_StatsMascotMood _statsMascotMood({
+  required double rate,
+  required int totalScheduled,
+}) {
+  if (totalScheduled <= 0) {
+    return _StatsMascotMood.neutral; // Assuming neutral mood for no activities
+  }
+  if (rate >= 0.85) {
+    return _StatsMascotMood.proud;
+  }
+  if (rate >= 0.55) {
+    return _StatsMascotMood.good;
+  }
+  if (rate >= 0.25) {
+    return _StatsMascotMood.meh;
+  }
+  return _StatsMascotMood.sad;
+}
+
+Color _statsMascotColor({
+  required ThemeData theme,
+  required _StatsMascotMood mood,
+}) {
+  return switch (mood) {
+    _StatsMascotMood.proud => theme.colorScheme.primary,
+    _StatsMascotMood.good => const Color(0xFFF59E0B),
+    _StatsMascotMood.meh => theme.colorScheme.tertiary, // Using tertiary for a middle-ground color
+    _StatsMascotMood.sad => theme.colorScheme.error,
+    _StatsMascotMood.neutral => theme.colorScheme.onSurfaceVariant,
+  };
+}
+
+
 class _StatsHeroSection extends StatelessWidget {
   const _StatsHeroSection({
     required this.percent,
@@ -1269,6 +1378,8 @@ class _StatsHeroSection extends StatelessWidget {
     required this.totalScheduled,
     required this.periodLabel,
     required this.onPeriodTap,
+    required this.statsMascotMood,
+    required this.statsMascotColor,
   });
 
   final int percent;
@@ -1277,12 +1388,31 @@ class _StatsHeroSection extends StatelessWidget {
   final int totalScheduled;
   final String periodLabel;
   final VoidCallback onPeriodTap;
+  final _StatsMascotMood statsMascotMood;
+  final Color statsMascotColor;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isId = Localizations.localeOf(context).languageCode == 'id';
     final bool hasScheduledActivities = totalScheduled > 0;
+    final String motivation = switch (statsMascotMood) {
+      _StatsMascotMood.proud => isId
+          ? 'Konsisten banget. Pertahankan ritmemu!'
+          : 'Excellent consistency. Keep your rhythm going!',
+      _StatsMascotMood.good => isId
+          ? 'Fondasinya sudah bagus. Sedikit lagi!'
+          : 'The foundation is good. Keep building on it!',
+      _StatsMascotMood.meh => isId
+          ? 'Mulai dari satu target kecil hari ini.'
+          : 'Start with one small target today.',
+      _StatsMascotMood.sad => isId
+          ? 'Tidak apa-apa, kamu bisa mulai lagi pelan-pelan.'
+          : 'It is okay. You can restart one step at a time.',
+      _StatsMascotMood.neutral => isId
+          ? 'Tambahkan aktivitas untuk mulai membaca ritmemu.'
+          : 'Add an activity to start reading your rhythm.',
+    };
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1388,25 +1518,19 @@ class _StatsHeroSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          hasScheduledActivities
-                              ? (isId
-                                    ? '$totalCompleted dari $totalScheduled aktivitas selesai'
-                                    : '$totalCompleted of $totalScheduled activities completed')
-                              : (isId
-                                    ? 'Belum ada aktivitas pada periode ini'
-                                    : 'No activities in this period'),
+                          motivation,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant
                                 .withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Circular Progress Indicator Stack
+                  // Reactive Mascot
                   SizedBox(
                     width: 64,
                     height: 64,
@@ -1422,14 +1546,13 @@ class _StatsHeroSection extends StatelessWidget {
                             backgroundColor: theme.colorScheme.outlineVariant
                                 .withValues(alpha: 0.2),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
+                              statsMascotColor,
                             ),
                           ),
                         ),
-                        Icon(
-                          Icons.pending_actions_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 24,
+                        _StatsReactionMascot(
+                          mood: statsMascotMood,
+                          color: statsMascotColor,
                         ),
                       ],
                     ),
