@@ -259,6 +259,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       onPeriodTap: _pickCustomRange,
                       statsMascotMood: statsMascotMood,
                       statsMascotColor: statsMascotColor,
+                      statsSummaryHeadline: summary.headline,
+                      statsSummaryBody: summary.body,
+                      statsSummarySupport: summary.support,
+                      hasScheduledActivities: hasActiveScheduleInPeriod,
+                      isId: isId,
                     ),
                     const SizedBox(height: _heroToInsightSpacing),
                     _StatsSmartSummarySection(
@@ -1380,6 +1385,11 @@ class _StatsHeroSection extends StatelessWidget {
     required this.onPeriodTap,
     required this.statsMascotMood,
     required this.statsMascotColor,
+    required this.statsSummaryHeadline,
+    required this.statsSummaryBody,
+    this.statsSummarySupport,
+    required this.hasScheduledActivities,
+    required this.isId,
   });
 
   final int percent;
@@ -1390,6 +1400,11 @@ class _StatsHeroSection extends StatelessWidget {
   final VoidCallback onPeriodTap;
   final _StatsMascotMood statsMascotMood;
   final Color statsMascotColor;
+  final String statsSummaryHeadline;
+  final String statsSummaryBody;
+  final String? statsSummarySupport;
+  final bool hasScheduledActivities;
+  final bool isId;
 
   @override
   Widget build(BuildContext context) {
@@ -1893,6 +1908,66 @@ class _WeeklyStatusSection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ActivityBreakdownChart extends StatelessWidget {
+  const _ActivityBreakdownChart({required this.stats});
+  final List<_PeriodActivityStat> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<_PeriodActivityStat> sortedStats = [...stats]
+      ..sort((a, b) => b.completionRate.compareTo(a.completionRate));
+
+    return Column(
+      children: sortedStats.map((stat) {
+        final double progress = stat.completionRate;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(
+                    stat.activity.title,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+                backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _statusColor(progress, theme),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Color _statusColor(double progress, ThemeData theme) {
+    if (progress >= 0.8) return theme.colorScheme.primary;
+    if (progress >= 0.4) return const Color(0xFFF59E0B);
+    return theme.colorScheme.error;
   }
 }
 
