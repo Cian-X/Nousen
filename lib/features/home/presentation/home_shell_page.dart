@@ -958,8 +958,8 @@ class _TodayHeroCard extends StatelessWidget {
                 ),
                 child: Text(
                   brief.source == HomeAiBriefSource.ml
-                      ? (localeCode == 'id' ? 'ML' : 'ML')
-                      : (localeCode == 'id' ? 'AI' : 'AI'),
+                      ? (localeCode == 'id' ? 'Nous' : 'Nous')
+                      : (localeCode == 'id' ? 'Nous' : 'Nous'),
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
