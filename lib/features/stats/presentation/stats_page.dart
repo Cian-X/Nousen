@@ -269,6 +269,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                     _StatsSmartSummarySection(
                       summary: summary,
                       activityHighlights: activityHighlights,
+                      activityStats: periodActivityStats,
                     ),
                     const SizedBox(height: 18),
                     _WeeklyStatusSection(
@@ -1618,6 +1619,20 @@ class _WeeklyStatusSection extends StatelessWidget {
         .where((DailyStat p) => p.totalScheduled > 0)
         .length;
 
+    // NEW: Max and Min completion rates for highlighting
+    final double maxCompletionRate = orderedPoints.isEmpty
+        ? 0
+        : orderedPoints
+            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
+            .map((p) => p.completionRate)
+            .fold(0.0, (a, b) => a > b ? a : b);
+    final double minCompletionRate = orderedPoints.isEmpty
+        ? 1.0
+        : orderedPoints
+            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
+            .map((p) => p.completionRate)
+            .fold(1.0, (a, b) => a < b ? a : b);
+
     // Warna badge header sesuai completion rate
     final Color weekColor;
     if (completionRate == 0 && totalScheduled > 0) {
@@ -1744,12 +1759,15 @@ class _WeeklyStatusSection extends StatelessWidget {
                     int index,
                   ) {
                     final DailyStat point = orderedPoints[index];
-                    final double rate = point.completionRate;
-                    final bool isToday = dateOnly(point.date) == today;
-                    final bool hasData = point.totalScheduled > 0;
+                        final double rate = point.completionRate;
+                        final bool hasData = point.totalScheduled > 0;
+                        final bool isToday = dateOnly(point.date) == today;
+                        
+                        final bool isMaxDay = hasData && point.completionRate == maxCompletionRate && maxCompletionRate > 0;
+                        final bool isMinDay = hasData && point.completionRate == minCompletionRate && minCompletionRate < 0.99 && point.completionRate > 0; // Avoid highlighting 0% completion as min if no data
 
-                    // Warna berdasarkan status proses
-                    final Color barColor;
+                        // Warna berdasarkan status proses
+                        final Color barColor;
                     if (!hasData) {
                       // Abu-abu: tidak ada jadwal
                       barColor = theme.colorScheme.outlineVariant.withValues(
@@ -1780,6 +1798,14 @@ class _WeeklyStatusSection extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: <Widget>[
+                            // Icon for highlight
+                            if (isMaxDay && hasData)
+                              Icon(Icons.star_rounded, size: 14, color: statsMascotColor)
+                            else if (isMinDay && hasData)
+                              Icon(Icons.warning_rounded, size: 14, color: statsMascotColor)
+                            else
+                              const SizedBox(height: 14), // placeholder to keep alignment
+                            const SizedBox(height: 4), // Small gap between icon and bar
                             // % label
                             SizedBox(
                               height: pctLabelH,
@@ -1821,26 +1847,43 @@ class _WeeklyStatusSection extends StatelessWidget {
                                   ),
                                 ),
                                 // Animated fill
-                                TweenAnimationBuilder<double>(
-                                  tween: Tween<double>(begin: 0, end: fillH),
-                                  duration: Duration(
-                                    milliseconds: 450 + (index * 60),
-                                  ),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 280),
                                   curve: Curves.easeOutCubic,
-                                  builder: (BuildContext ctx, double h, _) {
-                                    if (h < 1) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return Container(
-                                      width: double.infinity,
-                                      height: h,
-                                      decoration: BoxDecoration(
-                                        color: rate <= 0.05
-                                            ? barColor.withValues(alpha: 0.72)
-                                            : barColor,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    );
+                                  width: double.infinity,
+                                  height: fillH,
+                                  decoration: BoxDecoration(
+                                    color: barColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: isMaxDay && hasData
+                                        ? Border.all(color: Colors.white, width: 2)
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: barToDayGap),
+                            // Day label
+                            Text(
+                              weekdayShortLabel(point.date.weekday, localeCode),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: (isToday || isMaxDay || isMinDay)
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                                color: isToday
+                                    ? barColor
+                                    : (isMaxDay || isMinDay)
+                                        ? statsMascotColor
+                                        : theme.colorScheme.onSurfaceVariant,
+                                fontSize: (isToday || isMaxDay || isMinDay)
+                                    ? 10
+                                    : 8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                                   },
                                 ),
                               ],
@@ -1975,10 +2018,12 @@ class _StatsSmartSummarySection extends StatelessWidget {
   const _StatsSmartSummarySection({
     required this.summary,
     required this.activityHighlights,
+    required this.activityStats,
   });
 
   final _StatsAiSummaryData summary;
   final _ActivityHighlightsData activityHighlights;
+  final List<_PeriodActivityStat> activityStats;
 
   @override
   Widget build(BuildContext context) {
@@ -2004,21 +2049,45 @@ class _StatsSmartSummarySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Header with auto_awesome icon
           Row(
             children: <Widget>[
-              Icon(
-                Icons.auto_awesome_rounded,
-                color: theme.colorScheme.primary,
-                size: 20,
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                summary.eyebrow,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: theme.colorScheme.onSurface,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  summary.eyebrow,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Nous',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -2051,7 +2120,21 @@ class _StatsSmartSummarySection extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 20),
+          if (activityStats.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 20),
+            Text(
+              isId ? 'PERFORMA AKTIVITAS' : 'ACTIVITY PERFORMANCE',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActivityBreakdownChart(stats: activityStats),
+          ],
+          const SizedBox(height: 12),
           Column(
             children: <Widget>[
               _ActivityHighlightRow(
