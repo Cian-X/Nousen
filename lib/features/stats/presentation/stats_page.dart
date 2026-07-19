@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:liburan_create/app/providers.dart';
+import 'package:liburan_create/app/router.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
@@ -184,19 +185,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       periodActivityStats,
       localeCode: localeCode,
     );
-    final List<DailyStat> weeklyStats = dailyStats.length <= 7
-        ? dailyStats
-        : dailyStats.sublist(dailyStats.length - 7);
     final String periodLabel = _periodLabel(localeCode, start, end);
-
-    final _StatsMascotMood statsMascotMood = _statsMascotMood(
-      rate: globalRate,
-      totalScheduled: totalScheduled,
-    );
-    final Color statsMascotColor = _statsMascotColor(
-      theme: theme,
-      mood: statsMascotMood,
-    );
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -257,30 +246,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       totalScheduled: totalScheduled,
                       periodLabel: periodLabel,
                       onPeriodTap: _pickCustomRange,
-                      statsMascotMood: statsMascotMood,
-                      statsMascotColor: statsMascotColor,
-                      statsSummaryHeadline: summary.headline,
-                      statsSummaryBody: summary.body,
-                      statsSummarySupport: summary.support,
-                      hasScheduledActivities: hasActiveScheduleInPeriod,
-                      isId: isId,
+                      onReportTap: () => Navigator.of(context).pushNamed(AppRoutes.statsReport),
                     ),
                     const SizedBox(height: _heroToInsightSpacing),
                     _StatsSmartSummarySection(
                       summary: summary,
                       activityHighlights: activityHighlights,
                       activityStats: periodActivityStats,
-                    ),
-                    const SizedBox(height: 18),
-                    _WeeklyStatusSection(
-                      points: weeklyStats,
-                      localeCode: localeCode,
-                    ),
-                    const SizedBox(height: _statusToActivitySpacing),
-                    _AdditionalSummarySection(
-                      totalScheduled: totalScheduled,
-                      totalCompleted: totalCompleted,
-                      averageDailyRate: averageDailyCompletionRate,
                     ),
                   ],
                 ),
@@ -1278,102 +1250,6 @@ String _weekdayLongLabel(int weekday, String localeCode) {
 
 enum _StatsFilterMode { last7, custom }
 
-enum _StatsMascotMood { proud, good, meh, sad, neutral }
-
-class _StatsReactionMascot extends StatelessWidget {
-  const _StatsReactionMascot({
-    required this.mood,
-    required this.color,
-  });
-
-  final _StatsMascotMood mood;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isProud = mood == _StatsMascotMood.proud;
-    final bool isGood = mood == _StatsMascotMood.good;
-    final bool isMeh = mood == _StatsMascotMood.meh;
-    final bool isSad = mood == _StatsMascotMood.sad;
-
-    final IconData faceIcon = isProud
-        ? Icons.sentiment_very_satisfied_rounded
-        : isGood
-        ? Icons.sentiment_satisfied_alt_rounded
-        : isMeh
-        ? Icons.sentiment_neutral_rounded
-        : Icons.sentiment_dissatisfied_rounded;
-
-    final double offsetY = isProud ? -3 : (isSad ? 2 : 0);
-
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 700),
-      curve: Curves.easeInOut,
-      tween: Tween<double>(begin: 0.92, end: 1),
-      builder: (BuildContext context, double scale, Widget? child) {
-        return Transform.translate(
-          offset: Offset(0, offsetY),
-          child: Transform.scale(scale: scale, child: child),
-        );
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.13),
-          shape: BoxShape.circle,
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Icon(Icons.tag_faces_rounded, size: 35, color: color), // General face outline
-            Positioned(
-              bottom: 6,
-              child: Icon(
-                faceIcon,
-                size: 20,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-_StatsMascotMood _statsMascotMood({
-  required double rate,
-  required int totalScheduled,
-}) {
-  if (totalScheduled <= 0) {
-    return _StatsMascotMood.neutral; // Assuming neutral mood for no activities
-  }
-  if (rate >= 0.85) {
-    return _StatsMascotMood.proud;
-  }
-  if (rate >= 0.55) {
-    return _StatsMascotMood.good;
-  }
-  if (rate >= 0.25) {
-    return _StatsMascotMood.meh;
-  }
-  return _StatsMascotMood.sad;
-}
-
-Color _statsMascotColor({
-  required ThemeData theme,
-  required _StatsMascotMood mood,
-}) {
-  return switch (mood) {
-    _StatsMascotMood.proud => theme.colorScheme.primary,
-    _StatsMascotMood.good => const Color(0xFFF59E0B),
-    _StatsMascotMood.meh => theme.colorScheme.tertiary, // Using tertiary for a middle-ground color
-    _StatsMascotMood.sad => theme.colorScheme.error,
-    _StatsMascotMood.neutral => theme.colorScheme.onSurfaceVariant,
-  };
-}
 
 
 class _StatsHeroSection extends StatelessWidget {
@@ -1384,13 +1260,7 @@ class _StatsHeroSection extends StatelessWidget {
     required this.totalScheduled,
     required this.periodLabel,
     required this.onPeriodTap,
-    required this.statsMascotMood,
-    required this.statsMascotColor,
-    required this.statsSummaryHeadline,
-    required this.statsSummaryBody,
-    this.statsSummarySupport,
-    required this.hasScheduledActivities,
-    required this.isId,
+    required this.onReportTap,
   });
 
   final int percent;
@@ -1399,37 +1269,13 @@ class _StatsHeroSection extends StatelessWidget {
   final int totalScheduled;
   final String periodLabel;
   final VoidCallback onPeriodTap;
-  final _StatsMascotMood statsMascotMood;
-  final Color statsMascotColor;
-  final String statsSummaryHeadline;
-  final String statsSummaryBody;
-  final String? statsSummarySupport;
-  final bool hasScheduledActivities;
-  final bool isId;
+  final VoidCallback onReportTap;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isId = Localizations.localeOf(context).languageCode == 'id';
-    final bool hasScheduledActivities = totalScheduled > 0;
-    final String motivation = switch (statsMascotMood) {
-      _StatsMascotMood.proud => isId
-          ? 'Konsisten banget. Pertahankan ritmemu!'
-          : 'Excellent consistency. Keep your rhythm going!',
-      _StatsMascotMood.good => isId
-          ? 'Fondasinya sudah bagus. Sedikit lagi!'
-          : 'The foundation is good. Keep building on it!',
-      _StatsMascotMood.meh => isId
-          ? 'Mulai dari satu target kecil hari ini.'
-          : 'Start with one small target today.',
-      _StatsMascotMood.sad => isId
-          ? 'Tidak apa-apa, kamu bisa mulai lagi pelan-pelan.'
-          : 'It is okay. You can restart one step at a time.',
-      _StatsMascotMood.neutral => isId
-          ? 'Tambahkan aktivitas untuk mulai membaca ritmemu.'
-          : 'Add an activity to start reading your rhythm.',
-    };
-
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1516,7 +1362,7 @@ class _StatsHeroSection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              // Row with rate value and circular chart
+              // Row with rate value and report button
               Row(
                 children: <Widget>[
                   Expanded(
@@ -1532,43 +1378,28 @@ class _StatsHeroSection extends StatelessWidget {
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          motivation,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Reactive Mascot
-                  SizedBox(
-                    width: 64,
-                    height: 64,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: CircularProgressIndicator(
-                            value: rate.clamp(0, 1),
-                            strokeWidth: 5,
-                            backgroundColor: theme.colorScheme.outlineVariant
-                                .withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              statsMascotColor,
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: onReportTap,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
                           ),
-                        ),
-                        _StatsReactionMascot(
-                          mood: statsMascotMood,
-                          color: statsMascotColor,
+                          child: Text(
+                            isId ? 'Lihat Laporan Lengkap' : 'View Full Report',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -1580,437 +1411,6 @@ class _StatsHeroSection extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _WeeklyStatusSection extends StatelessWidget {
-  const _WeeklyStatusSection({required this.points, required this.localeCode});
-
-  final List<DailyStat> points;
-  final String localeCode;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final bool isId = Localizations.localeOf(context).languageCode == 'id';
-    final DateTime today = dateOnly(DateTime.now());
-
-    // Sort points Sen-Min
-    final List<DailyStat> orderedPoints = [...points]
-      ..sort(
-        (DailyStat a, DailyStat b) => a.date.weekday.compareTo(b.date.weekday),
-      );
-
-    // Calculate global completion rate for the period
-    final int totalScheduled = orderedPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.totalScheduled,
-    );
-    final int totalCompleted = orderedPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.totalCompleted,
-    );
-    final double completionRate = totalScheduled > 0
-        ? totalCompleted / totalScheduled
-        : 0;
-    final int completionPercent = (completionRate * 100).round();
-
-    final int activeDays = orderedPoints
-        .where((DailyStat p) => p.totalScheduled > 0)
-        .length;
-
-    // NEW: Max and Min completion rates for highlighting
-    final double maxCompletionRate = orderedPoints.isEmpty
-        ? 0
-        : orderedPoints
-            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
-            .map((p) => p.completionRate)
-            .fold(0.0, (a, b) => a > b ? a : b);
-    final double minCompletionRate = orderedPoints.isEmpty
-        ? 1.0
-        : orderedPoints
-            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
-            .map((p) => p.completionRate)
-            .fold(1.0, (a, b) => a < b ? a : b);
-
-    // Warna badge header sesuai completion rate
-    final Color weekColor;
-    if (completionRate == 0 && totalScheduled > 0) {
-      // Merah: ada jadwal tapi tidak ada yang selesai
-      weekColor = const Color(0xFFBA1A1A);
-    } else if (completionRate >= 1.0) {
-      // Biru: sempurna
-      weekColor = const Color(0xFF1A5BAD);
-    } else if (completionRate > 0) {
-      // Orange: progres parsial
-      weekColor = const Color(0xFFF59E0B);
-    } else {
-      // Abu-abu/default
-      weekColor = theme.colorScheme.outlineVariant;
-    }
-
-    // Chart geometry constants
-    const double maxBarH = 108.0;
-    const double pctLabelH = 14.0;
-    const double pctToBarGap = 4.0;
-    const double barToDayGap = 10.0;
-    const double dayLabelH = 20.0; // enough room for pill
-    const double chartH =
-        pctLabelH + pctToBarGap + maxBarH + barToDayGap + dayLabelH;
-    // 50% reference line sits at this offset from the bottom of the Stack
-    const double refLineBottom = barToDayGap + dayLabelH + (maxBarH * 0.5);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // ── Header ──────────────────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      isId ? 'Progres Mingguan' : 'Weekly Progress',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isId
-                          ? '$activeDays hari aktif minggu ini'
-                          : '$activeDays active days this week',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.42,
-                        ),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: weekColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$completionPercent%',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          // ── Chart area ──────────────────────────────────────
-          SizedBox(
-            height: chartH,
-            child: Stack(
-              children: <Widget>[
-                // 50 % reference dashed line
-                Positioned(
-                  bottom: refLineBottom,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    children: List<Widget>.generate(14, (int i) {
-                      final bool show = i.isEven;
-                      return Expanded(
-                        child: Container(
-                          height: 1,
-                          color: show
-                              ? theme.colorScheme.outlineVariant.withValues(
-                                  alpha: 0.28,
-                                )
-                              : Colors.transparent,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-                // Bars
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List<Widget>.generate(orderedPoints.length, (
-                    int index,
-                  ) {
-                    final DailyStat point = orderedPoints[index];
-                        final double rate = point.completionRate;
-                        final bool hasData = point.totalScheduled > 0;
-                        final bool isToday = dateOnly(point.date) == today;
-                        
-                        final bool isMaxDay = hasData && point.completionRate == maxCompletionRate && maxCompletionRate > 0;
-                        final bool isMinDay = hasData && point.completionRate == minCompletionRate && minCompletionRate < 0.99 && point.completionRate > 0; // Avoid highlighting 0% completion as min if no data
-
-                        // Warna berdasarkan status proses
-                        final Color barColor;
-                    if (!hasData) {
-                      // Abu-abu: tidak ada jadwal
-                      barColor = theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.2,
-                      );
-                    } else if (rate == 0) {
-                      // Merah: dijadwalkan tapi tidak dikerjakan
-                      barColor = const Color(0xFFBA1A1A);
-                    } else if (rate < 1.0) {
-                      // Orange: sudah proses tapi belum selesai
-                      barColor = const Color(0xFFF59E0B);
-                    } else {
-                      // Biru: selesai sempurna (default success)
-                      barColor = const Color(0xFF1A5BAD);
-                    }
-
-                    // fill: minimum 5% height when data exists
-                    final double fillH = rate > 0
-                        ? maxBarH * rate.clamp(0.05, 1.0)
-                        : (hasData ? 4.0 : 0.0);
-                    final int pct = (rate * 100).round();
-
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isToday ? 1.0 : 2.5,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: <Widget>[
-                            // Icon for highlight
-                            if (isMaxDay && hasData)
-                              Icon(Icons.star_rounded, size: 14, color: statsMascotColor)
-                            else if (isMinDay && hasData)
-                              Icon(Icons.warning_rounded, size: 14, color: statsMascotColor)
-                            else
-                              const SizedBox(height: 14), // placeholder to keep alignment
-                            const SizedBox(height: 4), // Small gap between icon and bar
-                            // % label
-                            SizedBox(
-                              height: pctLabelH,
-                              child: hasData && rate > 0
-                                  ? Text(
-                                      '$pct%',
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            fontSize: 9,
-                                            fontWeight: isToday
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
-                                            color: isToday
-                                                ? barColor
-                                                : barColor.withValues(
-                                                    alpha: 0.68,
-                                                  ),
-                                          ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(height: pctToBarGap),
-
-                            // Bar: flat track and solid fill.
-                            Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: <Widget>[
-                                // Track
-                                Container(
-                                  width: double.infinity,
-                                  height: maxBarH,
-                                  decoration: BoxDecoration(
-                                    color: isToday
-                                        ? barColor.withValues(alpha: 0.12)
-                                        : theme.colorScheme.outlineVariant
-                                              .withValues(alpha: 0.16),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                // Animated fill
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 280),
-                                  curve: Curves.easeOutCubic,
-                                  width: double.infinity,
-                                  height: fillH,
-                                  decoration: BoxDecoration(
-                                    color: barColor,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: isMaxDay && hasData
-                                        ? Border.all(color: Colors.white, width: 2)
-                                        : null,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: barToDayGap),
-                            // Day label
-                            Text(
-                              weekdayShortLabel(point.date.weekday, localeCode),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: (isToday || isMaxDay || isMinDay)
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                color: isToday
-                                    ? barColor
-                                    : (isMaxDay || isMinDay)
-                                        ? statsMascotColor
-                                        : theme.colorScheme.onSurfaceVariant,
-                                fontSize: (isToday || isMaxDay || isMinDay)
-                                    ? 10
-                                    : 8,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                                  },
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: barToDayGap),
-
-                            // Day label — pill for today, plain for others
-                            SizedBox(
-                              height: dayLabelH,
-                              child: isToday
-                                  ? Center(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 5,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: barColor.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          weekdayShortLabel(
-                                            point.date.weekday,
-                                            localeCode,
-                                          ),
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                                color: barColor,
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                  : Center(
-                                      child: Text(
-                                        weekdayShortLabel(
-                                          point.date.weekday,
-                                          localeCode,
-                                        ),
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w500,
-                                              color: theme.colorScheme.onSurface
-                                                  .withValues(alpha: 0.38),
-                                            ),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivityBreakdownChart extends StatelessWidget {
-  const _ActivityBreakdownChart({required this.stats});
-  final List<_PeriodActivityStat> stats;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final List<_PeriodActivityStat> sortedStats = [...stats]
-      ..sort((a, b) => b.completionRate.compareTo(a.completionRate));
-
-    return Column(
-      children: sortedStats.map((stat) {
-        final double progress = stat.completionRate;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text(
-                    stat.activity.title,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${(progress * 100).round()}%',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-                backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  _statusColor(progress, theme),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Color _statusColor(double progress, ThemeData theme) {
-    if (progress >= 0.8) return theme.colorScheme.primary;
-    if (progress >= 0.4) return const Color(0xFFF59E0B);
-    return theme.colorScheme.error;
   }
 }
 
@@ -2132,7 +1532,6 @@ class _StatsSmartSummarySection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _ActivityBreakdownChart(stats: activityStats),
           ],
           const SizedBox(height: 12),
           Column(
@@ -2159,38 +1558,18 @@ class _StatsSmartSummarySection extends StatelessWidget {
   }
 }
 
-class _StatsSectionHeader extends StatelessWidget {
-  const _StatsSectionHeader({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _StatsAiSummaryData {
+  const _StatsAiSummaryData({
+    required this.eyebrow,
+    required this.headline,
+    required this.body,
+    this.support,
+  });
+ 
+  final String eyebrow;
+  final String headline;
+  final String body;
+  final String? support;
 }
 
 class _ActivityHighlightRow extends StatelessWidget {
@@ -2433,120 +1812,6 @@ class _HighlightCardData {
   final String value;
   final String detail;
   final IconData icon;
-}
-
-class _MainInsightCardsSection extends StatelessWidget {
-  const _MainInsightCardsSection({required this.cards});
-
-  final List<_HighlightCardData> cards;
-
-  @override
-  Widget build(BuildContext context) {
-    if (cards.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: cards
-          .asMap()
-          .entries
-          .map(
-            (MapEntry<int, _HighlightCardData> entry) => Padding(
-              padding: EdgeInsets.only(
-                bottom: entry.key == cards.length - 1 ? 0 : 10,
-              ),
-              child: _HighlightCard(card: entry.value, compact: false),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _HighlightCard extends StatelessWidget {
-  const _HighlightCard({required this.card, this.compact = true});
-
-  final _HighlightCardData card;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(compact ? 14 : 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(compact ? 14 : 16),
-        border: compact
-            ? null
-            : Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                width: 1,
-              ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(
-            card.icon,
-            size: compact ? 18 : 20,
-            color: theme.colorScheme.primary.withValues(alpha: 0.82),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            card.title,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.56),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            card.value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style:
-                (compact
-                        ? theme.textTheme.titleMedium
-                        : theme.textTheme.titleLarge)
-                    ?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            card.detail,
-            maxLines: compact ? 2 : 3,
-            overflow: TextOverflow.ellipsis,
-            style:
-                (compact
-                        ? theme.textTheme.labelSmall
-                        : theme.textTheme.bodySmall)
-                    ?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.62,
-                      ),
-                      height: 1.35,
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivityHighlightsData {
-  const _ActivityHighlightsData({
-    required this.strongestTitle,
-    required this.strongestDetail,
-    required this.strugglingTitle,
-    required this.strugglingDetail,
-  });
-
-  final String strongestTitle;
-  final String strongestDetail;
-  final String strugglingTitle;
-  final String strugglingDetail;
 }
 
 class _PeriodActivityStat {
