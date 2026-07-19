@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 
 class _StatsAiSummaryData {

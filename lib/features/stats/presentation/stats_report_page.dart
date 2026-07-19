@@ -7,6 +7,7 @@ import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart'; // Import this to use _PeriodActivityStat
+import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 
