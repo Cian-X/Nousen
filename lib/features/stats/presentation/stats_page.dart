@@ -8,8 +8,8 @@ import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
-import 'package:liburan_create/features/stats/application/stats_ml_service.dart';
-import 'package:liburan_create/features/stats/domain/stats_models.dart';
+import 'package:liburan_create/features/stats/presentation/stats_report_page.dart';
+import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -246,17 +246,17 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       totalScheduled: totalScheduled,
                       periodLabel: periodLabel,
                       onPeriodTap: _pickCustomRange,
-                      onReportTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isId
-                                  ? 'Laporan detail sedang disiapkan.'
-                                  : 'The detailed report is being prepared.',
-                            ),
-                          ),
-                        );
-                      },
+                      onReportTap: () => Navigator.of(context).pushNamed(
+                        AppRoutes.statsReport,
+                        arguments: <String, dynamic>{
+                          'dailyStats': dailyStats,
+                          'periodActivityStats': periodActivityStats,
+                          'start': start,
+                          'end': end,
+                          'totalScheduled': totalScheduled,
+                          'localeCode': localeCode,
+                        },
+                      ),
                     ),
                     const SizedBox(height: _heroToInsightSpacing),
                     _StatsSmartSummarySection(
