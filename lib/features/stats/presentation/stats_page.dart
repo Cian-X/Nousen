@@ -9,7 +9,6 @@ import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
 import 'package:liburan_create/features/stats/presentation/stats_report_page.dart';
-import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/features/stats/application/stats_ml_service.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
@@ -22,7 +21,7 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-  _StatsFilterMode _selectedFilter = _StatsFilterMode.last7;
+  StatsFilterMode _selectedFilter = StatsFilterMode.last7;
   DateTimeRange? _customRange;
   static const double _heroToInsightSpacing = 16;
   static const double _insightToPatternSpacing = 18;
@@ -133,18 +132,18 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final bool hasActiveScheduleInPeriod = dailyStats.any(
       (DailyStat item) => item.totalScheduled > 0,
     );
-    final List<_PeriodActivityStat> periodActivityStats =
+    final List<PeriodActivityStat> periodActivityStats =
         _buildPeriodActivityStats(
           activities: activities,
           progressEntries: progressEntries,
           start: start,
           end: end,
         );
-    final List<_TimeBucketStat> timeBucketStats = _buildTimeBucketStats(
+    final List<TimeBucketStat> timeBucketStats = _buildTimeBucketStats(
       periodActivityStats,
       localeCode: localeCode,
     );
-    final _StatsAiSummaryData summary = _buildStatsAiSummary(
+    final StatsAiSummaryData summary = _buildStatsAiSummary(
       localeCode: localeCode,
       currentStats: dailyStats,
       periodActivityStats: periodActivityStats,
@@ -155,16 +154,16 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       hasActiveScheduleInPeriod: hasActiveScheduleInPeriod,
     );
 
-    final List<_HighlightCardData> dayHighlights = _buildDayHighlights(
+    final List<HighlightCardData> dayHighlights = _buildDayHighlights(
       dailyStats: dailyStats,
       localeCode: localeCode,
     );
-    final _HighlightCardData? timeHighlight = _buildTimeHighlight(
+    final HighlightCardData? timeHighlight = _buildTimeHighlight(
       timeBucketStats,
       localeCode: localeCode,
     );
-    final List<_HighlightCardData> fallbackMainInsightCards =
-        <_HighlightCardData>[
+    final List<HighlightCardData> fallbackMainInsightCards =
+        <HighlightCardData>[
           if (dayHighlights.isNotEmpty) dayHighlights.first,
           if (timeHighlight != null)
             timeHighlight
@@ -178,13 +177,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final StatsMlInsight? statsMlInsight = statsMlRequest == null
         ? null
         : ref.watch(statsMlInsightProvider(statsMlRequest)).valueOrNull;
-    final List<_HighlightCardData> mainInsightCards = _resolveMainInsightCards(
+    final List<HighlightCardData> mainInsightCards = _resolveMainInsightCards(
       mlInsight: statsMlInsight,
       mlRequest: statsMlRequest,
       fallbackCards: fallbackMainInsightCards,
       localeCode: localeCode,
     );
-    final _ActivityHighlightsData activityHighlights = _buildActivityHighlights(
+    final ActivityHighlightsData activityHighlights = _buildActivityHighlights(
       periodActivityStats,
       localeCode: localeCode,
     );
@@ -315,39 +314,39 @@ class _StatsDateRangeSheetState extends State<_StatsDateRangeSheet> {
     _preset = _detectPreset(_start, _end);
   }
 
-  _StatsRangePreset _detectPreset(DateTime start, DateTime end) {
+  StatsFilterMode _detectPreset(DateTime start, DateTime end) {
     final DateTime today = dateOnly(DateTime.now());
     if (_sameDay(end, today) && end.difference(start).inDays == 6) {
-      return _StatsRangePreset.last7;
+      return StatsFilterMode.last7;
     }
     if (_sameDay(end, today) && end.difference(start).inDays == 29) {
-      return _StatsRangePreset.last30;
+      return StatsFilterMode.last30;
     }
     if (start.day == 1 &&
         end.year == start.year &&
         end.month == start.month &&
         end.day == DateTime(start.year, start.month + 1, 0).day) {
-      return _StatsRangePreset.thisMonth;
+      return StatsFilterMode.thisMonth;
     }
-    return _StatsRangePreset.custom;
+    return StatsFilterMode.custom;
   }
 
-  void _selectPreset(_StatsRangePreset preset) {
+  void _selectPreset(StatsFilterMode preset) {
     final DateTime today = dateOnly(DateTime.now());
     setState(() {
       _preset = preset;
       _selectingEnd = false;
       switch (preset) {
-        case _StatsRangePreset.last7:
+        case StatsFilterMode.last7:
           _start = today.subtract(const Duration(days: 6));
           _end = today;
-        case _StatsRangePreset.last30:
+        case StatsFilterMode.last30:
           _start = today.subtract(const Duration(days: 29));
           _end = today;
-        case _StatsRangePreset.thisMonth:
+        case StatsFilterMode.thisMonth:
           _start = DateTime(today.year, today.month);
           _end = DateTime(today.year, today.month + 1, 0);
-        case _StatsRangePreset.custom:
+        case StatsFilterMode.custom:
           _selectingEnd = true;
       }
       _visibleMonth = DateTime(_end.year, _end.month);
@@ -719,11 +718,11 @@ class _RangeCalendarGrid extends StatelessWidget {
   }
 }
 
-_StatsAiSummaryData _buildStatsAiSummary({
+StatsAiSummaryData _buildStatsAiSummary({
   required String localeCode,
   required List<DailyStat> currentStats,
-  required List<_PeriodActivityStat> periodActivityStats,
-  required List<_TimeBucketStat> timeBucketStats,
+  required List<PeriodActivityStat> periodActivityStats,
+  required List<TimeBucketStat> timeBucketStats,
   required double averageDailyRate,
   required double currentGlobalRate,
   required double previousGlobalRate,
@@ -835,7 +834,7 @@ double _computeAverageDailyRate(List<DailyStat> stats) {
   return totalRate / activeDays.length;
 }
 
-List<_PeriodActivityStat> _buildPeriodActivityStats({
+List<PeriodActivityStat> _buildPeriodActivityStats({
   required List<ActivityModel> activities,
   required List<ProgressEntryModel> progressEntries,
   required DateTime start,
@@ -883,8 +882,8 @@ List<_PeriodActivityStat> _buildPeriodActivityStats({
   return stats;
 }
 
-List<_TimeBucketStat> _buildTimeBucketStats(
-  List<_PeriodActivityStat> activityStats, {
+List<TimeBucketStat> _buildTimeBucketStats(
+  List<PeriodActivityStat> activityStats, {
   required String localeCode,
 }) {
   final Map<String, _TimeBucketStat> buckets = <String, _TimeBucketStat>{};

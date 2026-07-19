@@ -6,7 +6,6 @@ import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart'; // Import this to use _PeriodActivityStat
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
@@ -23,7 +22,7 @@ class StatsReportPage extends ConsumerWidget {
   });
 
   final List<DailyStat> dailyStats;
-  final List<_PeriodActivityStat> periodActivityStats;
+  final List<PeriodActivityStat> periodActivityStats;
   final DateTime start;
   final DateTime end;
   final int totalScheduled;
@@ -54,18 +53,18 @@ class StatsReportPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           if (totalScheduled > 0) ...[
-            _WeeklyStatusSection(
+            WeeklyStatusSection(
               points: weeklyStats,
               localeCode: localeCode,
               totalScheduledForPeriod: totalScheduled,
             ),
             const SizedBox(height: 24),
-            _ActivityBreakdownChart(
+            ActivityBreakdownChart(
               stats: periodActivityStats,
               localeCode: localeCode,
             ),
           ] else
-            _EmptyStatsReportPanel(localeCode: localeCode),
+            EmptyStatsReportPanel(localeCode: localeCode),
         ],
       ),
     );
@@ -76,16 +75,16 @@ class StatsReportPage extends ConsumerWidget {
 // WIDGETS DARI STATS_PAGE.DART YANG DIPINDAH KE SINI
 // =========================================================================
 
-class _ActivityBreakdownChart extends StatelessWidget {
-  const _ActivityBreakdownChart({required this.stats, required this.localeCode});
-  final List<_PeriodActivityStat> stats;
+class ActivityBreakdownChart extends StatelessWidget {
+  const ActivityBreakdownChart({required this.stats, required this.localeCode});
+  final List<PeriodActivityStat> stats;
   final String localeCode;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final List<_PeriodActivityStat> sortedStats = [...stats]
-      ..sort((a, b) => b.completionRate.compareTo(a.completionRate));
+    final List<PeriodActivityStat> sortedStats = [...stats]
+      ..sort((PeriodActivityStat a, PeriodActivityStat b) => b.completionRate.compareTo(a.completionRate));
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -162,7 +161,7 @@ class _ActivityBreakdownChart extends StatelessWidget {
   }
 }
 
-class _WeeklyStatusSection extends StatelessWidget {
+class WeeklyStatusSection extends StatelessWidget {
   const _WeeklyStatusSection({required this.points, required this.localeCode, required this.totalScheduledForPeriod});
 
   final List<DailyStat> points;
@@ -476,8 +475,8 @@ class _WeeklyStatusSection extends StatelessWidget {
   }
 }
 
-class _EmptyStatsReportPanel extends StatelessWidget {
-  const _EmptyStatsReportPanel({required this.localeCode});
+class EmptyStatsReportPanel extends StatelessWidget {
+  const EmptyStatsReportPanel({required this.localeCode});
   final String localeCode;
 
   @override

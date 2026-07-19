@@ -9,6 +9,7 @@ import 'package:liburan_create/features/one_time_reminder/presentation/one_time_
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/presentation/initial_setup_onboarding_page.dart';
 import 'package:liburan_create/features/stats/presentation/stats_page.dart';
+import 'package:liburan_create/features/stats/presentation/stats_report_page.dart';
 
 class AppRoutes {
   static const String home = '/';

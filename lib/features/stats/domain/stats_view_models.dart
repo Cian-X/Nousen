@@ -1,22 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
+import 'package:flutter/material.dart'; // Keep this for IconData
+import 'package:liburan_create/features/activity/domain/activity_model.dart'; // For ActivityModel
 
-class _StatsAiSummaryData {
-  const _StatsAiSummaryData({
+class StatsAiSummaryData { // Renamed
+  const StatsAiSummaryData({
     required this.eyebrow,
     required this.headline,
     required this.body,
     this.support,
   });
-
+ 
   final String eyebrow;
   final String headline;
   final String body;
   final String? support;
 }
 
-class _ActivityHighlightsData {
-  const _ActivityHighlightsData({
+class ActivityHighlightsData { // Renamed
+  const ActivityHighlightsData({
     required this.strongestTitle,
     required this.strongestDetail,
     required this.strugglingTitle,
@@ -29,8 +29,8 @@ class _ActivityHighlightsData {
   final String strugglingDetail;
 }
 
-class _HighlightCardData {
-  const _HighlightCardData({
+class HighlightCardData { // Renamed
+  const HighlightCardData({
     required this.title,
     required this.value,
     required this.detail,
@@ -43,8 +43,8 @@ class _HighlightCardData {
   final IconData icon;
 }
 
-class _PeriodActivityStat {
-  const _PeriodActivityStat({
+class PeriodActivityStat { // Renamed
+  const PeriodActivityStat({
     required this.activity,
     required this.scheduled,
     required this.completed,
@@ -61,11 +61,11 @@ class _PeriodActivityStat {
     return completed / scheduled;
   }
 
-  _PeriodActivityStat copyWith({
+  PeriodActivityStat copyWith({
     int? scheduled,
     int? completed,
   }) {
-    return _PeriodActivityStat(
+    return PeriodActivityStat(
       activity: activity,
       scheduled: scheduled ?? this.scheduled,
       completed: completed ?? this.completed,
@@ -73,8 +73,8 @@ class _PeriodActivityStat {
   }
 }
 
-class _TimeBucketStat {
-  const _TimeBucketStat({
+class TimeBucketStat { // Renamed
+  const TimeBucketStat({
     required this.key,
     required this.label,
     required this.scheduled,
@@ -91,11 +91,11 @@ class _TimeBucketStat {
     return completed / scheduled;
   }
 
-  _TimeBucketStat copyWith({
+  TimeBucketStat copyWith({
     int? scheduled,
     int? completed,
   }) {
-    return _TimeBucketStat(
+    return TimeBucketStat(
       key: key,
       label: label,
       scheduled: scheduled ?? this.scheduled,
