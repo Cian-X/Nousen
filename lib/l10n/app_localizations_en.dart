@@ -403,6 +403,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overallCompletion => 'Overall completion';
 
   @override
+  String get statsReportTitle => 'Detailed Report';
+
+  @override
+  String get statsReportComingSoon => 'Stats report coming soon...';
+
+  @override
   String get last7DaysChart => 'Last 7 days';
 
   @override

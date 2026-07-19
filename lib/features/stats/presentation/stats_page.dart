@@ -246,7 +246,17 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       totalScheduled: totalScheduled,
                       periodLabel: periodLabel,
                       onPeriodTap: _pickCustomRange,
-                      onReportTap: () => Navigator.of(context).pushNamed(AppRoutes.statsReport),
+                      onReportTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isId
+                                  ? 'Laporan detail sedang disiapkan.'
+                                  : 'The detailed report is being prepared.',
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: _heroToInsightSpacing),
                     _StatsSmartSummarySection(
@@ -1558,20 +1568,6 @@ class _StatsSmartSummarySection extends StatelessWidget {
   }
 }
 
-class _StatsAiSummaryData {
-  const _StatsAiSummaryData({
-    required this.eyebrow,
-    required this.headline,
-    required this.body,
-    this.support,
-  });
- 
-  final String eyebrow;
-  final String headline;
-  final String body;
-  final String? support;
-}
-
 class _ActivityHighlightRow extends StatelessWidget {
   const _ActivityHighlightRow({
     required this.title,
@@ -1798,6 +1794,20 @@ class _StatsAiSummaryData {
   final String headline;
   final String body;
   final String? support;
+}
+
+class _ActivityHighlightsData {
+  const _ActivityHighlightsData({
+    required this.strongestTitle,
+    required this.strongestDetail,
+    required this.strugglingTitle,
+    required this.strugglingDetail,
+  });
+
+  final String strongestTitle;
+  final String strongestDetail;
+  final String strugglingTitle;
+  final String strugglingDetail;
 }
 
 class _HighlightCardData {

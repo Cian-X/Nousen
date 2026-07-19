@@ -812,6 +812,18 @@ abstract class AppLocalizations {
   /// **'Overall completion'**
   String get overallCompletion;
 
+  /// No description provided for @statsReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed Report'**
+  String get statsReportTitle;
+
+  /// No description provided for @statsReportComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats report coming soon...'**
+  String get statsReportComingSoon;
+
   /// No description provided for @last7DaysChart.
   ///
   /// In en, this message translates to:

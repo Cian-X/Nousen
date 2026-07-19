@@ -226,6 +226,8 @@
   "noteSaveWarningMessage": "A note can only be saved once per date. After saving, it cannot be edited (only deleted). Continue?",
   "photoSaveWarningMessage": "Uploaded photos and upload comments cannot be edited after saving (only deleted). Continue?",
   "overallCompletion": "Overall completion",
+  "statsReportTitle": "Detailed Report",
+  "statsReportComingSoon": "Stats report coming soon...",
   "last7DaysChart": "Last 7 days",
   "last28DaysHeatmap": "Last 28 days heatmap",
   "insightsTitle": "Auto insights",

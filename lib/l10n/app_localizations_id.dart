@@ -405,6 +405,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get overallCompletion => 'Penyelesaian keseluruhan';
 
   @override
+  String get statsReportTitle => 'Laporan Detail';
+
+  @override
+  String get statsReportComingSoon => 'Laporan statistik akan segera hadir...';
+
+  @override
   String get last7DaysChart => '7 hari terakhir';
 
   @override

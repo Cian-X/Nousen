@@ -226,6 +226,8 @@
   "noteSaveWarningMessage": "Catatan hanya bisa disimpan sekali per tanggal. Setelah tersimpan, tidak bisa diedit (hanya bisa dihapus). Lanjut?",
   "photoSaveWarningMessage": "Foto dan komentar upload tidak bisa diedit setelah disimpan (hanya bisa dihapus). Lanjut?",
   "overallCompletion": "Penyelesaian keseluruhan",
+  "statsReportTitle": "Laporan Detail",
+  "statsReportComingSoon": "Laporan statistik akan segera hadir...",
   "last7DaysChart": "7 hari terakhir",
   "last28DaysHeatmap": "Heatmap 28 hari",
   "insightsTitle": "Insight otomatis",
