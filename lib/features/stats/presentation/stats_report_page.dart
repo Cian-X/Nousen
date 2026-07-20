@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
@@ -76,7 +72,11 @@ class StatsReportPage extends ConsumerWidget {
 // =========================================================================
 
 class ActivityBreakdownChart extends StatelessWidget {
-  const ActivityBreakdownChart({required this.stats, required this.localeCode});
+  const ActivityBreakdownChart({
+    super.key,
+    required this.stats,
+    required this.localeCode,
+  });
   final List<PeriodActivityStat> stats;
   final String localeCode;
 
@@ -84,7 +84,10 @@ class ActivityBreakdownChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final List<PeriodActivityStat> sortedStats = [...stats]
-      ..sort((PeriodActivityStat a, PeriodActivityStat b) => b.completionRate.compareTo(a.completionRate));
+      ..sort(
+        (PeriodActivityStat a, PeriodActivityStat b) =>
+            b.completionRate.compareTo(a.completionRate),
+      );
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -140,7 +143,8 @@ class ActivityBreakdownChart extends StatelessWidget {
                     value: progress,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
-                    backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                    backgroundColor: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _statusColor(progress, theme),
                     ),
@@ -148,7 +152,7 @@ class ActivityBreakdownChart extends StatelessWidget {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -162,7 +166,12 @@ class ActivityBreakdownChart extends StatelessWidget {
 }
 
 class WeeklyStatusSection extends StatelessWidget {
-  const _WeeklyStatusSection({required this.points, required this.localeCode, required this.totalScheduledForPeriod});
+  const WeeklyStatusSection({
+    super.key,
+    required this.points,
+    required this.localeCode,
+    required this.totalScheduledForPeriod,
+  });
 
   final List<DailyStat> points;
   final String localeCode;
@@ -202,15 +211,19 @@ class WeeklyStatusSection extends StatelessWidget {
     final double maxCompletionRate = orderedPoints.isEmpty
         ? 0
         : orderedPoints
-            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
-            .map((p) => p.completionRate)
-            .fold(0.0, (a, b) => a > b ? a : b);
+              .where(
+                (p) => p.totalScheduled > 0,
+              ) // Only consider days with scheduled activities
+              .map((p) => p.completionRate)
+              .fold(0.0, (a, b) => a > b ? a : b);
     final double minCompletionRate = orderedPoints.isEmpty
         ? 1.0
         : orderedPoints
-            .where((p) => p.totalScheduled > 0) // Only consider days with scheduled activities
-            .map((p) => p.completionRate)
-            .fold(1.0, (a, b) => a < b ? a : b);
+              .where(
+                (p) => p.totalScheduled > 0,
+              ) // Only consider days with scheduled activities
+              .map((p) => p.completionRate)
+              .fold(1.0, (a, b) => a < b ? a : b);
 
     // Warna badge header sesuai completion rate
     final Color weekColor;
@@ -339,15 +352,23 @@ class WeeklyStatusSection extends StatelessWidget {
                     int index,
                   ) {
                     final DailyStat point = orderedPoints[index];
-                        final double rate = point.completionRate;
-                        final bool hasData = point.totalScheduled > 0;
-                        final bool isToday = dateOnly(point.date) == today;
-                        
-                        final bool isMaxDay = hasData && point.completionRate == maxCompletionRate && maxCompletionRate > 0;
-                        final bool isMinDay = hasData && point.completionRate == minCompletionRate && minCompletionRate < 0.99 && point.completionRate > 0; // Avoid highlighting 0% completion as min if no data
+                    final double rate = point.completionRate;
+                    final bool hasData = point.totalScheduled > 0;
+                    final bool isToday = dateOnly(point.date) == today;
 
-                        // Warna berdasarkan status proses
-                        final Color barColor;
+                    final bool isMaxDay =
+                        hasData &&
+                        point.completionRate == maxCompletionRate &&
+                        maxCompletionRate > 0;
+                    final bool isMinDay =
+                        hasData &&
+                        point.completionRate == minCompletionRate &&
+                        minCompletionRate < 0.99 &&
+                        point.completionRate >
+                            0; // Avoid highlighting 0% completion as min if no data
+
+                    // Warna berdasarkan status proses
+                    final Color barColor;
                     if (!hasData) {
                       // Abu-abu: tidak ada jadwal
                       barColor = theme.colorScheme.outlineVariant.withValues(
@@ -380,12 +401,24 @@ class WeeklyStatusSection extends StatelessWidget {
                           children: <Widget>[
                             // Icon for highlight
                             if (isMaxDay && hasData)
-                              Icon(Icons.star_rounded, size: 14, color: barColor)
+                              Icon(
+                                Icons.star_rounded,
+                                size: 14,
+                                color: barColor,
+                              )
                             else if (isMinDay && hasData)
-                              Icon(Icons.warning_rounded, size: 14, color: barColor)
+                              Icon(
+                                Icons.warning_rounded,
+                                size: 14,
+                                color: barColor,
+                              )
                             else
-                              const SizedBox(height: 14), // placeholder to keep alignment
-                            const SizedBox(height: 4), // Small gap between icon and bar
+                              const SizedBox(
+                                height: 14,
+                              ), // placeholder to keep alignment
+                            const SizedBox(
+                              height: 4,
+                            ), // Small gap between icon and bar
                             // % label
                             SizedBox(
                               height: pctLabelH,
@@ -436,7 +469,10 @@ class WeeklyStatusSection extends StatelessWidget {
                                     color: barColor,
                                     borderRadius: BorderRadius.circular(4),
                                     border: isMaxDay && hasData
-                                        ? Border.all(color: Colors.white, width: 2)
+                                        ? Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          )
                                         : null,
                                   ),
                                 ),
@@ -453,8 +489,8 @@ class WeeklyStatusSection extends StatelessWidget {
                                 color: isToday
                                     ? barColor
                                     : (isMaxDay || isMinDay)
-                                        ? barColor
-                                        : theme.colorScheme.onSurfaceVariant,
+                                    ? barColor
+                                    : theme.colorScheme.onSurfaceVariant,
                                 fontSize: (isToday || isMaxDay || isMinDay)
                                     ? 10
                                     : 8,
@@ -476,7 +512,7 @@ class WeeklyStatusSection extends StatelessWidget {
 }
 
 class EmptyStatsReportPanel extends StatelessWidget {
-  const EmptyStatsReportPanel({required this.localeCode});
+  const EmptyStatsReportPanel({super.key, required this.localeCode});
   final String localeCode;
 
   @override
