@@ -243,12 +243,20 @@ class WeeklyStatusSection extends StatelessWidget {
 
     // Chart geometry constants
     const double maxBarH = 108.0;
+    const double iconSlotH = 14.0;
+    const double iconToPctGap = 4.0;
     const double pctLabelH = 14.0;
     const double pctToBarGap = 4.0;
     const double barToDayGap = 10.0;
     const double dayLabelH = 20.0; // enough room for pill
     const double chartH =
-        pctLabelH + pctToBarGap + maxBarH + barToDayGap + dayLabelH;
+        iconSlotH +
+        iconToPctGap +
+        pctLabelH +
+        pctToBarGap +
+        maxBarH +
+        barToDayGap +
+        dayLabelH;
     // 50% reference line sits at this offset from the bottom of the Stack
     const double refLineBottom = barToDayGap + dayLabelH + (maxBarH * 0.5);
 
@@ -332,7 +340,8 @@ class WeeklyStatusSection extends StatelessWidget {
                   child: Row(
                     children: List<Widget>.generate(14, (int i) {
                       final bool show = i.isEven;
-                      return Expanded(
+                      return Flexible(
+                        // Tambahkan Flexible di sini
                         child: Container(
                           height: 1,
                           color: show
@@ -479,21 +488,32 @@ class WeeklyStatusSection extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: barToDayGap),
-                            // Day label
-                            Text(
-                              weekdayShortLabel(point.date.weekday, localeCode),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: (isToday || isMaxDay || isMinDay)
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                color: isToday
-                                    ? barColor
-                                    : (isMaxDay || isMinDay)
-                                    ? barColor
-                                    : theme.colorScheme.onSurfaceVariant,
-                                fontSize: (isToday || isMaxDay || isMinDay)
-                                    ? 10
-                                    : 8,
+                            SizedBox(
+                              height: dayLabelH,
+                              child: Center(
+                                child: Text(
+                                  weekdayShortLabel(
+                                    point.date.weekday,
+                                    localeCode,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.clip,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight:
+                                        (isToday || isMaxDay || isMinDay)
+                                        ? FontWeight.w800
+                                        : FontWeight.w500,
+                                    color: isToday
+                                        ? barColor
+                                        : (isMaxDay || isMinDay)
+                                        ? barColor
+                                        : theme.colorScheme.onSurfaceVariant,
+                                    fontSize: (isToday || isMaxDay || isMinDay)
+                                        ? 10
+                                        : 8,
+                                  ),
+                                ),
                               ),
                             ),
                           ],

@@ -278,24 +278,78 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     required bool hasActiveScheduleInPeriod,
   }) {
     final bool isId = localeCode == 'id';
+    String headline;
+    String body;
+    String? support;
+
+    if (!hasActiveScheduleInPeriod) {
+      headline = isId ? 'Belum ada aktivitas' : 'No activities yet';
+      body = isId
+          ? 'Tambahkan jadwal aktivitas untuk melihat statistik Anda di sini.'
+          : 'Add some scheduled activities to see your stats here.';
+    } else if (currentGlobalRate >= 0.8) {
+      headline = isId ? 'Performa sangat baik!' : 'Excellent performance!';
+      body = isId
+          ? 'Terus pertahankan konsistensi Anda. Luar biasa!'
+          : 'Keep up the great work and consistency!';
+    } else if (currentGlobalRate > 0) {
+      headline = isId ? 'Butuh sedikit dorongan' : 'Needs a little push';
+      body = isId
+          ? 'Coba tingkatkan progres Anda hari ini.'
+          : 'Try to improve your progress today.';
+      if (currentGlobalRate < previousGlobalRate) {
+        support = isId
+            ? 'Performa sedikit menurun dibandingkan periode sebelumnya.'
+            : 'Slight decrease in performance compared to previous period.';
+      }
+    } else {
+      headline = isId ? 'Data minggu ini masih tipis' : 'Not enough data';
+      body = isId
+          ? 'Selesaikan beberapa aktivitas dulu.'
+          : 'Complete activities first.';
+    }
+
     return StatsAiSummaryData(
       eyebrow: isId ? 'Ringkasan pintar' : 'Smart overview',
-      headline: isId ? 'Data minggu ini masih tipis' : 'Not enough data',
-      body: isId
-          ? 'Selesaikan beberapa aktivitas dulu.'
-          : 'Complete activities first.',
+      headline: headline,
+      body: body,
+      support: support,
     );
   }
 
   ActivityHighlightsData _buildActivityHighlights(
     List<PeriodActivityStat> stats, {
     required String localeCode,
-  }) => const ActivityHighlightsData(
-    strongestTitle: '-',
-    strongestDetail: '-',
-    strugglingTitle: '-',
-    strugglingDetail: '-',
-  );
+  }) {
+    String strongestTitle = '-';
+    String strongestDetail = '-';
+    String strugglingTitle = '-';
+    String strugglingDetail = '-';
+
+    if (stats.isNotEmpty) {
+      final List<PeriodActivityStat> sortedStats = [...stats]
+        ..sort((a, b) => b.completionRate.compareTo(a.completionRate));
+      final PeriodActivityStat strongest = sortedStats.first;
+      final PeriodActivityStat struggling = sortedStats.last;
+
+      strongestTitle = strongest.activity.title;
+      strongestDetail = localeCode == 'id'
+          ? '${(strongest.completionRate * 100).round()}% selesai'
+          : '${(strongest.completionRate * 100).round()}% completed';
+
+      strugglingTitle = struggling.activity.title;
+      strugglingDetail = localeCode == 'id'
+          ? '${(struggling.completionRate * 100).round()}% selesai'
+          : '${(struggling.completionRate * 100).round()}% completed';
+    }
+
+    return ActivityHighlightsData(
+      strongestTitle: strongestTitle,
+      strongestDetail: strongestDetail,
+      strugglingTitle: strugglingTitle,
+      strugglingDetail: strugglingDetail,
+    );
+  }
 
   StatsMascotMood _statsMascotMood({
     required double rate,
