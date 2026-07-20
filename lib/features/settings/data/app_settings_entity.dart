@@ -89,7 +89,7 @@ String? _encodeSettingsPayload(
     'routine': normalized
         .map((WeeklyRoutineDayProfile day) => day.toJson())
         .toList(growable: false),
-    if (trimmedNote != null) 'extraActivitiesNote': trimmedNote,
+    'extraActivitiesNote': ?trimmedNote,
   });
 }
 

@@ -284,7 +284,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     if (!hasRoutineDays) {
       return 6 * 60;
     }
-    return (averageRoutineStart - 90).clamp(5 * 60, 10 * 60) as int;
+    return (averageRoutineStart - 90).clamp(5 * 60, 10 * 60);
   }
 
   int _estimatedSleepMinutes(
@@ -294,7 +294,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     if (!hasRoutineDays) {
       return 22 * 60 + 30;
     }
-    return (averageRoutineEnd + 5 * 60).clamp(20 * 60, 23 * 60 + 59) as int;
+    return (averageRoutineEnd + 5 * 60).clamp(20 * 60, 23 * 60 + 59);
   }
 
   bool _hasMeaningfulScheduleContext(

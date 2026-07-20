@@ -450,7 +450,7 @@ class ActivityTimeSyncEngine {
     final int clamped = rawMinutes.clamp(
       _earliestCandidateMinutes,
       _latestCandidateMinutes,
-    ) as int;
+    );
     return ((clamped / 5).round()) * 5;
   }
 

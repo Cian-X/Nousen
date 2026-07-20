@@ -299,7 +299,7 @@ class SmartActivityAdvisor {
     }
     final SmartActivityCategory category =
         profile?.category ?? fallbackCategory!;
-    final SmartActivityLocalPlan? localPlan =
+    final SmartActivityLocalPlan localPlan =
         profile?.localPlan ?? _defaultLocalPlanForCategory(category);
     final String keyword =
         profile?.canonicalKeyword ??

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart'; // Keep this for IconData
 import 'package:liburan_create/features/activity/domain/activity_model.dart'; // For ActivityModel
 
-class StatsAiSummaryData { // Renamed
+class StatsAiSummaryData {
   const StatsAiSummaryData({
     required this.eyebrow,
     required this.headline,
@@ -15,7 +15,7 @@ class StatsAiSummaryData { // Renamed
   final String? support;
 }
 
-class ActivityHighlightsData { // Renamed
+class ActivityHighlightsData {
   const ActivityHighlightsData({
     required this.strongestTitle,
     required this.strongestDetail,
@@ -29,7 +29,7 @@ class ActivityHighlightsData { // Renamed
   final String strugglingDetail;
 }
 
-class HighlightCardData { // Renamed
+class HighlightCardData {
   const HighlightCardData({
     required this.title,
     required this.value,
@@ -43,7 +43,7 @@ class HighlightCardData { // Renamed
   final IconData icon;
 }
 
-class PeriodActivityStat { // Renamed
+class PeriodActivityStat {
   const PeriodActivityStat({
     required this.activity,
     required this.scheduled,
@@ -73,7 +73,7 @@ class PeriodActivityStat { // Renamed
   }
 }
 
-class TimeBucketStat { // Renamed
+class TimeBucketStat {
   const TimeBucketStat({
     required this.key,
     required this.label,
@@ -103,3 +103,5 @@ class TimeBucketStat { // Renamed
     );
   }
 }
+
+enum StatsFilterMode { last7, last30, thisMonth, custom }
