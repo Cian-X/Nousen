@@ -17,16 +17,14 @@ class StatsAiSummaryData {
 
 class ActivityHighlightsData {
   const ActivityHighlightsData({
-    required this.strongestTitle,
-    required this.strongestDetail,
-    required this.strugglingTitle,
-    required this.strugglingDetail,
+    required this.best,
+    required this.fair,
+    required this.needsAttention,
   });
 
-  final String strongestTitle;
-  final String strongestDetail;
-  final String strugglingTitle;
-  final String strugglingDetail;
+  final List<HighlightCardData> best;
+  final List<HighlightCardData> fair;
+  final List<HighlightCardData> needsAttention;
 }
 
 class HighlightCardData {

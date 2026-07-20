@@ -321,33 +321,35 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     List<PeriodActivityStat> stats, {
     required String localeCode,
   }) {
-    String strongestTitle = '-';
-    String strongestDetail = '-';
-    String strugglingTitle = '-';
-    String strugglingDetail = '-';
+    final bool isId = localeCode == 'id';
+    final List<HighlightCardData> best = [];
+    final List<HighlightCardData> fair = [];
+    final List<HighlightCardData> needsAttention = [];
 
-    if (stats.isNotEmpty) {
-      final List<PeriodActivityStat> sortedStats = [...stats]
-        ..sort((a, b) => b.completionRate.compareTo(a.completionRate));
-      final PeriodActivityStat strongest = sortedStats.first;
-      final PeriodActivityStat struggling = sortedStats.last;
+    for (final stat in stats) {
+      final card = HighlightCardData(
+        title: stat.activity.title,
+        value: '${(stat.completionRate * 100).round()}%',
+        detail: isId
+            ? '${stat.completed} dari ${stat.scheduled} selesai'
+            : '${stat.completed} of ${stat.scheduled} completed',
+        icon: Icons
+            .verified_rounded, // Fallback icon - need to check ActivityModel
+      );
 
-      strongestTitle = strongest.activity.title;
-      strongestDetail = localeCode == 'id'
-          ? '${(strongest.completionRate * 100).round()}% selesai'
-          : '${(strongest.completionRate * 100).round()}% completed';
-
-      strugglingTitle = struggling.activity.title;
-      strugglingDetail = localeCode == 'id'
-          ? '${(struggling.completionRate * 100).round()}% selesai'
-          : '${(struggling.completionRate * 100).round()}% completed';
+      if (stat.completionRate >= 0.8) {
+        best.add(card);
+      } else if (stat.completionRate > 0.4) {
+        fair.add(card);
+      } else {
+        needsAttention.add(card);
+      }
     }
 
     return ActivityHighlightsData(
-      strongestTitle: strongestTitle,
-      strongestDetail: strongestDetail,
-      strugglingTitle: strugglingTitle,
-      strugglingDetail: strugglingDetail,
+      best: best,
+      fair: fair,
+      needsAttention: needsAttention,
     );
   }
 
@@ -714,7 +716,7 @@ class StatsHeroSection extends StatelessWidget {
   }
 }
 
-class StatsSmartSummarySection extends StatelessWidget {
+class StatsSmartSummarySection extends ConsumerStatefulWidget {
   const StatsSmartSummarySection({
     super.key,
     required this.summary,
@@ -727,9 +729,46 @@ class StatsSmartSummarySection extends StatelessWidget {
   final List<PeriodActivityStat> activityStats;
 
   @override
+  ConsumerState<StatsSmartSummarySection> createState() =>
+      _StatsSmartSummarySectionState();
+}
+
+enum HighlightCategory { best, fair, needsAttention }
+
+class _StatsSmartSummarySectionState
+    extends ConsumerState<StatsSmartSummarySection> {
+  HighlightCategory _selectedHighlightCategory = HighlightCategory.best;
+
+  @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isId = Localizations.localeOf(context).languageCode == 'id';
+
+    List<HighlightCardData> displayedHighlights;
+    String categoryTitle;
+    Color categoryColor;
+    IconData categoryIcon;
+
+    switch (_selectedHighlightCategory) {
+      case HighlightCategory.best:
+        displayedHighlights = widget.activityHighlights.best;
+        categoryTitle = isId ? 'Terbaik' : 'Best';
+        categoryColor = theme.colorScheme.primary;
+        categoryIcon = Icons.verified_rounded;
+        break;
+      case HighlightCategory.fair:
+        displayedHighlights = widget.activityHighlights.fair;
+        categoryTitle = isId ? 'Cukup baik' : 'Fair';
+        categoryColor = const Color(0xFFF59E0B);
+        categoryIcon = Icons.lightbulb_outline_rounded;
+        break;
+      case HighlightCategory.needsAttention:
+        displayedHighlights = widget.activityHighlights.needsAttention;
+        categoryTitle = isId ? 'Perlu perhatian' : 'Needs attention';
+        categoryColor = const Color(0xFFBA1A1A);
+        categoryIcon = Icons.warning_amber_rounded;
+        break;
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -744,30 +783,30 @@ class StatsSmartSummarySection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            summary.eyebrow,
+            widget.summary.eyebrow,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            summary.headline,
+            widget.summary.headline,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            summary.body,
+            widget.summary.body,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
           ),
-          if (summary.support != null) ...<Widget>[
+          if (widget.summary.support != null) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              summary.support!,
+              widget.summary.support!,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -775,7 +814,7 @@ class StatsSmartSummarySection extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          if (activityStats.isNotEmpty) ...<Widget>[
+          if (widget.activityStats.isNotEmpty) ...<Widget>[
             Text(
               isId ? 'Sorotan aktivitas' : 'Activity highlights',
               style: theme.textTheme.labelMedium?.copyWith(
@@ -784,21 +823,99 @@ class StatsSmartSummarySection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _ActivityHighlightRow(
-              title: isId ? 'Terkuat' : 'Strongest',
-              value: activityHighlights.strongestTitle,
-              detail: activityHighlights.strongestDetail,
+            _buildExpansionTile(
+              context,
+              category: HighlightCategory.best,
+              title: isId ? 'Terbaik' : 'Best',
+              icon: Icons.verified_rounded,
               color: theme.colorScheme.primary,
+              highlights: widget.activityHighlights.best,
             ),
-            const SizedBox(height: 12),
-            _ActivityHighlightRow(
+            const SizedBox(height: 8),
+            _buildExpansionTile(
+              context,
+              category: HighlightCategory.fair,
+              title: isId ? 'Cukup baik' : 'Fair',
+              icon: Icons.lightbulb_outline_rounded,
+              color: const Color(0xFFF59E0B),
+              highlights: widget.activityHighlights.fair,
+            ),
+            const SizedBox(height: 8),
+            _buildExpansionTile(
+              context,
+              category: HighlightCategory.needsAttention,
               title: isId ? 'Perlu perhatian' : 'Needs attention',
-              value: activityHighlights.strugglingTitle,
-              detail: activityHighlights.strugglingDetail,
+              icon: Icons.warning_amber_rounded,
               color: const Color(0xFFBA1A1A),
+              highlights: widget.activityHighlights.needsAttention,
               isWarning: true,
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpansionTile(
+    BuildContext context, {
+    required HighlightCategory category,
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<HighlightCardData> highlights,
+    bool isWarning = false,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        key: PageStorageKey(category),
+        initiallyExpanded: _selectedHighlightCategory == category,
+        onExpansionChanged: (bool expanded) {
+          if (expanded) {
+            setState(() {
+              _selectedHighlightCategory = category;
+            });
+          }
+        },
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(icon, color: color),
+        title: Text(
+          '$title (${highlights.length} ${isId ? 'aktivitas' : 'activities'})',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        children: <Widget>[
+          if (highlights.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                isId
+                    ? 'Tidak ada aktivitas di kategori ini.'
+                    : 'No activities in this category.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            ...highlights.map(
+              (highlight) => Padding(
+                padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                child: _ActivityHighlightRow(
+                  title: title,
+                  highlight: highlight,
+                  color: color,
+                  icon: icon,
+                  isWarning: isWarning,
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -808,16 +925,16 @@ class StatsSmartSummarySection extends StatelessWidget {
 class _ActivityHighlightRow extends StatelessWidget {
   const _ActivityHighlightRow({
     required this.title,
-    required this.value,
-    required this.detail,
+    required this.highlight,
     required this.color,
+    required this.icon,
     this.isWarning = false,
   });
 
   final String title;
-  final String value;
-  final String detail;
+  final HighlightCardData highlight;
   final Color color;
+  final IconData icon;
   final bool isWarning;
 
   @override
@@ -844,10 +961,7 @@ class _ActivityHighlightRow extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              isWarning ? Icons.warning_amber_rounded : Icons.verified_rounded,
-              color: color,
-            ),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -855,19 +969,19 @@ class _ActivityHighlightRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  title,
+                  highlight.title,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  value,
+                  highlight.value,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  detail,
+                  highlight.detail,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
