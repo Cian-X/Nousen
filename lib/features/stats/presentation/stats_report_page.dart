@@ -29,10 +29,14 @@ class StatsReportPage extends ConsumerWidget {
     final AppLocalizations t = AppLocalizations.of(context)!;
     final ThemeData theme = Theme.of(context);
 
-    // Filter to last 7 days for weekly stats section
-    final List<DailyStat> weeklyStats = dailyStats.length <= 7
-        ? dailyStats
-        : dailyStats.sublist(dailyStats.length - 7);
+    // Filter dailyStats to only include dates within the report period (start to end)
+    final List<DailyStat> weeklyStats = dailyStats.where((stat) {
+      final statDate = dateOnly(stat.date);
+      return !statDate.isBefore(start) && !statDate.isAfter(end);
+    }).toList();
+
+    // Sort by weekday (Senin = 1, Minggu = 7)
+    weeklyStats.sort((a, b) => a.date.weekday.compareTo(b.date.weekday));
 
     return Scaffold(
       appBar: AppBar(

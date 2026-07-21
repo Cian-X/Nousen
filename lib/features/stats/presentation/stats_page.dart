@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
@@ -50,19 +50,17 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     if (!mounted) return;
     final String localeCode =
         ref.read(settingsStreamProvider).value?.localeCode ?? 'id';
+
     final DateTimeRange? picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return StatsDateRangeSheet(
-          initialRange: initialRange,
-          firstDate: DateTime(today.year - 5, 1, 1),
-          lastDate: DateTime(today.year + 1, 12, 31),
-          localeCode: localeCode,
-        );
-      },
+      builder: (_) => StatsDateRangeSheet(
+        initialRange: initialRange,
+        firstDate: DateTime(today.year - 5, 1, 1),
+        lastDate: DateTime(today.year + 1, 12, 31),
+        localeCode: localeCode,
+      ),
     );
 
     if (picked == null || !mounted) return;
@@ -390,6 +388,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 }
 
 enum StatsMascotMood { neutral, happy, excited, concerned }
+
+enum StatsFilterMode { last7, custom }
 
 class StatsDateRangeSheet extends StatefulWidget {
   const StatsDateRangeSheet({

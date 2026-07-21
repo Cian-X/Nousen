@@ -102,4 +102,4 @@ class TimeBucketStat {
   }
 }
 
-enum StatsFilterMode { last7, last30, thisMonth, custom }
+enum HighlightCategory { best, fair, needsAttention }

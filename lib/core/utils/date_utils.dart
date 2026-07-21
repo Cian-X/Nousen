@@ -4,6 +4,11 @@ DateTime dateOnly(DateTime dateTime) {
   return DateTime(dateTime.year, dateTime.month, dateTime.day);
 }
 
+bool isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+
 String dateKeyFromDate(DateTime dateTime) {
   final DateTime date = dateOnly(dateTime);
   final String mm = date.month.toString().padLeft(2, '0');
