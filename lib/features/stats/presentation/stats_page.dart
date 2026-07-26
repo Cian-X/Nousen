@@ -16,40 +16,45 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-  StatsFilterMode _selectedFilter = StatsFilterMode.last7;
+  StatsFilterMode _selectedFilter = StatsFilterMode.currentWeek;
   DateTimeRange? _customRange;
   static const double _heroToInsightSpacing = 16;
 
   String _periodLabel(String localeCode, DateTime start, DateTime end) {
-    if (_selectedFilter == StatsFilterMode.last7) {
-      return localeCode == 'id' ? '7 Hari' : '7 Days';
+    // Check if range matches current week (Mon–Sun) for display
+    final week = currentWeekRange();
+    if (_selectedFilter == StatsFilterMode.currentWeek &&
+        isSameDay(week.start, start) &&
+        isSameDay(week.end, end)) {
+      return localeCode == 'id' ? 'Minggu Ini' : 'This Week';
     }
     return '${formatDateShort(start, localeCode)} - ${formatDateShort(end, localeCode)}';
   }
 
   ({DateTime start, DateTime end}) _resolveActiveRange() {
-    final DateTime today = dateOnly(DateTime.now());
     if (_selectedFilter == StatsFilterMode.custom && _customRange != null) {
       return (
         start: dateOnly(_customRange!.start),
         end: dateOnly(_customRange!.end),
       );
     }
-    return (start: today.subtract(const Duration(days: 6)), end: today);
+    // Default: current Monday–Sunday week (dynamic from today)
+    return currentWeekRange();
   }
 
   Future<void> _pickCustomRange() async {
-    final DateTime today = dateOnly(DateTime.now());
+    final week = currentWeekRange();
     final DateTimeRange initialRange =
         _customRange ??
         DateTimeRange(
-          start: today.subtract(const Duration(days: 6)),
-          end: today,
+          start: week.start,
+          end: week.end,
         );
 
     if (!mounted) return;
     final String localeCode =
         ref.read(settingsStreamProvider).value?.localeCode ?? 'id';
+    final DateTime today = dateOnly(DateTime.now());
 
     final DateTimeRange? picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
@@ -389,7 +394,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
 enum StatsMascotMood { neutral, happy, excited, concerned }
 
-enum StatsFilterMode { last7, custom }
+enum StatsFilterMode { currentWeek, custom }
 
 class StatsDateRangeSheet extends StatefulWidget {
   const StatsDateRangeSheet({
@@ -445,6 +450,13 @@ class _StatsDateRangeSheetState extends State<StatsDateRangeSheet> {
     });
   }
 
+  void _setPresetToCurrentWeek() {
+    final ({DateTime start, DateTime end}) week = currentWeekRange();
+    setState(() {
+      _range = DateTimeRange(start: week.start, end: week.end);
+    });
+  }
+
   String _formatRange() {
     return '${formatDateShort(_range.start, widget.localeCode)} - ${formatDateShort(_range.end, widget.localeCode)}';
   }
@@ -480,8 +492,8 @@ class _StatsDateRangeSheetState extends State<StatsDateRangeSheet> {
                 runSpacing: 8,
                 children: <Widget>[
                   ActionChip(
-                    label: Text(_isId ? '7 hari' : '7 days'),
-                    onPressed: () => _setPreset(const Duration(days: 6)),
+                    label: Text(_isId ? 'Minggu Ini' : 'This Week'),
+                    onPressed: () => _setPresetToCurrentWeek(),
                   ),
                   ActionChip(
                     label: Text(_isId ? '30 hari' : '30 days'),

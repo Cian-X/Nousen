@@ -27,3 +27,14 @@ String formatDateShort(DateTime dateTime, String locale) {
 String formatDateLong(DateTime dateTime, String locale) {
   return DateFormat('EEEE, d MMM yyyy', locale).format(dateTime);
 }
+
+/// Returns the Monday–Sunday range for the week containing [reference].
+/// Uses the device's local timezone (typically WIB/Asia/Jakarta in this app).
+/// Weekday: Monday = 1, Sunday = 7 (Dart convention).
+({DateTime start, DateTime end}) currentWeekRange([DateTime? reference]) {
+  final DateTime today = dateOnly(reference ?? DateTime.now());
+  // today.weekday: Mon=1 … Sun=7
+  final DateTime monday = today.subtract(Duration(days: today.weekday - 1));
+  final DateTime sunday = monday.add(const Duration(days: 6));
+  return (start: monday, end: sunday);
+}
