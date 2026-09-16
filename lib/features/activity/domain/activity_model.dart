@@ -2,6 +2,11 @@ class ActivityModel {
   const ActivityModel({
     required this.id,
     required this.title,
+    this.family = 'general',
+    this.category = 'general',
+    this.tags = const <String>[],
+    this.duration = 0,
+    this.isAnomali = false,
     required this.selectedDays,
     required this.subActivities,
     required this.timeMinutes,
@@ -19,6 +24,11 @@ class ActivityModel {
 
   final String id;
   final String title;
+  final String family;
+  final String category;
+  final List<String> tags;
+  final int duration;
+  final bool isAnomali;
   final List<int> selectedDays;
   final List<String> subActivities;
   final int timeMinutes;
@@ -36,6 +46,11 @@ class ActivityModel {
   ActivityModel copyWith({
     String? id,
     String? title,
+    String? family,
+    String? category,
+    List<String>? tags,
+    int? duration,
+    bool? isAnomali,
     List<int>? selectedDays,
     List<String>? subActivities,
     int? timeMinutes,
@@ -54,6 +69,11 @@ class ActivityModel {
     return ActivityModel(
       id: id ?? this.id,
       title: title ?? this.title,
+      family: family ?? this.family,
+      category: category ?? this.category,
+      tags: tags ?? this.tags,
+      duration: duration ?? this.duration,
+      isAnomali: isAnomali ?? this.isAnomali,
       selectedDays: selectedDays ?? this.selectedDays,
       subActivities: subActivities ?? this.subActivities,
       timeMinutes: timeMinutes ?? this.timeMinutes,

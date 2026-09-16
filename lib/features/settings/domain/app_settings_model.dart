@@ -14,6 +14,7 @@ class AppSettingsModel {
     this.sleepMinutes,
     this.usualBreakStartMinutes,
     this.usualBreakEndMinutes,
+    this.hasSeededData = false,
   });
 
   final int morningReminderMinutes;
@@ -28,6 +29,7 @@ class AppSettingsModel {
   final int? sleepMinutes;
   final int? usualBreakStartMinutes;
   final int? usualBreakEndMinutes;
+  final bool hasSeededData;
 
   AppSettingsModel copyWith({
     int? morningReminderMinutes,
@@ -49,6 +51,7 @@ class AppSettingsModel {
     bool clearUsualBreakStartMinutes = false,
     int? usualBreakEndMinutes,
     bool clearUsualBreakEndMinutes = false,
+    bool? hasSeededData,
   }) {
     return AppSettingsModel(
       morningReminderMinutes:
@@ -73,6 +76,7 @@ class AppSettingsModel {
       usualBreakEndMinutes: clearUsualBreakEndMinutes
           ? null
           : (usualBreakEndMinutes ?? this.usualBreakEndMinutes),
+      hasSeededData: hasSeededData ?? this.hasSeededData,
     );
   }
 

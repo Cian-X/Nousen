@@ -22,6 +22,7 @@ class AppSettingsEntity {
   int? sleepMinutes;
   int? usualBreakStartMinutes;
   int? usualBreakEndMinutes;
+  bool? hasSeededData;
 }
 
 extension AppSettingsEntityMapper on AppSettingsEntity {
@@ -42,6 +43,7 @@ extension AppSettingsEntityMapper on AppSettingsEntity {
       sleepMinutes: sleepMinutes,
       usualBreakStartMinutes: usualBreakStartMinutes,
       usualBreakEndMinutes: usualBreakEndMinutes,
+      hasSeededData: payload.hasSeededData,
     );
   }
 }
@@ -58,6 +60,7 @@ AppSettingsEntity settingsEntityFromDomain(AppSettingsModel model) {
     ..weeklyRoutineJson = _encodeSettingsPayload(
       model.weeklyRoutine,
       model.extraActivitiesNote,
+      model.hasSeededData,
     )
     ..wakeUpMinutes = model.wakeUpMinutes
     ..sleepMinutes = model.sleepMinutes
@@ -78,18 +81,21 @@ AppSettingsModel defaultSettingsModel() {
 String? _encodeSettingsPayload(
   List<WeeklyRoutineDayProfile> routine,
   String? extraActivitiesNote,
+  bool hasSeededData,
 ) {
   final List<WeeklyRoutineDayProfile> normalized = normalizeWeeklyRoutine(routine);
   final String? trimmedNote = _normalizeNullableString(extraActivitiesNote);
   if (normalized.every((WeeklyRoutineDayProfile day) => day.kind == WeeklyRoutineDayKind.unspecified) &&
-      trimmedNote == null) {
+      trimmedNote == null &&
+      !hasSeededData) {
     return null;
   }
   return jsonEncode(<String, dynamic>{
     'routine': normalized
         .map((WeeklyRoutineDayProfile day) => day.toJson())
         .toList(growable: false),
-    'extraActivitiesNote': ?trimmedNote,
+    'extraActivitiesNote': trimmedNote,
+    'hasSeededData': hasSeededData,
   });
 }
 
@@ -98,6 +104,7 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
     return const _DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
+      hasSeededData: false,
     );
   }
 
@@ -107,26 +114,31 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
       return _DecodedSettingsPayload(
         routine: _decodeWeeklyRoutineEntries(decoded),
         extraActivitiesNote: null,
+        hasSeededData: false,
       );
     }
     if (decoded is Map) {
       final Object? rawRoutine = decoded['routine'];
       final Object? rawExtraActivitiesNote = decoded['extraActivitiesNote'];
+      final Object? rawHasSeededData = decoded['hasSeededData'];
       return _DecodedSettingsPayload(
         routine: _decodeWeeklyRoutineEntries(rawRoutine),
         extraActivitiesNote: _normalizeNullableString(
           rawExtraActivitiesNote?.toString(),
         ),
+        hasSeededData: rawHasSeededData == true,
       );
     }
     return const _DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
+      hasSeededData: false,
     );
   } catch (_) {
     return const _DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
+      hasSeededData: false,
     );
   }
 }
@@ -159,8 +171,10 @@ class _DecodedSettingsPayload {
   const _DecodedSettingsPayload({
     required this.routine,
     required this.extraActivitiesNote,
+    required this.hasSeededData,
   });
 
   final List<WeeklyRoutineDayProfile> routine;
   final String? extraActivitiesNote;
+  final bool hasSeededData;
 }

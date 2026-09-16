@@ -513,11 +513,11 @@ class HomeAiBriefEngine {
     return HomeAiBrief(
       headline: localeCode == 'id'
           ? snapshot.scheduledCount == 1
-                ? '$dayLabel punya 1 aktivitas'
-                : '$dayLabel sudah punya ${snapshot.scheduledCount} aktivitas'
+                ? 'Ada 1 aktivitas terjadwal'
+                : 'Ada ${snapshot.scheduledCount} aktivitas terjadwal'
           : snapshot.scheduledCount == 1
-          ? '$dayLabel has 1 activity'
-          : '$dayLabel has ${snapshot.scheduledCount} activities',
+          ? '1 activity scheduled'
+          : '${snapshot.scheduledCount} activities scheduled',
       insight: insight,
       suggestion: _upcomingLabel(
         localeCode: localeCode,
@@ -575,8 +575,8 @@ class HomeAiBriefEngine {
 
     return HomeAiBrief(
       headline: localeCode == 'id'
-          ? _pastHeadlineId(dayLabel, snapshot)
-          : _pastHeadlineEn(dayLabel, snapshot),
+          ? _pastHeadlineId(snapshot)
+          : _pastHeadlineEn(snapshot),
       insight: insight,
       suggestion: localeCode == 'id'
           ? 'Hari itu sudah lewat'
@@ -722,14 +722,10 @@ class HomeAiBriefEngine {
     required ActivityModel activity,
     required DateTime selectedDate,
   }) {
-    final String dayLabel = _weekdayFullLabel(
-      selectedDate.weekday,
-      localeCode,
-    );
     final String timeLabel = formatMinutesAsTime(activity.timeMinutes);
     return localeCode == 'id'
-        ? 'Pertama di $dayLabel: ${activity.title} | $timeLabel'
-        : 'First on $dayLabel: ${activity.title} | $timeLabel';
+        ? 'Pertama: ${activity.title} | $timeLabel'
+        : 'First: ${activity.title} | $timeLabel';
   }
 
   String _focusLabel({
@@ -821,8 +817,8 @@ class HomeAiBriefEngine {
   }) {
     final String starterTitle = snapshot.firstActivity?.title ?? nextActivity.title;
     final String base = snapshot.scheduledCount == 1
-        ? '$dayLabel dimulai ${nextActivity.title} pukul $firstTime.'
-        : '$dayLabel punya ${snapshot.scheduledCount} aktivitas, mulai $starterTitle pukul $firstTime.';
+        ? '${nextActivity.title} mulai pukul $firstTime.'
+        : '${snapshot.scheduledCount} aktivitas terjadwal, mulai $starterTitle pukul $firstTime.';
     final String personal = _personalQualifierId(
       profile: profile,
       referenceActivity: nextActivity,
@@ -844,8 +840,8 @@ class HomeAiBriefEngine {
   }) {
     final String starterTitle = snapshot.firstActivity?.title ?? nextActivity.title;
     final String base = snapshot.scheduledCount == 1
-        ? '$dayLabel starts with ${nextActivity.title} at $firstTime.'
-        : '$dayLabel has ${snapshot.scheduledCount} activities, starting with $starterTitle at $firstTime.';
+        ? '${nextActivity.title} starts at $firstTime.'
+        : '${snapshot.scheduledCount} activities scheduled, starting with $starterTitle at $firstTime.';
     final String personal = _personalQualifierEn(
       profile: profile,
       referenceActivity: nextActivity,
@@ -977,77 +973,6 @@ class HomeAiBriefEngine {
       condition,
       personal,
     ]);
-  }
-
-  String _buildStatusDistribution({
-    required int doneCount,
-    required int partialCount,
-    required int missedCount,
-    required int skippedCount,
-    required int pendingCount,
-    required String localeCode,
-    required String pendingLabel,
-    required String missedLabel,
-  }) {
-    final String phrase = _buildStatusDistributionPhrase(
-      doneCount: doneCount,
-      partialCount: partialCount,
-      missedCount: missedCount,
-      skippedCount: skippedCount,
-      pendingCount: pendingCount,
-      localeCode: localeCode,
-      pendingLabel: pendingLabel,
-      missedLabel: missedLabel,
-    );
-    if (phrase.isEmpty) {
-      return localeCode == 'id'
-          ? 'Belum ada progres yang tercatat.'
-          : 'No progress has been recorded yet.';
-    }
-    return '$phrase.';
-  }
-
-  String _buildStatusDistributionPhrase({
-    required int doneCount,
-    required int partialCount,
-    required int missedCount,
-    required int skippedCount,
-    required int pendingCount,
-    required String localeCode,
-    required String pendingLabel,
-    required String missedLabel,
-  }) {
-    final List<String> parts = <String>[];
-    if (doneCount > 0) {
-      parts.add(localeCode == 'id' ? '$doneCount selesai' : '$doneCount done');
-    }
-    if (partialCount > 0) {
-      parts.add(
-        localeCode == 'id'
-            ? '$partialCount hampir selesai'
-            : '$partialCount nearly complete',
-      );
-    }
-    if (pendingCount > 0) {
-      parts.add('$pendingCount $pendingLabel');
-    }
-    if (missedCount > 0) {
-      parts.add('$missedCount $missedLabel');
-    }
-    if (skippedCount > 0) {
-      parts.add(
-        localeCode == 'id' ? '$skippedCount dilewati' : '$skippedCount skipped',
-      );
-    }
-    if (parts.isEmpty) {
-      return '';
-    }
-    if (parts.length == 1) {
-      return parts.first;
-    }
-    final String last = parts.removeLast();
-    final String joinWord = localeCode == 'id' ? 'dan' : 'and';
-    return '${parts.join(', ')}, $joinWord $last';
   }
 
   String _buildTodayConditionId({
@@ -1201,18 +1126,18 @@ class HomeAiBriefEngine {
     required _SelectedDaySnapshot snapshot,
   }) {
     if (snapshot.doneTitles.isNotEmpty) {
-      return '${snapshot.doneTitles.first} pada $dayLabel selesai.';
+      return '${snapshot.doneTitles.first} selesai.';
     }
     if (snapshot.partialTitles.isNotEmpty) {
-      return '${snapshot.partialTitles.first} pada $dayLabel belum tuntas.';
+      return '${snapshot.partialTitles.first} belum tuntas.';
     }
     if (snapshot.missedTitles.isNotEmpty) {
-      return '${snapshot.missedTitles.first} pada $dayLabel tidak dikerjakan.';
+      return '${snapshot.missedTitles.first} tidak dikerjakan.';
     }
     if (snapshot.skippedTitles.isNotEmpty) {
-      return '${snapshot.skippedTitles.first} pada $dayLabel dilewati.';
+      return '${snapshot.skippedTitles.first} dilewati.';
     }
-    return 'Pada $dayLabel ada 1 aktivitas yang tidak punya progres.';
+    return 'Ada 1 aktivitas yang tidak punya progres.';
   }
 
   String _buildSinglePastConditionEn({
@@ -1239,18 +1164,18 @@ class HomeAiBriefEngine {
     required _SelectedDaySnapshot snapshot,
   }) {
     if (snapshot.doneCount == snapshot.scheduledCount) {
-      return '$dayLabel punya ${snapshot.scheduledCount} aktivitas, semuanya selesai.';
+      return '${snapshot.scheduledCount} aktivitas selesai semua.';
     }
     if (snapshot.doneCount == 0 && snapshot.missedCount == snapshot.scheduledCount) {
-      return '$dayLabel punya ${snapshot.scheduledCount} aktivitas, semuanya terlewat.';
+      return '${snapshot.scheduledCount} aktivitas terlewat semua.';
     }
     if (snapshot.doneCount > 0 && snapshot.remainingCount > 0) {
-      return '$dayLabel punya ${snapshot.scheduledCount} aktivitas, ${snapshot.doneCount} selesai.';
+      return '${snapshot.doneCount} dari ${snapshot.scheduledCount} aktivitas selesai.';
     }
     if (snapshot.partialCount > 0) {
-      return '$dayLabel punya ${snapshot.scheduledCount} aktivitas, ${snapshot.partialCount} belum tuntas.';
+      return '${snapshot.partialCount} dari ${snapshot.scheduledCount} aktivitas belum tuntas.';
     }
-    return '$dayLabel punya ${snapshot.scheduledCount} aktivitas.';
+    return 'Ada ${snapshot.scheduledCount} aktivitas tercatat.';
   }
 
   String _buildPastSummaryEn({
@@ -1290,7 +1215,7 @@ class HomeAiBriefEngine {
     }
     if (profile.bestWeekday == selectedWeekday &&
         snapshot.doneCount != snapshot.scheduledCount) {
-      return 'Biasanya $dayLabel lebih stabil buatmu.';
+      return 'Biasanya hari seperti ini lebih stabil buatmu.';
     }
     return _asSentence(personal);
   }
@@ -1464,34 +1389,34 @@ class HomeAiBriefEngine {
     return 'Today is moving along well';
   }
 
-  String _pastHeadlineId(String dayLabel, _SelectedDaySnapshot snapshot) {
+  String _pastHeadlineId(_SelectedDaySnapshot snapshot) {
     if (snapshot.doneCount == snapshot.scheduledCount) {
-      return '$dayLabel selesai dengan rapi';
+      return 'Selesai dengan rapi';
     }
     if (snapshot.doneCount == 0 &&
         snapshot.partialCount == 0 &&
         snapshot.missedCount == snapshot.scheduledCount) {
-      return '$dayLabel tidak berjalan';
+      return 'Tidak berjalan';
     }
     if (snapshot.partialCount > 0 || snapshot.missedCount > 0) {
-      return '$dayLabel belum tuntas';
+      return 'Belum tuntas';
     }
-    return 'Ringkasan $dayLabel';
+    return 'Ringkasan aktivitas';
   }
 
-  String _pastHeadlineEn(String dayLabel, _SelectedDaySnapshot snapshot) {
+  String _pastHeadlineEn(_SelectedDaySnapshot snapshot) {
     if (snapshot.doneCount == snapshot.scheduledCount) {
-      return '$dayLabel finished cleanly';
+      return 'Finished cleanly';
     }
     if (snapshot.doneCount == 0 &&
         snapshot.partialCount == 0 &&
         snapshot.missedCount == snapshot.scheduledCount) {
-      return '$dayLabel did not really happen';
+      return 'Did not really happen';
     }
     if (snapshot.partialCount > 0 || snapshot.missedCount > 0) {
-      return '$dayLabel was left unfinished';
+      return 'Left unfinished';
     }
-    return '$dayLabel recap';
+    return 'Activity recap';
   }
 
 }

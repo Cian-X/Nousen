@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
+import 'package:liburan_create/core/constants/ai_demo_config.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/features/activity/application/activity_actions.dart';
@@ -302,6 +303,10 @@ final activityDetailMlPredictionProvider =
       Ref ref,
       String activityId,
     ) async {
+      if (!AiDemoConfig.onDeviceMlEnabled) {
+        return null;
+      }
+
       final List<ActivityModel> activities =
           ref.watch(activitiesStreamProvider).value ?? const <ActivityModel>[];
       ActivityModel? activity;
@@ -342,6 +347,9 @@ final activityFormMlPredictionProvider =
       Ref ref,
       ActivityFormMlRequest request,
     ) async {
+      if (!AiDemoConfig.onDeviceMlEnabled) {
+        return null;
+      }
       return ref.watch(activityFormMlServiceProvider).predict(request: request);
     });
 
@@ -350,6 +358,9 @@ final statsMlInsightProvider =
       Ref ref,
       StatsMlRequest request,
     ) async {
+      if (!AiDemoConfig.onDeviceMlEnabled) {
+        return null;
+      }
       return ref.watch(statsMlServiceProvider).predict(request: request);
     });
 
@@ -358,6 +369,9 @@ final homeMlPredictionProvider =
       Ref ref,
       HomeMlRequest request,
     ) async {
+      if (!AiDemoConfig.onDeviceMlEnabled) {
+        return null;
+      }
       return ref.watch(homeMlServiceProvider).predict(request: request);
     });
 

@@ -81,6 +81,8 @@ flutter:
 
   assets:
     - assets/ai/activity_profiles.json
+    - assets/ai/catalog_activities.json
+    - assets/ai/progress_entries.json
     - assets/ml_model/
 
   # An image asset can refer to one or more resolution-specific "variants", see

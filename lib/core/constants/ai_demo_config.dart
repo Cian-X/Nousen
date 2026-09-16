@@ -7,4 +7,8 @@ class AiDemoConfig {
   );
 
   static bool get hasGeminiApiKey => geminiApiKey.trim().isNotEmpty;
+
+  /// Gates all on-device ONNX predictions while the models are being rebuilt.
+  /// Rules-based insights remain enabled.
+  static const bool onDeviceMlEnabled = false;
 }

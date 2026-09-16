@@ -1,0 +1,5807 @@
+[
+  {
+    "id": "ACT_0001",
+    "title": "Sarapan Pagi",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0002",
+    "title": "Makan Siang",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0003",
+    "title": "Makan Malam",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0004",
+    "title": "Mandi Pagi",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0005",
+    "title": "Mandi Sore",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0006",
+    "title": "Minum Air 2L",
+    "family": "hidrasi",
+    "category": "kesehatan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 5,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0007",
+    "title": "Tidur Malam",
+    "family": "tidur",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0008",
+    "title": "Bangun Tidur",
+    "family": "bangun",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0009",
+    "title": "Sarapan Pagi",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0010",
+    "title": "Makan Siang",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0011",
+    "title": "Makan Malam",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0012",
+    "title": "Mandi Pagi",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0013",
+    "title": "Mandi Sore",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0014",
+    "title": "Minum Air 2L",
+    "family": "hidrasi",
+    "category": "kesehatan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 5,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0015",
+    "title": "Tidur Malam",
+    "family": "tidur",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0016",
+    "title": "Bangun Tidur",
+    "family": "bangun",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0017",
+    "title": "Sarapan Pagi",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0018",
+    "title": "Makan Siang",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0019",
+    "title": "Makan Malam",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0020",
+    "title": "Mandi Pagi",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0021",
+    "title": "Mandi Sore",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0022",
+    "title": "Minum Air 2L",
+    "family": "hidrasi",
+    "category": "kesehatan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 5,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0023",
+    "title": "Tidur Malam",
+    "family": "tidur",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0024",
+    "title": "Bangun Tidur",
+    "family": "bangun",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0025",
+    "title": "Sarapan Pagi",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0026",
+    "title": "Makan Siang",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0027",
+    "title": "Makan Malam",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0028",
+    "title": "Mandi Pagi",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0029",
+    "title": "Mandi Sore",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0030",
+    "title": "Minum Air 2L",
+    "family": "hidrasi",
+    "category": "kesehatan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 5,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0031",
+    "title": "Tidur Malam",
+    "family": "tidur",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0032",
+    "title": "Bangun Tidur",
+    "family": "bangun",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0033",
+    "title": "Sarapan Pagi",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0034",
+    "title": "Makan Siang",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0035",
+    "title": "Makan Malam",
+    "family": "makan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0036",
+    "title": "Mandi Pagi",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0037",
+    "title": "Mandi Sore",
+    "family": "kebersihan",
+    "category": "rutinitas",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0038",
+    "title": "Minum Air 2L",
+    "family": "hidrasi",
+    "category": "kesehatan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 5,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0039",
+    "title": "Tidur Malam",
+    "family": "tidur",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0040",
+    "title": "Bangun Tidur",
+    "family": "bangun",
+    "category": "rutinitas",
+    "tags": [
+      "umum"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0041",
+    "title": "Sholat Subuh",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0042",
+    "title": "Sholat Dzuhur",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0043",
+    "title": "Sholat Ashar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0044",
+    "title": "Sholat Maghrib",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0045",
+    "title": "Sholat Isya",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0046",
+    "title": "Ngaji 1 Lembar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0047",
+    "title": "Dzikir Pagi",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0048",
+    "title": "Sholat Subuh",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0049",
+    "title": "Sholat Dzuhur",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0050",
+    "title": "Sholat Ashar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0051",
+    "title": "Sholat Maghrib",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0052",
+    "title": "Sholat Isya",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0053",
+    "title": "Ngaji 1 Lembar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0054",
+    "title": "Dzikir Pagi",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0055",
+    "title": "Sholat Subuh",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0056",
+    "title": "Sholat Dzuhur",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "siang"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0057",
+    "title": "Sholat Ashar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0058",
+    "title": "Sholat Maghrib",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0059",
+    "title": "Sholat Isya",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "malam"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0060",
+    "title": "Ngaji 1 Lembar",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0061",
+    "title": "Dzikir Pagi",
+    "family": "ibadah",
+    "category": "spiritual",
+    "tags": [
+      "umum",
+      "pagi"
+    ],
+    "duration": 10,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0062",
+    "title": "Kelas Pagi",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "akademik"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0063",
+    "title": "Kelas Siang",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "akademik"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0064",
+    "title": "Kerjakan Tugas Kuliah",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "akademik",
+      "tugas"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0065",
+    "title": "Kerjakan Skripsi (Bab 1-3)",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "skripsi"
+    ],
+    "duration": 180,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0066",
+    "title": "Bimbingan Dosen",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "skripsi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0067",
+    "title": "Riset Jurnal",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "skripsi",
+      "paper"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0068",
+    "title": "Meeting Mingguan",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0069",
+    "title": "Daily Standup",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0070",
+    "title": "Coding Fitur Baru",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 180,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0071",
+    "title": "Fixing Bug Production",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0072",
+    "title": "Review Pull Request",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0073",
+    "title": "Bikin Laporan Keuangan",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0074",
+    "title": "Follow Up Klien",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "sosial_drain"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0075",
+    "title": "Nge-Grab / Ngebid",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "di_jalan",
+      "fisik"
+    ],
+    "duration": 240,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0076",
+    "title": "Buka Toko / Susun Barang",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0077",
+    "title": "Live Streaming Game",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "game",
+      "malam"
+    ],
+    "duration": 180,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0078",
+    "title": "Edit Video YouTube",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 150,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0079",
+    "title": "Desain UI Mobile App",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0080",
+    "title": "Nulis Artikel Blog",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif",
+      "reading"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0081",
+    "title": "Task Profesi 39",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0082",
+    "title": "Task Profesi 44",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0083",
+    "title": "Task Profesi 26",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0084",
+    "title": "Task Profesi 10",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0085",
+    "title": "Task Profesi 70",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0086",
+    "title": "Task Profesi 33",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0087",
+    "title": "Task Profesi 9",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0088",
+    "title": "Task Profesi 62",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0089",
+    "title": "Task Profesi 97",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0090",
+    "title": "Task Profesi 25",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0091",
+    "title": "Task Profesi 65",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0092",
+    "title": "Task Profesi 41",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0093",
+    "title": "Task Profesi 24",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0094",
+    "title": "Task Profesi 77",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0095",
+    "title": "Task Profesi 92",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0096",
+    "title": "Task Profesi 16",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0097",
+    "title": "Task Profesi 52",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0098",
+    "title": "Task Profesi 27",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0099",
+    "title": "Task Profesi 64",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0100",
+    "title": "Task Profesi 74",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0101",
+    "title": "Task Profesi 89",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0102",
+    "title": "Task Profesi 20",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0103",
+    "title": "Task Profesi 9",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0104",
+    "title": "Task Profesi 55",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0105",
+    "title": "Task Profesi 20",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0106",
+    "title": "Task Profesi 95",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0107",
+    "title": "Task Profesi 92",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0108",
+    "title": "Task Profesi 96",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0109",
+    "title": "Task Profesi 95",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0110",
+    "title": "Task Profesi 59",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0111",
+    "title": "Task Profesi 92",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0112",
+    "title": "Task Profesi 27",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0113",
+    "title": "Task Profesi 54",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0114",
+    "title": "Task Profesi 72",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0115",
+    "title": "Task Profesi 88",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0116",
+    "title": "Task Profesi 22",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0117",
+    "title": "Task Profesi 49",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0118",
+    "title": "Task Profesi 54",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0119",
+    "title": "Task Profesi 94",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0120",
+    "title": "Task Profesi 11",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0121",
+    "title": "Task Profesi 15",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0122",
+    "title": "Task Profesi 16",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0123",
+    "title": "Task Profesi 82",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0124",
+    "title": "Task Profesi 88",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0125",
+    "title": "Task Profesi 11",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0126",
+    "title": "Task Profesi 5",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0127",
+    "title": "Task Profesi 82",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0128",
+    "title": "Task Profesi 81",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0129",
+    "title": "Task Profesi 75",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0130",
+    "title": "Task Profesi 24",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0131",
+    "title": "Task Profesi 24",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0132",
+    "title": "Task Profesi 24",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0133",
+    "title": "Task Profesi 99",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0134",
+    "title": "Task Profesi 56",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0135",
+    "title": "Task Profesi 86",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0136",
+    "title": "Task Profesi 19",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0137",
+    "title": "Task Profesi 79",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0138",
+    "title": "Task Profesi 50",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0139",
+    "title": "Task Profesi 21",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0140",
+    "title": "Task Profesi 47",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0141",
+    "title": "Task Profesi 1",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0142",
+    "title": "Task Profesi 66",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0143",
+    "title": "Task Profesi 39",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0144",
+    "title": "Task Profesi 54",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0145",
+    "title": "Task Profesi 6",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0146",
+    "title": "Task Profesi 29",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0147",
+    "title": "Task Profesi 21",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0148",
+    "title": "Task Profesi 86",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0149",
+    "title": "Task Profesi 38",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0150",
+    "title": "Task Profesi 83",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0151",
+    "title": "Task Profesi 68",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0152",
+    "title": "Task Profesi 87",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0153",
+    "title": "Task Profesi 55",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0154",
+    "title": "Task Profesi 21",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0155",
+    "title": "Task Profesi 78",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0156",
+    "title": "Task Profesi 91",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0157",
+    "title": "Task Profesi 26",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0158",
+    "title": "Task Profesi 54",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0159",
+    "title": "Task Profesi 18",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "admin"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0160",
+    "title": "Task Profesi 97",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0161",
+    "title": "Task Profesi 58",
+    "family": "kerja",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0162",
+    "title": "Jogging Keliling Komplek",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "pagi"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0163",
+    "title": "Nge-Gym Pull Day",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "sore"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0164",
+    "title": "Home Workout (Pushup/Situp)",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0165",
+    "title": "Main Futsal",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "malam",
+      "sosial"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0166",
+    "title": "Berenang",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "pagi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0167",
+    "title": "Main Game (Valo/ML)",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0168",
+    "title": "Nonton Netflix / Film",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "santai",
+      "malam"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0169",
+    "title": "Nonton Anime Seasonal",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0170",
+    "title": "Membaca Novel / Buku Self-Help",
+    "family": "hobi",
+    "category": "pengembangan_diri",
+    "tags": [
+      "reading"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0171",
+    "title": "Belajar Skill Baru (Udemy)",
+    "family": "hobi",
+    "category": "pengembangan_diri",
+    "tags": [
+      "belajar_mandiri"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0172",
+    "title": "Nongkrong di Warkop",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial",
+      "malam"
+    ],
+    "duration": 180,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0173",
+    "title": "Deep Talk / Curhat",
+    "family": "sosial",
+    "category": "kesehatan_mental",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0174",
+    "title": "Skincare Routine Malam",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "malam"
+    ],
+    "duration": 20,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0175",
+    "title": "Aktivitas selfcare 82",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0176",
+    "title": "Aktivitas hobi 40",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0177",
+    "title": "Aktivitas selfcare 59",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0178",
+    "title": "Aktivitas olahraga 56",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0179",
+    "title": "Aktivitas sosial 69",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0180",
+    "title": "Aktivitas sosial 93",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0181",
+    "title": "Aktivitas olahraga 50",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0182",
+    "title": "Aktivitas hobi 90",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0183",
+    "title": "Aktivitas selfcare 43",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0184",
+    "title": "Aktivitas olahraga 34",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0185",
+    "title": "Aktivitas hobi 45",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0186",
+    "title": "Aktivitas selfcare 32",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0187",
+    "title": "Aktivitas sosial 26",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0188",
+    "title": "Aktivitas hobi 10",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0189",
+    "title": "Aktivitas olahraga 24",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0190",
+    "title": "Aktivitas hobi 54",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0191",
+    "title": "Aktivitas sosial 35",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0192",
+    "title": "Aktivitas sosial 1",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0193",
+    "title": "Aktivitas sosial 45",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0194",
+    "title": "Aktivitas sosial 29",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0195",
+    "title": "Aktivitas olahraga 75",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0196",
+    "title": "Aktivitas sosial 23",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0197",
+    "title": "Aktivitas selfcare 42",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0198",
+    "title": "Aktivitas olahraga 48",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0199",
+    "title": "Aktivitas hobi 66",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0200",
+    "title": "Aktivitas sosial 47",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0201",
+    "title": "Aktivitas sosial 29",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0202",
+    "title": "Aktivitas olahraga 33",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0203",
+    "title": "Aktivitas sosial 88",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0204",
+    "title": "Aktivitas olahraga 91",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0205",
+    "title": "Aktivitas olahraga 71",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0206",
+    "title": "Aktivitas sosial 39",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0207",
+    "title": "Aktivitas sosial 97",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0208",
+    "title": "Aktivitas selfcare 43",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0209",
+    "title": "Aktivitas olahraga 34",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0210",
+    "title": "Aktivitas olahraga 25",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0211",
+    "title": "Aktivitas olahraga 73",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0212",
+    "title": "Aktivitas olahraga 58",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0213",
+    "title": "Aktivitas selfcare 11",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0214",
+    "title": "Aktivitas selfcare 82",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0215",
+    "title": "Aktivitas selfcare 2",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0216",
+    "title": "Aktivitas hobi 52",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0217",
+    "title": "Aktivitas olahraga 98",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0218",
+    "title": "Aktivitas olahraga 3",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0219",
+    "title": "Aktivitas selfcare 60",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0220",
+    "title": "Aktivitas hobi 83",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0221",
+    "title": "Aktivitas olahraga 94",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0222",
+    "title": "Aktivitas olahraga 13",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0223",
+    "title": "Aktivitas olahraga 82",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0224",
+    "title": "Aktivitas olahraga 12",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0225",
+    "title": "Aktivitas hobi 15",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0226",
+    "title": "Aktivitas selfcare 79",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0227",
+    "title": "Aktivitas hobi 66",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0228",
+    "title": "Aktivitas olahraga 79",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0229",
+    "title": "Aktivitas sosial 71",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0230",
+    "title": "Aktivitas hobi 6",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0231",
+    "title": "Aktivitas sosial 80",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0232",
+    "title": "Aktivitas olahraga 98",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0233",
+    "title": "Aktivitas olahraga 83",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0234",
+    "title": "Aktivitas sosial 85",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0235",
+    "title": "Aktivitas hobi 48",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0236",
+    "title": "Aktivitas sosial 62",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0237",
+    "title": "Aktivitas selfcare 25",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0238",
+    "title": "Aktivitas selfcare 18",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0239",
+    "title": "Aktivitas sosial 46",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0240",
+    "title": "Aktivitas hobi 23",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0241",
+    "title": "Aktivitas sosial 11",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0242",
+    "title": "Aktivitas hobi 94",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0243",
+    "title": "Aktivitas olahraga 6",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0244",
+    "title": "Aktivitas sosial 32",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0245",
+    "title": "Aktivitas sosial 54",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0246",
+    "title": "Aktivitas sosial 98",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0247",
+    "title": "Aktivitas olahraga 18",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0248",
+    "title": "Aktivitas sosial 86",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0249",
+    "title": "Aktivitas hobi 93",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0250",
+    "title": "Aktivitas olahraga 95",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0251",
+    "title": "Aktivitas sosial 14",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0252",
+    "title": "Aktivitas olahraga 33",
+    "family": "olahraga",
+    "category": "kesehatan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0253",
+    "title": "Aktivitas selfcare 70",
+    "family": "selfcare",
+    "category": "kesehatan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0254",
+    "title": "Aktivitas hobi 73",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0255",
+    "title": "Aktivitas hobi 68",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0256",
+    "title": "Aktivitas hobi 75",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0257",
+    "title": "Aktivitas hobi 52",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0258",
+    "title": "Aktivitas hobi 40",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "game"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0259",
+    "title": "Aktivitas sosial 27",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0260",
+    "title": "Aktivitas sosial 29",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0261",
+    "title": "Aktivitas sosial 93",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "sosial"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0262",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0263",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0264",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0265",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0266",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0267",
+    "title": "Begadang Nonton Series",
+    "family": "anomali_hiburan",
+    "category": "anomali",
+    "tags": [
+      "begadang",
+      "santai"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0268",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0269",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0270",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0271",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0272",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0273",
+    "title": "Doom Scrolling TikTok di Kasur",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "malas"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0274",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0275",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0276",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0277",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0278",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0279",
+    "title": "Bangun Kesiangan Parah",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "malas"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0280",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0281",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0282",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0283",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0284",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0285",
+    "title": "Ketiduran di Kelas/Meeting",
+    "family": "anomali_tidur",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "kurang_tidur"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0286",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0287",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0288",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0289",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0290",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0291",
+    "title": "Lupa Deadline, SKS Semalaman",
+    "family": "anomali_akademik",
+    "category": "anomali",
+    "tags": [
+      "tugas",
+      "stress",
+      "begadang"
+    ],
+    "duration": 300,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0292",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0293",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0294",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0295",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0296",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0297",
+    "title": "Laptop Blue Screen",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0298",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0299",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0300",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0301",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0302",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0303",
+    "title": "Mati Lampu / WiFi Putus",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "tech_issue"
+    ],
+    "duration": 180,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0304",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0305",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0306",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0307",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0308",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0309",
+    "title": "Terjebak Macet Berjam-jam",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "macet",
+      "di_jalan",
+      "capek"
+    ],
+    "duration": 150,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0310",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0311",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0312",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0313",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0314",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0315",
+    "title": "Motor Bocor di Jalan",
+    "family": "anomali_fisik",
+    "category": "anomali",
+    "tags": [
+      "di_jalan",
+      "stress"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0316",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0317",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0318",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0319",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0320",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0321",
+    "title": "Makan Indomie Jam 3 Pagi",
+    "family": "anomali_makan",
+    "category": "anomali",
+    "tags": [
+      "begadang"
+    ],
+    "duration": 20,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0322",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0323",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0324",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0325",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0326",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0327",
+    "title": "Lupa Makan Siang (Maag Kumat)",
+    "family": "anomali_kesehatan",
+    "category": "anomali",
+    "tags": [
+      "capek",
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0328",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0329",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0330",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0331",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0332",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0333",
+    "title": "Overthinking Sebelum Tidur",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0334",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0335",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0336",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0337",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0338",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0339",
+    "title": "Rebahan Seharian (Burnout)",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "burnout",
+      "malas"
+    ],
+    "duration": 480,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0340",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0341",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0342",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0343",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0344",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0345",
+    "title": "Berantem di Kolom Komentar",
+    "family": "anomali_sosmed",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "emosi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0346",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0347",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0348",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0349",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0350",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0351",
+    "title": "Nangis Tanpa Alasan Jelas",
+    "family": "anomali_mental",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "burnout"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0352",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0353",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0354",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0355",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0356",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0357",
+    "title": "Gaji Telat / Dompet Ketinggalan",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0358",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0359",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0360",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0361",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0362",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0363",
+    "title": "Belanja Online Impulsif (Paylater)",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "sosmed",
+      "santai"
+    ],
+    "duration": 45,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0364",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0365",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0366",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0367",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0368",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0369",
+    "title": "Main Slot / Gacha Ampas",
+    "family": "anomali_keuangan",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "stress"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0370",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0371",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0372",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0373",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0374",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0375",
+    "title": "Pelanggan Ngamuk (Karen)",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "emosi",
+      "stress"
+    ],
+    "duration": 30,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0376",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0377",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0378",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0379",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0380",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0381",
+    "title": "Disuruh Revisi Major H-1",
+    "family": "anomali_kerja",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "lembur",
+      "kreatif"
+    ],
+    "duration": 240,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0382",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0383",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0384",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0385",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0386",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0387",
+    "title": "Anak Rewel Tengah Malam",
+    "family": "anomali_keluarga",
+    "category": "anomali",
+    "tags": [
+      "kurang_tidur",
+      "capek"
+    ],
+    "duration": 120,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0388",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0389",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0390",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0391",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0392",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0393",
+    "title": "Lupa Matikan Air / Kompor",
+    "family": "anomali_rumah",
+    "category": "anomali",
+    "tags": [
+      "stress"
+    ],
+    "duration": 15,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0394",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0395",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0396",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0397",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0398",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0399",
+    "title": "Nge-Game Lupa Waktu Sholat",
+    "family": "anomali_ibadah",
+    "category": "anomali",
+    "tags": [
+      "game",
+      "sosmed"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0400",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0401",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0402",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0403",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0404",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0405",
+    "title": "Kopi Tumpah ke Keyboard",
+    "family": "anomali_tech",
+    "category": "anomali",
+    "tags": [
+      "stress",
+      "kopi"
+    ],
+    "duration": 60,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0406",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0407",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0408",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0409",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0410",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0411",
+    "title": "Skip Mandi Seharian",
+    "family": "anomali_kebersihan",
+    "category": "anomali",
+    "tags": [
+      "malas",
+      "burnout"
+    ],
+    "duration": 0,
+    "is_anomali": true
+  },
+  {
+    "id": "ACT_0412",
+    "title": "Aktivitas Tambahan Normal 1",
+    "family": "kesehatan",
+    "category": "hiburan",
+    "tags": [
+      "malam",
+      "reading"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0413",
+    "title": "Aktivitas Tambahan Normal 2",
+    "family": "belajar",
+    "category": "hiburan",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0414",
+    "title": "Aktivitas Tambahan Normal 3",
+    "family": "belajar",
+    "category": "hiburan",
+    "tags": [
+      "pagi",
+      "siang"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0415",
+    "title": "Aktivitas Tambahan Normal 4",
+    "family": "kebersihan",
+    "category": "profesional",
+    "tags": [
+      "pagi",
+      "sore"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0416",
+    "title": "Aktivitas Tambahan Normal 5",
+    "family": "sosial",
+    "category": "pengembangan_diri",
+    "tags": [
+      "siang"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0417",
+    "title": "Aktivitas Tambahan Normal 6",
+    "family": "sosial",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0418",
+    "title": "Aktivitas Tambahan Normal 7",
+    "family": "hobi",
+    "category": "hubungan",
+    "tags": [
+      "coding"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0419",
+    "title": "Aktivitas Tambahan Normal 8",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "pagi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0420",
+    "title": "Aktivitas Tambahan Normal 9",
+    "family": "belajar",
+    "category": "hiburan",
+    "tags": [
+      "pagi",
+      "coding",
+      "sore"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0421",
+    "title": "Aktivitas Tambahan Normal 10",
+    "family": "karir",
+    "category": "profesional",
+    "tags": [
+      "meeting",
+      "coding",
+      "umum"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0422",
+    "title": "Aktivitas Tambahan Normal 11",
+    "family": "kebersihan",
+    "category": "profesional",
+    "tags": [
+      "umum",
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0423",
+    "title": "Aktivitas Tambahan Normal 12",
+    "family": "belajar",
+    "category": "finansial",
+    "tags": [
+      "sore",
+      "siang",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0424",
+    "title": "Aktivitas Tambahan Normal 13",
+    "family": "belajar",
+    "category": "pengembangan_diri",
+    "tags": [
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0425",
+    "title": "Aktivitas Tambahan Normal 14",
+    "family": "kesehatan",
+    "category": "finansial",
+    "tags": [
+      "reading",
+      "meeting",
+      "pagi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0426",
+    "title": "Aktivitas Tambahan Normal 15",
+    "family": "kesehatan",
+    "category": "profesional",
+    "tags": [
+      "umum",
+      "reading"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0427",
+    "title": "Aktivitas Tambahan Normal 16",
+    "family": "kesehatan",
+    "category": "pengembangan_diri",
+    "tags": [
+      "kreatif",
+      "umum",
+      "pagi"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0428",
+    "title": "Aktivitas Tambahan Normal 17",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "coding",
+      "malam",
+      "fisik"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0429",
+    "title": "Aktivitas Tambahan Normal 18",
+    "family": "akademik",
+    "category": "rumah_tangga",
+    "tags": [
+      "reading",
+      "umum",
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0430",
+    "title": "Aktivitas Tambahan Normal 19",
+    "family": "kebersihan",
+    "category": "finansial",
+    "tags": [
+      "malam"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0431",
+    "title": "Aktivitas Tambahan Normal 20",
+    "family": "karir",
+    "category": "pengembangan_diri",
+    "tags": [
+      "coding",
+      "siang",
+      "umum"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0432",
+    "title": "Aktivitas Tambahan Normal 21",
+    "family": "kesehatan",
+    "category": "hubungan",
+    "tags": [
+      "siang"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0433",
+    "title": "Aktivitas Tambahan Normal 22",
+    "family": "sosial",
+    "category": "profesional",
+    "tags": [
+      "kreatif",
+      "sore",
+      "reading"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0434",
+    "title": "Aktivitas Tambahan Normal 23",
+    "family": "sosial",
+    "category": "hiburan",
+    "tags": [
+      "kreatif",
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0435",
+    "title": "Aktivitas Tambahan Normal 24",
+    "family": "kesehatan",
+    "category": "kesehatan",
+    "tags": [
+      "reading",
+      "umum"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0436",
+    "title": "Aktivitas Tambahan Normal 25",
+    "family": "hobi",
+    "category": "finansial",
+    "tags": [
+      "umum",
+      "meeting",
+      "pagi"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0437",
+    "title": "Aktivitas Tambahan Normal 26",
+    "family": "akademik",
+    "category": "profesional",
+    "tags": [
+      "coding"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0438",
+    "title": "Aktivitas Tambahan Normal 27",
+    "family": "sosial",
+    "category": "hubungan",
+    "tags": [
+      "meeting",
+      "kreatif",
+      "coding"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0439",
+    "title": "Aktivitas Tambahan Normal 28",
+    "family": "belajar",
+    "category": "hiburan",
+    "tags": [
+      "umum"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0440",
+    "title": "Aktivitas Tambahan Normal 29",
+    "family": "sosial",
+    "category": "pengembangan_diri",
+    "tags": [
+      "umum"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0441",
+    "title": "Aktivitas Tambahan Normal 30",
+    "family": "akademik",
+    "category": "pengembangan_diri",
+    "tags": [
+      "coding",
+      "meeting",
+      "pagi"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0442",
+    "title": "Aktivitas Tambahan Normal 31",
+    "family": "sosial",
+    "category": "hubungan",
+    "tags": [
+      "umum",
+      "meeting"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0443",
+    "title": "Aktivitas Tambahan Normal 32",
+    "family": "belajar",
+    "category": "hubungan",
+    "tags": [
+      "sore"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0444",
+    "title": "Aktivitas Tambahan Normal 33",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0445",
+    "title": "Aktivitas Tambahan Normal 34",
+    "family": "karir",
+    "category": "hubungan",
+    "tags": [
+      "kreatif",
+      "coding"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0446",
+    "title": "Aktivitas Tambahan Normal 35",
+    "family": "sosial",
+    "category": "kesehatan",
+    "tags": [
+      "coding",
+      "reading",
+      "fisik"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0447",
+    "title": "Aktivitas Tambahan Normal 36",
+    "family": "akademik",
+    "category": "kesehatan",
+    "tags": [
+      "kreatif",
+      "siang",
+      "meeting"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0448",
+    "title": "Aktivitas Tambahan Normal 37",
+    "family": "karir",
+    "category": "pendidikan",
+    "tags": [
+      "fisik",
+      "umum",
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0449",
+    "title": "Aktivitas Tambahan Normal 38",
+    "family": "karir",
+    "category": "hiburan",
+    "tags": [
+      "meeting",
+      "coding",
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0450",
+    "title": "Aktivitas Tambahan Normal 39",
+    "family": "kesehatan",
+    "category": "profesional",
+    "tags": [
+      "siang"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0451",
+    "title": "Aktivitas Tambahan Normal 40",
+    "family": "hobi",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "meeting",
+      "pagi"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0452",
+    "title": "Aktivitas Tambahan Normal 41",
+    "family": "hobi",
+    "category": "finansial",
+    "tags": [
+      "coding",
+      "malam",
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0453",
+    "title": "Aktivitas Tambahan Normal 42",
+    "family": "belajar",
+    "category": "pendidikan",
+    "tags": [
+      "sore",
+      "coding"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0454",
+    "title": "Aktivitas Tambahan Normal 43",
+    "family": "keuangan",
+    "category": "kesehatan",
+    "tags": [
+      "coding",
+      "pagi"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0455",
+    "title": "Aktivitas Tambahan Normal 44",
+    "family": "karir",
+    "category": "kesehatan",
+    "tags": [
+      "fisik",
+      "umum"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0456",
+    "title": "Aktivitas Tambahan Normal 45",
+    "family": "keuangan",
+    "category": "hubungan",
+    "tags": [
+      "fisik",
+      "malam"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0457",
+    "title": "Aktivitas Tambahan Normal 46",
+    "family": "kebersihan",
+    "category": "finansial",
+    "tags": [
+      "umum",
+      "pagi",
+      "fisik"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0458",
+    "title": "Aktivitas Tambahan Normal 47",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "umum",
+      "fisik",
+      "sore"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0459",
+    "title": "Aktivitas Tambahan Normal 48",
+    "family": "belajar",
+    "category": "rumah_tangga",
+    "tags": [
+      "fisik",
+      "siang",
+      "kreatif"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0460",
+    "title": "Aktivitas Tambahan Normal 49",
+    "family": "karir",
+    "category": "hubungan",
+    "tags": [
+      "kreatif",
+      "fisik"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0461",
+    "title": "Aktivitas Tambahan Normal 50",
+    "family": "hobi",
+    "category": "finansial",
+    "tags": [
+      "malam",
+      "siang",
+      "umum"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0462",
+    "title": "Aktivitas Tambahan Normal 51",
+    "family": "kesehatan",
+    "category": "pengembangan_diri",
+    "tags": [
+      "sore"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0463",
+    "title": "Aktivitas Tambahan Normal 52",
+    "family": "keuangan",
+    "category": "pendidikan",
+    "tags": [
+      "kreatif",
+      "meeting"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0464",
+    "title": "Aktivitas Tambahan Normal 53",
+    "family": "kesehatan",
+    "category": "hiburan",
+    "tags": [
+      "pagi",
+      "umum"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0465",
+    "title": "Aktivitas Tambahan Normal 54",
+    "family": "sosial",
+    "category": "finansial",
+    "tags": [
+      "kreatif",
+      "reading",
+      "fisik"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0466",
+    "title": "Aktivitas Tambahan Normal 55",
+    "family": "karir",
+    "category": "profesional",
+    "tags": [
+      "reading",
+      "kreatif",
+      "fisik"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0467",
+    "title": "Aktivitas Tambahan Normal 56",
+    "family": "belajar",
+    "category": "hubungan",
+    "tags": [
+      "coding"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0468",
+    "title": "Aktivitas Tambahan Normal 57",
+    "family": "keuangan",
+    "category": "hubungan",
+    "tags": [
+      "malam"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0469",
+    "title": "Aktivitas Tambahan Normal 58",
+    "family": "hobi",
+    "category": "rumah_tangga",
+    "tags": [
+      "kreatif"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0470",
+    "title": "Aktivitas Tambahan Normal 59",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "fisik",
+      "kreatif"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0471",
+    "title": "Aktivitas Tambahan Normal 60",
+    "family": "belajar",
+    "category": "pengembangan_diri",
+    "tags": [
+      "siang",
+      "umum"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0472",
+    "title": "Aktivitas Tambahan Normal 61",
+    "family": "hobi",
+    "category": "pendidikan",
+    "tags": [
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0473",
+    "title": "Aktivitas Tambahan Normal 62",
+    "family": "belajar",
+    "category": "kesehatan",
+    "tags": [
+      "malam",
+      "reading",
+      "coding"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0474",
+    "title": "Aktivitas Tambahan Normal 63",
+    "family": "akademik",
+    "category": "profesional",
+    "tags": [
+      "reading"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0475",
+    "title": "Aktivitas Tambahan Normal 64",
+    "family": "hobi",
+    "category": "hiburan",
+    "tags": [
+      "kreatif",
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0476",
+    "title": "Aktivitas Tambahan Normal 65",
+    "family": "keuangan",
+    "category": "pengembangan_diri",
+    "tags": [
+      "meeting"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0477",
+    "title": "Aktivitas Tambahan Normal 66",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "malam",
+      "meeting"
+    ],
+    "duration": 120,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0478",
+    "title": "Aktivitas Tambahan Normal 67",
+    "family": "akademik",
+    "category": "finansial",
+    "tags": [
+      "coding"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0479",
+    "title": "Aktivitas Tambahan Normal 68",
+    "family": "akademik",
+    "category": "hiburan",
+    "tags": [
+      "meeting",
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0480",
+    "title": "Aktivitas Tambahan Normal 69",
+    "family": "kebersihan",
+    "category": "rumah_tangga",
+    "tags": [
+      "pagi",
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0481",
+    "title": "Aktivitas Tambahan Normal 70",
+    "family": "kebersihan",
+    "category": "hubungan",
+    "tags": [
+      "coding",
+      "siang"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0482",
+    "title": "Aktivitas Tambahan Normal 71",
+    "family": "hobi",
+    "category": "pengembangan_diri",
+    "tags": [
+      "siang"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0483",
+    "title": "Aktivitas Tambahan Normal 72",
+    "family": "keuangan",
+    "category": "profesional",
+    "tags": [
+      "umum",
+      "fisik",
+      "meeting"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0484",
+    "title": "Aktivitas Tambahan Normal 73",
+    "family": "sosial",
+    "category": "finansial",
+    "tags": [
+      "pagi",
+      "malam",
+      "coding"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0485",
+    "title": "Aktivitas Tambahan Normal 74",
+    "family": "kebersihan",
+    "category": "kesehatan",
+    "tags": [
+      "umum",
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0486",
+    "title": "Aktivitas Tambahan Normal 75",
+    "family": "akademik",
+    "category": "pendidikan",
+    "tags": [
+      "sore",
+      "fisik"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0487",
+    "title": "Aktivitas Tambahan Normal 76",
+    "family": "kesehatan",
+    "category": "kesehatan",
+    "tags": [
+      "siang",
+      "kreatif"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0488",
+    "title": "Aktivitas Tambahan Normal 77",
+    "family": "hobi",
+    "category": "finansial",
+    "tags": [
+      "siang",
+      "kreatif",
+      "meeting"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0489",
+    "title": "Aktivitas Tambahan Normal 78",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "umum",
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0490",
+    "title": "Aktivitas Tambahan Normal 79",
+    "family": "akademik",
+    "category": "hiburan",
+    "tags": [
+      "siang",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0491",
+    "title": "Aktivitas Tambahan Normal 80",
+    "family": "kebersihan",
+    "category": "rumah_tangga",
+    "tags": [
+      "sore",
+      "malam"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0492",
+    "title": "Aktivitas Tambahan Normal 81",
+    "family": "kebersihan",
+    "category": "hiburan",
+    "tags": [
+      "siang",
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0493",
+    "title": "Aktivitas Tambahan Normal 82",
+    "family": "belajar",
+    "category": "finansial",
+    "tags": [
+      "malam",
+      "fisik",
+      "coding"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0494",
+    "title": "Aktivitas Tambahan Normal 83",
+    "family": "keuangan",
+    "category": "hubungan",
+    "tags": [
+      "fisik"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0495",
+    "title": "Aktivitas Tambahan Normal 84",
+    "family": "kebersihan",
+    "category": "pengembangan_diri",
+    "tags": [
+      "malam"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0496",
+    "title": "Aktivitas Tambahan Normal 85",
+    "family": "kebersihan",
+    "category": "kesehatan",
+    "tags": [
+      "pagi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0497",
+    "title": "Aktivitas Tambahan Normal 86",
+    "family": "keuangan",
+    "category": "hiburan",
+    "tags": [
+      "malam",
+      "kreatif"
+    ],
+    "duration": 90,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0498",
+    "title": "Aktivitas Tambahan Normal 87",
+    "family": "karir",
+    "category": "pengembangan_diri",
+    "tags": [
+      "pagi",
+      "fisik"
+    ],
+    "duration": 30,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0499",
+    "title": "Aktivitas Tambahan Normal 88",
+    "family": "belajar",
+    "category": "profesional",
+    "tags": [
+      "sore"
+    ],
+    "duration": 15,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0500",
+    "title": "Aktivitas Tambahan Normal 89",
+    "family": "akademik",
+    "category": "pengembangan_diri",
+    "tags": [
+      "coding",
+      "pagi"
+    ],
+    "duration": 60,
+    "is_anomali": false
+  },
+  {
+    "id": "ACT_0501",
+    "title": "Aktivitas Tambahan Normal 90",
+    "family": "keuangan",
+    "category": "hiburan",
+    "tags": [
+      "umum",
+      "malam",
+      "kreatif"
+    ],
+    "duration": 45,
+    "is_anomali": false
+  }
+]
