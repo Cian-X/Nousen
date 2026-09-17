@@ -17,9 +17,15 @@ class PopUpAssistService {
   }
 
   Future<void> show({
+    String activityId = '',
     String title = 'NOUSEN Assist',
-    String time = 'Siap mendampingi aktivitasmu',
+    String time = 'Siap mendampingi',
+    String? speechText,
     int streak = 0,
+    List<String> subActivities = const <String>[],
+    List<String> completedSubActivities = const <String>[],
+    bool isCompleted = false,
+    bool isSkipped = false,
   }) async {
     final bool granted = await isPermissionGranted();
     if (!granted) {
@@ -30,31 +36,57 @@ class PopUpAssistService {
     }
 
     await FlutterOverlayWindow.showOverlay(
-      height: 80,
-      width: 80,
+      height: 76,
+      width: 76,
       alignment: OverlayAlignment.centerRight,
       enableDrag: true,
       positionGravity: PositionGravity.auto,
-      overlayTitle: 'NOUSEN Assist Aktif',
+      overlayTitle: 'NOUSEN Assist',
       overlayContent: 'Ketuk untuk membuka asisten aktivitas',
       flag: OverlayFlag.defaultFlag,
       visibility: NotificationVisibility.visibilitySecret,
     );
 
-    await syncData(title: title, time: time, streak: streak);
+    await syncActivity(
+      activityId: activityId,
+      title: title,
+      timeLabel: time,
+      speechText: speechText,
+      streak: streak,
+      subActivities: subActivities,
+      completedSubActivities: completedSubActivities,
+      isCompleted: isCompleted,
+      isSkipped: isSkipped,
+    );
   }
 
-  Future<void> syncData({
+  Future<void> syncActivity({
+    required String activityId,
     required String title,
-    required String time,
+    required String timeLabel,
+    String? speechText,
     int streak = 0,
+    List<String> subActivities = const <String>[],
+    List<String> completedSubActivities = const <String>[],
+    bool isCompleted = false,
+    bool isSkipped = false,
   }) async {
     try {
       await FlutterOverlayWindow.shareData(
         jsonEncode(<String, dynamic>{
+          'type': 'sync_activity',
+          'activityId': activityId,
           'title': title,
-          'time': time,
+          'time': timeLabel,
           'streak': streak,
+          'speechText': speechText ??
+              (title.isNotEmpty && title != 'NOUSEN Assist'
+                  ? 'Waktunya $title! Mau dikerjakan sekarang?'
+                  : 'Siap mendampingi aktivitasmu hari ini!'),
+          'subActivities': subActivities,
+          'completedSubActivities': completedSubActivities,
+          'isCompleted': isCompleted,
+          'isSkipped': isSkipped,
         }),
       );
     } catch (_) {}

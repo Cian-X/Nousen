@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ import 'package:liburan_create/features/progress/domain/progress_entry_model.dar
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/presentation/settings_page.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 class HomeShellPage extends ConsumerStatefulWidget {
   const HomeShellPage({super.key});
@@ -32,17 +34,109 @@ class HomeShellPage extends ConsumerStatefulWidget {
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
   Timer? _countdownTimer;
+  StreamSubscription<dynamic>? _overlayActionSubscription;
+  _ActivityTileData? _lastFocusItem;
+  int _lastStreak = 0;
 
   @override
   void initState() {
     super.initState();
     _startMinuteTicker();
+    _setupOverlayActionListener();
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _overlayActionSubscription?.cancel();
     super.dispose();
+  }
+
+  void _setupOverlayActionListener() {
+    _overlayActionSubscription =
+        FlutterOverlayWindow.overlayListener.listen((dynamic event) async {
+      if (event == null || !mounted) return;
+      try {
+        final Map<String, dynamic> data = event is String
+            ? jsonDecode(event) as Map<String, dynamic>
+            : Map<String, dynamic>.from(event as Map);
+        final String? type = data['type']?.toString();
+        final String? activityId = data['activityId']?.toString();
+
+        if (type == 'request_sync') {
+          _syncCurrentFocusToOverlay();
+          return;
+        }
+
+        if (activityId == null || activityId.isEmpty) return;
+
+        final List<ActivityModel> activities =
+            ref.read(activitiesStreamProvider).value ?? const <ActivityModel>[];
+        ActivityModel? activity;
+        for (final ActivityModel a in activities) {
+          if (a.id == activityId) {
+            activity = a;
+            break;
+          }
+        }
+        if (activity == null) return;
+
+        if (type == 'action_complete') {
+          await ref.read(activityActionsProvider).toggleTodayCompletion(
+                activity: activity,
+                completed: true,
+              );
+        } else if (type == 'action_skip') {
+          await ref.read(activityActionsProvider).skipToday(
+                activity: activity,
+                note: 'Lewati dari Pop Up Assist',
+              );
+        } else if (type == 'action_postpone') {
+          final int minutes =
+              int.tryParse(data['minutes']?.toString() ?? '') ?? 10;
+          await ref
+              .read(notificationSchedulerProvider)
+              .postponeActivityReminder(activity: activity, minutes: minutes);
+        } else if (type == 'toggle_sub_activity') {
+          final String? sub = data['subActivity']?.toString();
+          final bool completed = data['completed'] == true;
+          if (sub != null && sub.isNotEmpty) {
+            await ref.read(activityActionsProvider).toggleTodaySubActivity(
+                  activity: activity,
+                  subActivity: sub,
+                  completed: completed,
+                );
+          }
+        } else if (type == 'open_app_detail') {
+          Navigator.of(context).pushNamed(
+            AppRoutes.activityDetail,
+            arguments: ActivityDetailArgs(activityId: activity.id),
+          );
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _syncCurrentFocusToOverlay() {
+    final _ActivityTileData? item = _lastFocusItem;
+    if (item == null) return;
+    final ActivityModel activity = item.activity;
+    final ProgressEntryModel? entry = item.progressEntry;
+    final List<String> completedSub = normalizeCompletedSubActivities(
+      completedValues: entry?.completedSubActivities ?? const <String>[],
+      subActivities: activity.subActivities,
+    );
+
+    ref.read(popUpAssistServiceProvider).syncActivity(
+          activityId: activity.id,
+          title: activity.title,
+          timeLabel: formatMinutesAsTime(activity.timeMinutes),
+          streak: _lastStreak,
+          subActivities: activity.subActivities,
+          completedSubActivities: completedSub,
+          isCompleted: item.isCompleted,
+          isSkipped: item.isSkipped,
+        );
   }
 
   void _startMinuteTicker() {
@@ -294,6 +388,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       selectedIsToday: selectedIsToday,
       focusItem: focusItem,
     );
+
+    _lastFocusItem =
+        focusItem ?? (activityItems.isNotEmpty ? activityItems.first : null);
+    _lastStreak = currentStreak;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncCurrentFocusToOverlay();
+    });
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
