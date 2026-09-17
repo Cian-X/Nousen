@@ -27,10 +27,15 @@ class CreateActivityArgs {
 }
 
 class ActivityDetailArgs {
-  const ActivityDetailArgs({required this.activityId, this.scheduledDate});
+  const ActivityDetailArgs({
+    required this.activityId,
+    this.scheduledDate,
+    this.notificationAction,
+  });
 
   final String activityId;
   final DateTime? scheduledDate;
+  final String? notificationAction;
 }
 
 class OneTimeReminderDetailArgs {

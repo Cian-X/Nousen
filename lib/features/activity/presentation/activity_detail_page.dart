@@ -22,6 +22,7 @@ import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:liburan_create/services/notification_action.dart';
 import 'package:liburan_create/services/photo_access_service.dart';
 
 void _disposeTextControllerSafely(TextEditingController controller) {
@@ -43,6 +44,7 @@ class ActivityDetailPage extends ConsumerWidget {
   static const String _menuEditActivity = 'edit_activity';
   static const String _menuSkipActivity = 'skip_activity';
   static const String _menuDeleteActivity = 'delete_activity';
+  static final Set<String> _handledNotificationActions = <String>{};
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,6 +58,41 @@ class ActivityDetailPage extends ConsumerWidget {
         appBar: AppBar(title: Text(t.activityDetail)),
         body: Center(child: Text(t.activityNotFound)),
       );
+    }
+
+    final NotificationActionId? notificationAction =
+        NotificationActionId.fromValue(args.notificationAction);
+    final String notificationActionKey =
+        '${activity.id}:${DateTime.now().toIso8601String().substring(0, 10)}:${args.notificationAction}';
+    if ((notificationAction == NotificationActionId.skipToday ||
+            notificationAction == NotificationActionId.postponeTenMinutes) &&
+        _handledNotificationActions.add(notificationActionKey)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!context.mounted) {
+          return;
+        }
+        if (notificationAction == NotificationActionId.skipToday) {
+          await ref
+              .read(activityActionsProvider)
+              .skipToday(activity: activity, note: 'Lewati dari notifikasi');
+        } else {
+          await ref
+              .read(notificationSchedulerProvider)
+              .postponeActivityReminder(activity: activity);
+        }
+        if (!context.mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              notificationAction == NotificationActionId.skipToday
+                  ? 'Aktivitas hari ini dilewati.'
+                  : 'Pengingat ditunda 10 menit.',
+            ),
+          ),
+        );
+      });
     }
 
     final List<ProgressEntryModel> entries =

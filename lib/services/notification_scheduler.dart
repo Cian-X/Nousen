@@ -11,7 +11,9 @@ import 'package:liburan_create/features/settings/domain/app_settings_model.dart'
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-typedef NotificationTapHandler = Future<void> Function(String? payload);
+typedef NotificationTapHandler = Future<void> Function(
+  NotificationResponse response,
+);
 
 class NotificationScheduler {
   NotificationScheduler({FlutterLocalNotificationsPlugin? plugin})
@@ -51,7 +53,7 @@ class NotificationScheduler {
       settings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         if (onTap != null) {
-          await onTap(response.payload);
+          await onTap(response);
         }
       },
     );
@@ -65,6 +67,10 @@ class NotificationScheduler {
 
     _initialized = true;
     await refreshCapabilities();
+  }
+
+  Future<NotificationAppLaunchDetails?> launchDetails() {
+    return _plugin.getNotificationAppLaunchDetails();
   }
 
   Future<void> refreshCapabilities() async {
@@ -217,6 +223,25 @@ class NotificationScheduler {
     );
   }
 
+  Future<void> postponeActivityReminder({
+    required ActivityModel activity,
+    int minutes = 10,
+  }) async {
+    await initialize();
+    final tz.TZDateTime scheduleAt = tz.TZDateTime.now(
+      tz.local,
+    ).add(Duration(minutes: minutes));
+    final int id = _postponeNotificationId(activity.id);
+    await _plugin.cancel(id);
+    await _zonedScheduleActivityOneTimeWithFallback(
+      id: id,
+      title: activity.title,
+      body: 'Pengingat ditunda $minutes menit',
+      scheduleAt: scheduleAt,
+      payload: _payload(activity.id, 'postponed'),
+    );
+  }
+
   Future<void> suppressTodayEndOfDay({
     required ActivityModel activity,
     required AppSettingsModel settings,
@@ -254,6 +279,7 @@ class NotificationScheduler {
 
   Future<void> cancelAllForActivity(String activityId) async {
     await initialize();
+    await _plugin.cancel(_postponeNotificationId(activityId));
     for (final NotificationType type in NotificationType.values) {
       if (type == NotificationType.threeDayRule) {
         await _plugin.cancel(threeDayRuleNotificationId(activityId));
@@ -362,6 +388,23 @@ class NotificationScheduler {
         channelDescription: 'Weekly schedule reminders',
         importance: Importance.high,
         priority: Priority.high,
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            'open_activity',
+            'Buka aktivitas',
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'postpone_ten_minutes',
+            'Tunda 10 mnt',
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'skip_today',
+            'Lewati',
+            showsUserInterface: true,
+          ),
+        ],
       ),
       iOS: DarwinNotificationDetails(),
     );
@@ -414,6 +457,38 @@ class NotificationScheduler {
     }
   }
 
+  Future<void> _zonedScheduleActivityOneTimeWithFallback({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduleAt,
+    required String payload,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduleAt,
+        _notificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+      _androidScheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+    } catch (_) {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduleAt,
+        _notificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
+      );
+      _androidScheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+  }
+
   Future<void> _zonedScheduleOneTimeWithFallback({
     required int id,
     required String title,
@@ -444,6 +519,21 @@ class NotificationScheduler {
       );
       _androidScheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
     }
+  }
+
+  int _postponeNotificationId(String activityId) {
+    const int postponeTypeCode = 8;
+    final int stableHash = _stableNotificationHash('postpone:$activityId');
+    return ((postponeTypeCode & 0x7f) << 23) | (stableHash & 0x000FFFFF);
+  }
+
+  int _stableNotificationHash(String input) {
+    int hash = 0x811C9DC5;
+    for (final int codeUnit in input.codeUnits) {
+      hash ^= codeUnit;
+      hash = (hash * 0x01000193) & 0x7fffffff;
+    }
+    return hash;
   }
 
   String _payload(String activityId, String type) {

@@ -7,6 +7,8 @@ import 'package:liburan_create/core/constants/app_constants.dart';
 import 'package:liburan_create/core/theme/app_theme.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 class ReminderScheduleApp extends ConsumerWidget {
   const ReminderScheduleApp({super.key});
 
@@ -16,6 +18,7 @@ class ReminderScheduleApp extends ConsumerWidget {
     final Locale locale = ref.watch(appLocaleProvider);
 
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       title: AppConstants.appName,
       theme: AppTheme.light(),
