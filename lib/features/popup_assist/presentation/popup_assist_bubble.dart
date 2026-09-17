@@ -23,6 +23,9 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   bool _isSkipped = false;
   String? _statusBanner;
 
+  bool _isIdle = false;
+  bool _isNearDismiss = false;
+  Timer? _idleTimer;
   Timer? _autoMinimizeTimer;
   StreamSubscription<dynamic>? _overlaySubscription;
 
@@ -32,6 +35,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     // Normalize window size to exact DPI scaled bounds immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterOverlayWindow.resizeOverlay(76, 76, true);
+      _resetIdleTimer();
     });
 
     _overlaySubscription =
@@ -41,6 +45,19 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         final Map<String, dynamic> data = event is String
             ? jsonDecode(event) as Map<String, dynamic>
             : Map<String, dynamic>.from(event as Map);
+
+        if (data['type'] == 'drag_near_dismiss') {
+          final bool isNear = data['isNear'] == true;
+          if (_isNearDismiss != isNear) {
+            setState(() {
+              _isNearDismiss = isNear;
+              if (isNear) {
+                _isIdle = false;
+              }
+            });
+          }
+          return;
+        }
 
         if (data['type'] == 'sync_activity' || data.containsKey('title')) {
           setState(() {
@@ -88,9 +105,24 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   @override
   void dispose() {
+    _idleTimer?.cancel();
     _autoMinimizeTimer?.cancel();
     _overlaySubscription?.cancel();
     super.dispose();
+  }
+
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+    if (_isIdle) {
+      setState(() => _isIdle = false);
+    }
+    if (!_isExpanded) {
+      _idleTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted && !_isExpanded) {
+          setState(() => _isIdle = true);
+        }
+      });
+    }
   }
 
   void _startAutoMinimizeTimer() {
@@ -103,7 +135,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   }
 
   Future<void> _expandOverlay() async {
-    setState(() => _isExpanded = true);
+    _idleTimer?.cancel();
+    setState(() {
+      _isExpanded = true;
+      _isIdle = false;
+    });
     await FlutterOverlayWindow.resizeOverlay(330, 290, false);
     _startAutoMinimizeTimer();
   }
@@ -112,6 +148,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     _autoMinimizeTimer?.cancel();
     setState(() => _isExpanded = false);
     await FlutterOverlayWindow.resizeOverlay(76, 76, true);
+    _resetIdleTimer();
   }
 
   Future<void> _sendAction(String type, [Map<String, dynamic>? extras]) async {
@@ -193,95 +230,110 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   }
 
   Widget _buildCollapsedBubble() {
-    return GestureDetector(
-      onTap: _expandOverlay,
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[Color(0xFF2563EB), Color(0xFF1D4ED8)],
-          ),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2.5),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            const Icon(
-              Icons.smart_toy_rounded,
-              color: Colors.white,
-              size: 34,
+    return AnimatedOpacity(
+      opacity: _isIdle ? 0.40 : 1.0,
+      duration: const Duration(milliseconds: 350),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          _resetIdleTimer();
+          _expandOverlay();
+        },
+        child: Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _isNearDismiss
+                  ? const <Color>[Color(0xFFEF4444), Color(0xFFB91C1C)]
+                  : const <Color>[Color(0xFF2563EB), Color(0xFF1D4ED8)],
             ),
-            if (_streak > 0)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEA580C),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Icon(
-                        Icons.local_fire_department,
-                        color: Colors.white,
-                        size: 9,
-                      ),
-                      Text(
-                        '$_streak',
-                        style: const TextStyle(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _isNearDismiss ? const Color(0xFFFCA5A5) : Colors.white,
+              width: 2.5,
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Icon(
+                _isNearDismiss ? Icons.delete_outline : Icons.smart_toy_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+              if (!_isNearDismiss && _streak > 0)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEA580C),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.local_fire_department,
                           color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
+                          size: 9,
                         ),
-                      ),
-                    ],
+                        Text(
+                          '$_streak',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            if (_isCompleted)
-              Positioned(
-                bottom: 2,
-                right: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF16A34A),
-                    shape: BoxShape.circle,
+              if (!_isNearDismiss && _isCompleted)
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 10,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 10,
+                )
+              else if (!_isNearDismiss && _isSkipped)
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF64748B),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.fast_forward,
+                      color: Colors.white,
+                      size: 10,
+                    ),
                   ),
                 ),
-              )
-            else if (_isSkipped)
-              Positioned(
-                bottom: 2,
-                right: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF64748B),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.fast_forward,
-                    color: Colors.white,
-                    size: 10,
-                  ),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
