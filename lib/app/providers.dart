@@ -36,6 +36,7 @@ import 'package:liburan_create/services/image_storage_service.dart';
 import 'package:liburan_create/services/ml/ml_model_encoder_service.dart';
 import 'package:liburan_create/services/ml/ml_model_schema_service.dart';
 import 'package:liburan_create/services/ml/onnx_model_service.dart';
+import 'package:liburan_create/services/popup_assist_service.dart';
 import 'package:liburan_create/services/notification_scheduler.dart';
 import 'package:liburan_create/services/photo_access_service.dart';
 
@@ -62,6 +63,15 @@ final photoAccessServiceProvider = Provider<PhotoAccessService>(
 final deviceHealthServiceProvider = Provider<DeviceHealthService>(
   (Ref ref) => DeviceHealthService(),
 );
+
+final popUpAssistServiceProvider = Provider<PopUpAssistService>(
+  (Ref ref) => const PopUpAssistService(),
+);
+
+final popUpAssistActiveProvider =
+    FutureProvider.autoDispose<bool>((Ref ref) async {
+      return await ref.watch(popUpAssistServiceProvider).isActive();
+    });
 
 final geminiActivityServiceProvider = Provider<GeminiActivityService>(
   (Ref ref) => GeminiActivityService(),

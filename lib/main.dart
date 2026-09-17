@@ -12,6 +12,7 @@ import 'package:liburan_create/features/activity/data/activity_entity.dart';
 import 'package:liburan_create/features/one_time_reminder/data/one_time_reminder_entity.dart';
 import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
 import 'package:liburan_create/features/settings/data/app_settings_entity.dart';
+import 'package:liburan_create/features/popup_assist/presentation/popup_assist_bubble.dart';
 import 'package:liburan_create/services/notification_action.dart';
 import 'package:liburan_create/services/notification_scheduler.dart';
 import 'package:path_provider/path_provider.dart';
@@ -85,4 +86,10 @@ Future<void> main() async {
       _handleNotificationResponse(launchResponse);
     });
   }
+}
+
+@pragma("vm:entry-point")
+void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const PopUpAssistBubbleApp());
 }

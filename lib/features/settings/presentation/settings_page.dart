@@ -181,6 +181,35 @@ class SettingsPage extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    _SectionLabel(
+                      title: isId ? 'Pop Up Assist' : 'Pop Up Assist',
+                    ),
+                    const SizedBox(height: 12),
+                    _SectionList(
+                      children: <Widget>[
+                        _SettingsSwitchItem(
+                          icon: Icons.smart_toy_outlined,
+                          title: isId
+                              ? 'Bubble asisten melayang'
+                              : 'Floating assistant bubble',
+                          value:
+                              ref.watch(popUpAssistActiveProvider).value ??
+                              false,
+                          onChanged: (bool nextValue) async {
+                            final popUpService = ref.read(
+                              popUpAssistServiceProvider,
+                            );
+                            if (nextValue) {
+                              await popUpService.show();
+                            } else {
+                              await popUpService.close();
+                            }
+                            ref.invalidate(popUpAssistActiveProvider);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     _SectionLabel(title: t.language),
                     const SizedBox(height: 12),
                     _SectionList(
