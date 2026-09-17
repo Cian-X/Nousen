@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -298,6 +300,18 @@ final globalStatsProvider = Provider<GlobalStats>((Ref ref) {
       .buildGlobalStats(activities: activities, progressEntries: progress);
 });
 
+final homeGlobalStreakProvider = Provider<int>((Ref ref) {
+  final List<ActivityModel> activities =
+      ref.watch(activitiesStreamProvider).value ?? const <ActivityModel>[];
+  final List<ProgressEntryModel> progress =
+      ref.watch(allProgressStreamProvider).value ??
+      const <ProgressEntryModel>[];
+
+  return ref
+      .watch(statsServiceProvider)
+      .computeGlobalStreak(activities: activities, progressEntries: progress);
+});
+
 final activityDetailMlPredictionProvider =
     FutureProvider.family<ActivityDetailMlPrediction?, String>((
       Ref ref,
@@ -381,8 +395,16 @@ final appBootstrapProvider = FutureProvider<void>((Ref ref) async {
 
   ref.read(appLocaleProvider.notifier).setLocale(Locale(settings.localeCode));
 
-  await ref.watch(activityActionsProvider).bootstrapRescheduleAndEvaluate();
-  await ref.watch(oneTimeReminderActionsProvider).bootstrapReschedule();
+  // Run heavy notification rescheduling asynchronously in background
+  // so app UI opens instantly without waiting for native platform channels.
+  unawaited(() async {
+    try {
+      await ref.read(activityActionsProvider).bootstrapRescheduleAndEvaluate();
+      await ref.read(oneTimeReminderActionsProvider).bootstrapReschedule();
+    } catch (_) {
+      // Ignore background reschedule errors on startup
+    }
+  }());
 });
 
 final homeSelectedWeekdayProvider = StateProvider<int>(

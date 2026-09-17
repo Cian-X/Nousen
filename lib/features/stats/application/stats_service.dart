@@ -104,6 +104,72 @@ class StatsService {
     );
   }
 
+  int computeGlobalStreak({
+    required List<ActivityModel> activities,
+    required List<ProgressEntryModel> progressEntries,
+    DateTime? now,
+  }) {
+    if (activities.isEmpty) {
+      return 0;
+    }
+    final DateTime today = dateOnly(now ?? DateTime.now());
+    final Map<String, ProgressEntryModel> progressByKey =
+        <String, ProgressEntryModel>{};
+    for (final ProgressEntryModel entry in progressEntries) {
+      progressByKey['${entry.activityId}|${entry.dateKey}'] = entry;
+    }
+    return _buildGlobalStreak(
+      activities: activities,
+      today: today,
+      progressByKey: progressByKey,
+    );
+  }
+
+  ActivityBreakdown buildSingleActivityBreakdown({
+    required ActivityModel activity,
+    required List<ProgressEntryModel> entries,
+    DateTime? now,
+  }) {
+    final DateTime today = dateOnly(now ?? DateTime.now());
+    final Map<String, ProgressEntryModel> progressByKey =
+        <String, ProgressEntryModel>{};
+    for (final ProgressEntryModel entry in entries) {
+      progressByKey['${entry.activityId}|${entry.dateKey}'] = entry;
+    }
+
+    int scheduled = 0;
+    int completed = 0;
+    DateTime cursor = dateOnly(activity.createdAt);
+    while (!cursor.isAfter(today)) {
+      if (activity.selectedDays.contains(cursor.weekday)) {
+        final String key = '${activity.id}|${dateKeyFromDate(cursor)}';
+        final ProgressEntryModel? entry = progressByKey[key];
+        if (entry?.isSkipped == true) {
+          cursor = cursor.add(const Duration(days: 1));
+          continue;
+        }
+        scheduled++;
+        if (entry?.isCompleted == true) {
+          completed++;
+        }
+      }
+      cursor = cursor.add(const Duration(days: 1));
+    }
+
+    final int streak = _activityStreak(
+      activity: activity,
+      today: today,
+      progressByKey: progressByKey,
+    );
+
+    return ActivityBreakdown(
+      activity: activity,
+      completedCount: completed,
+      scheduledCount: scheduled,
+      currentStreak: streak,
+    );
+  }
+
   int _activityStreak({
     required ActivityModel activity,
     required DateTime today,

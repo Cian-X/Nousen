@@ -98,14 +98,12 @@ class ActivityDetailPage extends ConsumerWidget {
     final List<ProgressEntryModel> entries =
         ref.watch(progressByActivityProvider(activity.id)).value ??
         const <ProgressEntryModel>[];
-    final GlobalStats stats = ref.watch(globalStatsProvider);
-    ActivityBreakdown? breakdown;
-    for (final ActivityBreakdown item in stats.breakdowns) {
-      if (item.activity.id == activity.id) {
-        breakdown = item;
-        break;
-      }
-    }
+    final ActivityBreakdown breakdown = ref
+        .watch(statsServiceProvider)
+        .buildSingleActivityBreakdown(
+          activity: activity,
+          entries: entries,
+        );
     final String localeCode =
         ref.watch(settingsStreamProvider).value?.localeCode ?? 'id';
     final ThemeData theme = Theme.of(context);
@@ -154,7 +152,7 @@ class ActivityDetailPage extends ConsumerWidget {
     final int doneFullDaysCount = weeklyScheduledDays
         .where((item) => item.isCompleted)
         .length;
-    final int currentStreak = breakdown?.currentStreak ?? 0;
+    final int currentStreak = breakdown.currentStreak;
     final ActivityDailyProgressStatus todayVisualStatus =
         resolveActivityDailyProgressStatus(
           scheduledDate: today,

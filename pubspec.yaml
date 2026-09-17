@@ -81,9 +81,10 @@ flutter:
 
   assets:
     - assets/ai/activity_profiles.json
-    - assets/ai/catalog_activities.json
-    - assets/ai/progress_entries.json
-    - assets/ml_model/
+    # Kept out of release bundle to optimize app size and startup performance:
+    # - assets/ai/catalog_activities.json
+    # - assets/ai/progress_entries.json (40MB synthetic data)
+    # - assets/ml_model/ (11MB ONNX models, disabled while AiDemoConfig.onDeviceMlEnabled = false)
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

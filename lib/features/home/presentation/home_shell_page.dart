@@ -17,11 +17,9 @@ import 'package:liburan_create/features/activity/presentation/activity_status_vi
 import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/home/application/home_ai_brief_engine.dart';
-import 'package:liburan_create/features/home/application/home_ml_service.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/presentation/settings_page.dart';
-import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 
 class HomeShellPage extends ConsumerStatefulWidget {
@@ -288,34 +286,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       selectedProgressByActivity: selectedProgressByActivity,
       allProgressEntries: historicalProgress,
     );
-    final GlobalStats globalStats = ref.watch(globalStatsProvider);
-    final HomeMlRequest? homeMlRequest = _buildHomeMlRequest(
-      selectedIsToday: selectedIsToday,
-      focusItem: focusItem,
-      scheduledCount: scheduledCount,
-      globalStats: globalStats,
-    );
-    final HomeMlPrediction? homeMlPrediction = homeMlRequest == null
-        ? null
-        : ref.watch(homeMlPredictionProvider(homeMlRequest)).valueOrNull;
-    final HomeAiBrief homeAiBrief = _blendHomeBriefWithMl(
-      baseBrief: baseHomeAiBrief,
-      prediction: homeMlPrediction,
-      request: homeMlRequest,
-      localeCode: localeCode,
-    );
+    final int currentStreak = ref.watch(homeGlobalStreakProvider);
+    final HomeAiBrief homeAiBrief = baseHomeAiBrief;
     final _HeroActionCue? heroActionCue = _buildHeroActionCue(
       localeCode: localeCode,
       now: now,
       selectedIsToday: selectedIsToday,
       focusItem: focusItem,
-    );
-
-    // HeroMascotMood for non-today cards (fallback)
-    final _HeroMascotMood nonTodayHeroMascotMood = _HeroMascotMood.neutral;
-    final Color nonTodayHeroMascotColor = _heroMascotColor(
-      theme: theme,
-      mood: nonTodayHeroMascotMood,
     );
 
     return Scaffold(
@@ -369,7 +346,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
               label: localeCode == 'id' ? 'Jadwal' : 'Schedule',
               isSelected: false,
               onTap: () {
-                // Stays on home list
+                ref.read(homeSelectedWeekdayProvider.notifier).state =
+                    DateTime.now().weekday;
               },
             ),
             _buildNavItem(
@@ -446,7 +424,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           localeCode: localeCode,
                           brief: homeAiBrief,
                           sidePadding: sidePadding,
-                          currentStreak: globalStats.globalStreak,
+                          currentStreak: currentStreak,
                           onDaySelected: (int weekday) {
                             ref
                                     .read(homeSelectedWeekdayProvider.notifier)
@@ -680,95 +658,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   }
 }
 
-HomeMlRequest? _buildHomeMlRequest({
-  required bool selectedIsToday,
-  required _ActivityTileData? focusItem,
-  required int scheduledCount,
-  required GlobalStats globalStats,
-}) {
-  if (!selectedIsToday || focusItem == null || scheduledCount <= 0) {
-    return null;
-  }
-
-  ActivityBreakdown? breakdown;
-  for (final ActivityBreakdown item in globalStats.breakdowns) {
-    if (item.activity.id == focusItem.activity.id) {
-      breakdown = item;
-      break;
-    }
-  }
-
-  final int totalScheduled = breakdown?.scheduledCount ?? 0;
-  final int totalCompleted = breakdown?.completedCount ?? 0;
-  final double completionRate = totalScheduled <= 0
-      ? 0
-      : totalCompleted / totalScheduled;
-
-  return HomeMlRequest(
-    activityTitle: focusItem.activity.title,
-    weekday: focusItem.scheduledDate.weekday - 1,
-    isWeekend: focusItem.scheduledDate.weekday >= 6 ? 1 : 0,
-    streak: breakdown?.currentStreak ?? 0,
-    completionRate: completionRate,
-    scheduledTimeMinutes: focusItem.activity.timeMinutes,
-    numActivitiesToday: scheduledCount,
-    totalScheduled: totalScheduled,
-    totalCompleted: totalCompleted,
-  );
-}
-
-bool _hasReliableHomeMlSignal(HomeMlRequest request) {
-  if (request.totalScheduled < 2) {
-    return false;
-  }
-  if (request.totalCompleted <= 0 && request.streak <= 0) {
-    return false;
-  }
-  return true;
-}
-
-HomeAiBrief _blendHomeBriefWithMl({
-  required HomeAiBrief baseBrief,
-  required HomeMlPrediction? prediction,
-  required HomeMlRequest? request,
-  required String localeCode,
-}) {
-  if (prediction == null ||
-      request == null ||
-      !_hasReliableHomeMlSignal(request)) {
-    return baseBrief;
-  }
-
-  final String activityTitle = prediction.referenceActivityTitle;
-  final String timeLabel = formatMinutesAsTime(request.scheduledTimeMinutes);
-
-  if (prediction.likelyComplete) {
-    return HomeAiBrief(
-      headline: baseBrief.headline,
-      insight: localeCode == 'id'
-          ? 'Prediksi hari ini cukup positif. $activityTitle punya peluang selesai kalau ritmemu tetap dijaga di sekitar $timeLabel.'
-          : 'Today looks fairly positive. $activityTitle has a good chance to finish if you protect the rhythm around $timeLabel.',
-      suggestion: localeCode == 'id'
-          ? 'Jaga fokus utama di $activityTitle'
-          : 'Keep your main focus on $activityTitle',
-      actionType: baseBrief.actionType,
-      source: HomeAiBriefSource.ml,
-    );
-  }
-
-  return HomeAiBrief(
-    headline: baseBrief.headline,
-    insight: localeCode == 'id'
-        ? 'Prediksi hari ini masih agak berat. $activityTitle lebih aman kalau dijalani ringan dan tidak didorong terlalu mepet.'
-        : 'Today still looks a bit heavy. $activityTitle will be safer if you keep it light and avoid pushing it too late.',
-    suggestion: localeCode == 'id'
-        ? 'Turunkan target $activityTitle jadi versi kecil dulu'
-        : 'Scale $activityTitle down to a smaller target first',
-    actionType: baseBrief.actionType,
-    source: HomeAiBriefSource.ml,
-  );
-}
-
 class _HeroActionCue {
   const _HeroActionCue({
     required this.label,
@@ -908,7 +797,6 @@ class _TodayHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final double progressValue = progress.clamp(0, 1).toDouble();
-    final bool isMlBrief = brief.source == HomeAiBriefSource.ml;
 
     return Container(
       constraints: const BoxConstraints(minHeight: 156),
