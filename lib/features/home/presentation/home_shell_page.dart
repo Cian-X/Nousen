@@ -37,6 +37,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   StreamSubscription<dynamic>? _overlayActionSubscription;
   _ActivityTileData? _lastFocusItem;
   int _lastStreak = 0;
+  String _lastSyncedSignature = '';
 
   @override
   void initState() {
@@ -126,6 +127,11 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       completedValues: entry?.completedSubActivities ?? const <String>[],
       subActivities: activity.subActivities,
     );
+
+    final String sig =
+        '${activity.id}_${_lastStreak}_${item.isCompleted}_${item.isSkipped}_${completedSub.join(',')}';
+    if (sig == _lastSyncedSignature) return;
+    _lastSyncedSignature = sig;
 
     ref.read(popUpAssistServiceProvider).syncActivity(
           activityId: activity.id,

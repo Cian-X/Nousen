@@ -32,11 +32,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   @override
   void initState() {
     super.initState();
-    // Normalize window size to exact DPI scaled bounds immediately
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FlutterOverlayWindow.resizeOverlay(76, 76, true);
-      _resetIdleTimer();
-    });
+    _resetIdleTimer();
 
     _overlaySubscription =
         FlutterOverlayWindow.overlayListener.listen((dynamic event) {
@@ -230,110 +226,117 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   }
 
   Widget _buildCollapsedBubble() {
-    return AnimatedOpacity(
-      opacity: _isIdle ? 0.40 : 1.0,
-      duration: const Duration(milliseconds: 350),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          _resetIdleTimer();
-          _expandOverlay();
-        },
-        child: Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _isNearDismiss
-                  ? const <Color>[Color(0xFFEF4444), Color(0xFFB91C1C)]
-                  : const <Color>[Color(0xFF2563EB), Color(0xFF1D4ED8)],
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _isNearDismiss ? const Color(0xFFFCA5A5) : Colors.white,
-              width: 2.5,
-            ),
+    final double a = _isIdle ? 0.45 : 1.0;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _resetIdleTimer();
+        _expandOverlay();
+      },
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: _isNearDismiss
+                ? <Color>[
+                    const Color(0xFFEF4444).withValues(alpha: a),
+                    const Color(0xFFB91C1C).withValues(alpha: a),
+                  ]
+                : <Color>[
+                    const Color(0xFF2563EB).withValues(alpha: a),
+                    const Color(0xFF1D4ED8).withValues(alpha: a),
+                  ],
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              Icon(
-                _isNearDismiss ? Icons.delete_outline : Icons.smart_toy_rounded,
-                color: Colors.white,
-                size: 34,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: (_isNearDismiss ? const Color(0xFFFCA5A5) : Colors.white)
+                .withValues(alpha: a),
+            width: 2.5,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            Icon(
+              _isNearDismiss ? Icons.delete_outline : Icons.smart_toy_rounded,
+              color: Colors.white.withValues(alpha: a),
+              size: 34,
+            ),
+            if (!_isNearDismiss && _streak > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEA580C).withValues(alpha: a),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: a),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.local_fire_department,
+                        color: Colors.white.withValues(alpha: a),
+                        size: 9,
+                      ),
+                      Text(
+                        '$_streak',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: a),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              if (!_isNearDismiss && _streak > 0)
-                Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEA580C),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(
-                          Icons.local_fire_department,
-                          color: Colors.white,
-                          size: 9,
-                        ),
-                        Text(
-                          '$_streak',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
+            if (!_isNearDismiss && _isCompleted)
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF16A34A).withValues(alpha: a),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    color: Colors.white.withValues(alpha: a),
+                    size: 10,
                   ),
                 ),
-              if (!_isNearDismiss && _isCompleted)
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF16A34A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 10,
-                    ),
+              )
+            else if (!_isNearDismiss && _isSkipped)
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF64748B).withValues(alpha: a),
+                    shape: BoxShape.circle,
                   ),
-                )
-              else if (!_isNearDismiss && _isSkipped)
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF64748B),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.fast_forward,
-                      color: Colors.white,
-                      size: 10,
-                    ),
+                  child: Icon(
+                    Icons.fast_forward,
+                    color: Colors.white.withValues(alpha: a),
+                    size: 10,
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
