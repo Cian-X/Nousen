@@ -55,6 +55,15 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           return;
         }
 
+        if (data['type'] == 'reset_state' ||
+            data['type'] == 'overlay_dismissed_by_user') {
+          setState(() {
+            _isNearDismiss = false;
+            _isIdle = false;
+          });
+          return;
+        }
+
         if (data['type'] == 'request_expand') {
           if (!_isExpanded) {
             _expandOverlay();
@@ -139,7 +148,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _expandOverlay() async {
     _idleTimer?.cancel();
-    await FlutterOverlayWindow.resizeOverlay(330, 290, false);
+    await FlutterOverlayWindow.resizeOverlay(286, 240, false);
     if (!mounted) return;
     setState(() {
       _isExpanded = true;
@@ -150,11 +159,21 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _collapseOverlay() async {
     _autoMinimizeTimer?.cancel();
-    setState(() => _isExpanded = false);
-    await Future<void>.delayed(const Duration(milliseconds: 160));
-    if (!mounted || _isExpanded) return;
     await FlutterOverlayWindow.resizeOverlay(58, 58, true);
+    if (!mounted) return;
+    setState(() => _isExpanded = false);
     _resetIdleTimer();
+  }
+
+  Future<void> _handleOpenActivity() async {
+    _autoMinimizeTimer?.cancel();
+    if (_activityId.isNotEmpty) {
+      await _sendAction('open_app_detail');
+      await FlutterOverlayWindow.openApp(_activityId);
+    } else {
+      await FlutterOverlayWindow.openApp();
+    }
+    await _collapseOverlay();
   }
 
   Future<void> _sendAction(String type, [Map<String, dynamic>? extras]) async {
@@ -229,20 +248,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _isExpanded
-                ? KeyedSubtree(
-                    key: const ValueKey<String>('expanded_card'),
-                    child: _buildExpandedCard(),
-                  )
-                : KeyedSubtree(
-                    key: const ValueKey<String>('collapsed_bubble'),
-                    child: _buildCollapsedBubble(),
-                  ),
-          ),
+          child: _isExpanded ? _buildExpandedCard() : _buildCollapsedBubble(),
         ),
       ),
     );
@@ -367,14 +373,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Widget _buildExpandedCard() {
     return Container(
-      width: 320,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      width: 276,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF1E40AF),
-          width: 1.8,
+          width: 1.6,
         ),
       ),
       child: Column(
@@ -385,7 +391,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           Row(
             children: <Widget>[
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: const BoxDecoration(
                   color: Color(0xFFEFF6FF),
                   shape: BoxShape.circle,
@@ -393,15 +399,15 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                 child: const Icon(
                   Icons.smart_toy_rounded,
                   color: Color(0xFF1D4ED8),
-                  size: 20,
+                  size: 17,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               const Expanded(
                 child: Text(
                   'NOUSEN Assist',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E40AF),
                   ),
@@ -411,7 +417,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                 Container(
                   margin: const EdgeInsets.only(right: 6),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF7ED),
                     borderRadius: BorderRadius.circular(8),
@@ -423,14 +429,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                       const Icon(
                         Icons.local_fire_department,
                         color: Color(0xFFEA580C),
-                        size: 12,
+                        size: 11,
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 1),
                       Text(
-                        '$_streak hari',
+                        '$_streak h',
                         style: const TextStyle(
                           color: Color(0xFFEA580C),
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -441,42 +447,42 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                 onTap: _collapseOverlay,
                 child: const Icon(
                   Icons.close_rounded,
-                  size: 20,
+                  size: 18,
                   color: Color(0xFF64748B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Speech Balloon / Proactive cue
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('💬', style: TextStyle(fontSize: 14)),
-                const SizedBox(width: 6),
+                const Text('💬', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     _speechText,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF334155),
-                      height: 1.3,
+                      height: 1.25,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Activity Title & Time
           Row(
@@ -490,16 +496,16 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       _timeLabel,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF64748B),
                       ),
@@ -507,41 +513,39 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   ],
                 ),
               ),
-              InkWell(
-                onTap: () {
-                  _sendAction('open_app_detail');
-                  _collapseOverlay();
-                },
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
-                    children: <Widget>[
-                      Text(
-                        'Buka',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF2563EB),
-                          fontWeight: FontWeight.w600,
+              if (_activityId.isNotEmpty)
+                InkWell(
+                  onTap: _handleOpenActivity,
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          'Buka',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF2563EB),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ],
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 15,
+                          color: Color(0xFF2563EB),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
 
           // Mini-checklist (if sub-activities exist)
           if (_subActivities.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Container(
-              constraints: const BoxConstraints(maxHeight: 72),
+              constraints: const BoxConstraints(maxHeight: 56),
               child: ListView.builder(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
@@ -553,26 +557,26 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                     onTap: () => _toggleSubActivity(sub),
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: <Widget>[
                           Icon(
                             isChecked
                                 ? Icons.check_circle_rounded
                                 : Icons.radio_button_unchecked_rounded,
-                            size: 16,
+                            size: 14,
                             color: isChecked
                                 ? const Color(0xFF16A34A)
                                 : const Color(0xFF94A3B8),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           Expanded(
                             child: Text(
                               sub,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: isChecked
                                     ? FontWeight.w600
                                     : FontWeight.normal,
@@ -596,19 +600,19 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
           // Status banner notification
           if (_statusBanner != null) ...<Widget>[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 _statusBanner!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF166534),
                 ),
@@ -616,81 +620,105 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
             ),
           ],
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          // Action buttons: Lewati | Tunda 10m | Selesai
-          Row(
-            children: <Widget>[
-              // Lewati
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+          // Action buttons: Lewati | Tunda 10m | Selesai, or Buka App if empty
+          if (_activityId.isNotEmpty)
+            Row(
+              children: <Widget>[
+                // Lewati
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
                     ),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                  ),
-                  onPressed: _handleSkip,
-                  child: const Text(
-                    'Lewati',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Tunda 10m
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    side: const BorderSide(color: Color(0xFFF59E0B)),
-                  ),
-                  onPressed: _handlePostpone,
-                  child: const Text(
-                    'Tunda 10m',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFD97706),
+                    onPressed: _handleSkip,
+                    child: const Text(
+                      'Lewati',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              // Selesai
-              Expanded(
-                flex: 1,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                const SizedBox(width: 5),
+                // Tunda 10m
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      side: const BorderSide(color: Color(0xFFF59E0B)),
                     ),
-                  ),
-                  onPressed: _handleComplete,
-                  child: const Text(
-                    'Selesai',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    onPressed: _handlePostpone,
+                    child: const Text(
+                      'Tunda 10m',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFD97706),
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 5),
+                // Selesai
+                Expanded(
+                  flex: 1,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: _handleComplete,
+                    child: const Text(
+                      'Selesai',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1D4ED8),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: _handleOpenActivity,
+                icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                label: const Text(
+                  'Buka NOUSEN',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );

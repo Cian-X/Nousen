@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:liburan_create/app/app.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
@@ -109,7 +110,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                 );
           }
         } else if (type == 'open_app_detail') {
-          Navigator.of(context).pushNamed(
+          appNavigatorKey.currentState?.pushNamed(
             AppRoutes.activityDetail,
             arguments: ActivityDetailArgs(activityId: activity.id),
           );
@@ -120,7 +121,23 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
   void _syncCurrentFocusToOverlay() {
     final _ActivityTileData? item = _lastFocusItem;
-    if (item == null) return;
+    if (item == null) {
+      if (_lastSyncedSignature == 'empty') return;
+      _lastSyncedSignature = 'empty';
+      ref.read(popUpAssistServiceProvider).syncActivity(
+            activityId: '',
+            title: 'Belum ada jadwal',
+            timeLabel: 'Hari ini santai',
+            speechText:
+                'Belum ada aktivitas aktif saat ini. Mau buat jadwal baru?',
+            streak: _lastStreak,
+            subActivities: const <String>[],
+            completedSubActivities: const <String>[],
+            isCompleted: false,
+            isSkipped: false,
+          );
+      return;
+    }
     final ActivityModel activity = item.activity;
     final ProgressEntryModel? entry = item.progressEntry;
     final List<String> completedSub = normalizeCompletedSubActivities(

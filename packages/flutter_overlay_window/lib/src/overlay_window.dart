@@ -95,6 +95,14 @@ class FlutterOverlayWindow {
     return res;
   }
 
+  /// Open/bring the main application to the foreground
+  static Future<bool?> openApp([String? activityId]) async {
+    final bool? res = await _overlayChannel.invokeMethod<bool?>('openApp', {
+      'activityId': activityId,
+    });
+    return res;
+  }
+
   /// Broadcast data to and from overlay app
   static Future shareData(dynamic data) async {
     return await _overlayMessageChannel.send(data);

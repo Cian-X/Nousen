@@ -96,11 +96,15 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private void initDismissView() {
         if (dismissView != null) return;
         dismissView = new FrameLayout(this);
+        dismissView.setElevation(0f);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            dismissView.setOutlineProvider(null);
+        }
 
         GradientDrawable shape = new GradientDrawable();
         shape.setShape(GradientDrawable.OVAL);
-        shape.setColor(Color.parseColor("#CC0F172A"));
-        shape.setStroke(dpToPx(2), Color.parseColor("#80FFFFFF"));
+        shape.setColor(Color.parseColor("#0F172A"));
+        shape.setStroke(dpToPx(2), Color.WHITE);
         dismissView.setBackground(shape);
 
         TextView xText = new TextView(this);
@@ -121,7 +125,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 size,
                 size,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT
         );
         dismissParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
@@ -148,7 +152,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
                 }
             } else {
-                if (shape != null) shape.setColor(Color.parseColor("#CC0F172A"));
+                if (shape != null) shape.setColor(Color.parseColor("#0F172A"));
                 dismissView.setScaleX(1.0f);
                 dismissView.setScaleY(1.0f);
             }
@@ -168,6 +172,10 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private void hideOverlay() {
         cancelSnapAnimation();
         hideDismissTarget();
+        if (overlayMessageChannel != null) {
+            overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
+            overlayMessageChannel.send("{\"type\":\"reset_state\"}");
+        }
         if (windowManager != null && flutterView != null && isViewAttached) {
             try {
                 windowManager.removeView(flutterView);
@@ -178,6 +186,10 @@ public class OverlayService extends Service implements View.OnTouchListener {
     }
 
     private void showOverlayView() {
+        if (overlayMessageChannel != null) {
+            overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
+            overlayMessageChannel.send("{\"type\":\"reset_state\"}");
+        }
         if (windowManager != null && flutterView != null && !isViewAttached) {
             if (mOverlayParams == null) {
                 int layoutW = dpToPx(58);
@@ -317,6 +329,23 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 int height = call.argument("height");
                 boolean enableDrag = call.argument("enableDrag");
                 resizeOverlay(width, height, enableDrag, result);
+            } else if (call.method.equals("openApp")) {
+                try {
+                    Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        String activityId = call.argument("activityId");
+                        if (activityId != null && !activityId.isEmpty()) {
+                            launchIntent.putExtra("activityId", activityId);
+                        }
+                        startActivity(launchIntent);
+                        result.success(true);
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.e("OverlayService", "Failed to launch main app: " + e.getMessage());
+                }
+                result.success(false);
             }
         });
         overlayMessageChannel.setMessageHandler((message, reply) -> {
@@ -678,28 +707,56 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
-                    boolean nearDismiss = event.getRawY() >= (szWindow.y - dpToPx(130));
-                    showDismissTarget(nearDismiss);
+                    float rawX = event.getRawX();
+                    float rawY = event.getRawY();
+
+                    float targetCenterX = szWindow.x / 2.0f;
+                    float targetCenterY = szWindow.y - dpToPx(48 + 28);
+
+                    float dxTarget = rawX - targetCenterX;
+                    float dyTarget = rawY - targetCenterY;
+                    float distTargetSq = dxTarget * dxTarget + dyTarget * dyTarget;
+                    float touchRadius = dpToPx(65);
+                    boolean isTouchingDismiss = distTargetSq <= (touchRadius * touchRadius);
+
+                    boolean inLowerArea = rawY >= (szWindow.y * 0.65f);
+                    if (inLowerArea || isTouchingDismiss) {
+                        showDismissTarget(isTouchingDismiss);
+                    } else {
+                        hideDismissTarget();
+                    }
+
                     if (overlayMessageChannel != null) {
-                        overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":" + nearDismiss + "}");
+                        overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":" + isTouchingDismiss + "}");
                     }
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    hideDismissTarget();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
-                    if (event.getRawY() >= (szWindow.y - dpToPx(130))) {
+                    float upRawX = event.getRawX();
+                    float upRawY = event.getRawY();
+                    float upTargetCenterX = szWindow.x / 2.0f;
+                    float upTargetCenterY = szWindow.y - dpToPx(48 + 28);
+                    float upDxTarget = upRawX - upTargetCenterX;
+                    float upDyTarget = upRawY - upTargetCenterY;
+                    float upDistTargetSq = upDxTarget * upDxTarget + upDyTarget * upDyTarget;
+                    float upTouchRadius = dpToPx(65);
+                    boolean isUpTouchingDismiss = upDistTargetSq <= (upTouchRadius * upTouchRadius);
+
+                    hideDismissTarget();
+
+                    if (overlayMessageChannel != null) {
+                        overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
+                    }
+
+                    if (isUpTouchingDismiss) {
                         if (overlayMessageChannel != null) {
                             overlayMessageChannel.send("{\"type\":\"overlay_dismissed_by_user\"}");
                         }
                         hideOverlay();
                         return false;
-                    }
-
-                    if (overlayMessageChannel != null) {
-                        overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
                     }
 
                     if (!WindowSetup.positionGravity.equals("none")) {
