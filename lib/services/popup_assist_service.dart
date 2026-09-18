@@ -36,8 +36,8 @@ class PopUpAssistService {
     }
 
     await FlutterOverlayWindow.showOverlay(
-      height: 76,
-      width: 76,
+      height: 58,
+      width: 58,
       alignment: OverlayAlignment.centerRight,
       enableDrag: true,
       positionGravity: PositionGravity.auto,

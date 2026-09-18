@@ -24,7 +24,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.animation.ValueAnimator;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.HapticFeedbackConstants;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -55,6 +60,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private Resources mResources;
 
     public static final String INTENT_EXTRA_IS_CLOSE_WINDOW = "IsCloseWindow";
+    public static final String ACTION_TOGGLE_OR_SHOW_OVERLAY = "flutter.overlay.window.ACTION_TOGGLE_OR_SHOW";
 
     private static OverlayService instance;
     public static boolean isRunning = false;
@@ -73,10 +79,153 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private Point szWindow = new Point();
     private ValueAnimator mSnapAnimator;
 
+    private boolean isViewAttached = false;
+    private FrameLayout dismissView;
+    private WindowManager.LayoutParams dismissParams;
+    private boolean isDismissViewAttached = false;
+    private boolean wasNearDismiss = false;
+    private WindowManager.LayoutParams mOverlayParams;
+
     private void cancelSnapAnimation() {
         if (mSnapAnimator != null) {
             mSnapAnimator.cancel();
             mSnapAnimator = null;
+        }
+    }
+
+    private void initDismissView() {
+        if (dismissView != null) return;
+        dismissView = new FrameLayout(this);
+
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.OVAL);
+        shape.setColor(Color.parseColor("#CC0F172A"));
+        shape.setStroke(dpToPx(2), Color.parseColor("#80FFFFFF"));
+        dismissView.setBackground(shape);
+
+        TextView xText = new TextView(this);
+        xText.setText("✕");
+        xText.setTextColor(Color.WHITE);
+        xText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        xText.setTypeface(Typeface.DEFAULT_BOLD);
+        xText.setGravity(Gravity.CENTER);
+
+        FrameLayout.LayoutParams textParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        dismissView.addView(xText, textParams);
+
+        int size = dpToPx(56);
+        dismissParams = new WindowManager.LayoutParams(
+                size,
+                size,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+        );
+        dismissParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        dismissParams.y = dpToPx(48);
+    }
+
+    private void showDismissTarget(boolean nearDismiss) {
+        initDismissView();
+        if (windowManager == null || dismissView == null) return;
+        if (!isDismissViewAttached) {
+            try {
+                windowManager.addView(dismissView, dismissParams);
+                isDismissViewAttached = true;
+            } catch (Exception ignored) {}
+        }
+        if (nearDismiss != wasNearDismiss) {
+            wasNearDismiss = nearDismiss;
+            GradientDrawable shape = (GradientDrawable) dismissView.getBackground();
+            if (nearDismiss) {
+                if (shape != null) shape.setColor(Color.parseColor("#EEEF4444"));
+                dismissView.setScaleX(1.18f);
+                dismissView.setScaleY(1.18f);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
+                }
+            } else {
+                if (shape != null) shape.setColor(Color.parseColor("#CC0F172A"));
+                dismissView.setScaleX(1.0f);
+                dismissView.setScaleY(1.0f);
+            }
+        }
+    }
+
+    private void hideDismissTarget() {
+        wasNearDismiss = false;
+        if (windowManager != null && dismissView != null && isDismissViewAttached) {
+            try {
+                windowManager.removeView(dismissView);
+            } catch (Exception ignored) {}
+            isDismissViewAttached = false;
+        }
+    }
+
+    private void hideOverlay() {
+        cancelSnapAnimation();
+        hideDismissTarget();
+        if (windowManager != null && flutterView != null && isViewAttached) {
+            try {
+                windowManager.removeView(flutterView);
+            } catch (Exception ignored) {}
+            isViewAttached = false;
+        }
+        updateNotification("Ketuk untuk memunculkan kembali bubble asisten");
+    }
+
+    private void showOverlayView() {
+        if (windowManager != null && flutterView != null && !isViewAttached) {
+            if (mOverlayParams == null) {
+                int layoutW = dpToPx(58);
+                int layoutH = dpToPx(58);
+                mOverlayParams = new WindowManager.LayoutParams(
+                        layoutW,
+                        layoutH,
+                        0,
+                        0,
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
+                        WindowSetup.flag | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                                | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                                | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                        PixelFormat.TRANSLUCENT
+                );
+                mOverlayParams.gravity = WindowSetup.gravity;
+            }
+            try {
+                windowManager.addView(flutterView, mOverlayParams);
+                isViewAttached = true;
+            } catch (Exception ignored) {}
+            snapToEdge();
+        }
+        updateNotification("Ketuk untuk membuka asisten aktivitas");
+    }
+
+    private Notification buildServiceNotification(String contentText) {
+        Intent toggleIntent = new Intent(this, OverlayService.class);
+        toggleIntent.setAction(ACTION_TOGGLE_OR_SHOW_OVERLAY);
+        int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        PendingIntent pendingIntent = PendingIntent.getService(this, 101, toggleIntent, pendingFlags);
+
+        final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
+        return new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
+                .setContentTitle(WindowSetup.overlayTitle != null && !WindowSetup.overlayTitle.isEmpty() ? WindowSetup.overlayTitle : "NOUSEN Assist")
+                .setContentText(contentText)
+                .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setVisibility(WindowSetup.notificationVisibility)
+                .build();
+    }
+
+    private void updateNotification(String contentText) {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager != null) {
+            notificationManager.notify(OverlayConstants.NOTIFICATION_ID, buildServiceNotification(contentText));
         }
     }
 
@@ -91,15 +240,25 @@ public class OverlayService extends Service implements View.OnTouchListener {
     public void onDestroy() {
         Log.d("OverLay", "Destroying the overlay window service");
         cancelSnapAnimation();
+        hideDismissTarget();
         if (windowManager != null) {
-            windowManager.removeView(flutterView);
+            if (flutterView != null && isViewAttached) {
+                try {
+                    windowManager.removeView(flutterView);
+                } catch (Exception ignored) {}
+            }
             windowManager = null;
-            flutterView.detachFromFlutterEngine();
-            flutterView = null;
+            if (flutterView != null) {
+                flutterView.detachFromFlutterEngine();
+                flutterView = null;
+            }
         }
+        isViewAttached = false;
         isRunning = false;
         NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(OverlayConstants.NOTIFICATION_ID);
+        if (notificationManager != null) {
+            notificationManager.cancel(OverlayConstants.NOTIFICATION_ID);
+        }
         instance = null;
     }
 
@@ -107,31 +266,40 @@ public class OverlayService extends Service implements View.OnTouchListener {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         mResources = getApplicationContext().getResources();
-        int startX = intent.getIntExtra("startX", OverlayConstants.DEFAULT_XY);
-        int startY = intent.getIntExtra("startY", OverlayConstants.DEFAULT_XY);
-        boolean isCloseWindow = intent.getBooleanExtra(INTENT_EXTRA_IS_CLOSE_WINDOW, false);
-        if (isCloseWindow) {
-            if (windowManager != null) {
-                windowManager.removeView(flutterView);
-                windowManager = null;
-                flutterView.detachFromFlutterEngine();
-                stopSelf();
+        if (intent != null) {
+            if (ACTION_TOGGLE_OR_SHOW_OVERLAY.equals(intent.getAction())) {
+                if (!isViewAttached) {
+                    showOverlayView();
+                } else {
+                    if (overlayMessageChannel != null) {
+                        overlayMessageChannel.send("{\"type\":\"request_expand\"}");
+                    }
+                }
+                return START_STICKY;
             }
-            isRunning = false;
+
+            boolean isCloseWindow = intent.getBooleanExtra(INTENT_EXTRA_IS_CLOSE_WINDOW, false);
+            if (isCloseWindow) {
+                onDestroy();
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+        }
+
+        if (windowManager != null && flutterView != null) {
+            showOverlayView();
             return START_STICKY;
         }
-        if (windowManager != null) {
-            windowManager.removeView(flutterView);
-            windowManager = null;
-            flutterView.detachFromFlutterEngine();
-            stopSelf();
-        }
+
         isRunning = true;
         Log.d("onStartCommand", "Service started");
         FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
+        if (engine == null) {
+            return START_STICKY;
+        }
         engine.getLifecycleChannel().appIsResumed();
         flutterView = new FlutterView(getApplicationContext(), new FlutterTextureView(getApplicationContext()));
-        flutterView.attachToFlutterEngine(FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG));
+        flutterView.attachToFlutterEngine(engine);
         flutterView.setFitsSystemWindows(true);
         flutterView.setFocusable(true);
         flutterView.setFocusableInTouchMode(true);
@@ -165,9 +333,11 @@ public class OverlayService extends Service implements View.OnTouchListener {
             int h = displaymetrics.heightPixels;
             szWindow.set(w, h);
         }
+        int startX = intent != null ? intent.getIntExtra("startX", OverlayConstants.DEFAULT_XY) : OverlayConstants.DEFAULT_XY;
+        int startY = intent != null ? intent.getIntExtra("startY", OverlayConstants.DEFAULT_XY) : OverlayConstants.DEFAULT_XY;
         int layoutW = (WindowSetup.width == -1999 || WindowSetup.width == -1) ? -1 : dpToPx(WindowSetup.width);
         int layoutH = (WindowSetup.height == -1999 || WindowSetup.height == -1) ? screenHeight() : dpToPx(WindowSetup.height);
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        mOverlayParams = new WindowManager.LayoutParams(
                 layoutW,
                 layoutH,
                 0,
@@ -180,16 +350,23 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 PixelFormat.TRANSLUCENT
         );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && WindowSetup.flag == clickableFlag) {
-            params.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
+            mOverlayParams.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
         }
-        params.gravity = WindowSetup.gravity;
+        mOverlayParams.gravity = WindowSetup.gravity;
         flutterView.setOnTouchListener(this);
-        windowManager.addView(flutterView, params);
+        try {
+            windowManager.addView(flutterView, mOverlayParams);
+            isViewAttached = true;
+        } catch (Exception ignored) {}
+
         if (startX != OverlayConstants.DEFAULT_XY || startY != OverlayConstants.DEFAULT_XY) {
             int dx = startX == OverlayConstants.DEFAULT_XY ? 0 : startX;
             int dy = startY == OverlayConstants.DEFAULT_XY ? 0 : startY;
             moveOverlay(dx, dy, null);
         }
+
+        createNotificationChannel();
+        updateNotification(WindowSetup.overlayContent != null && !WindowSetup.overlayContent.isEmpty() ? WindowSetup.overlayContent : "Ketuk untuk membuka asisten aktivitas");
         return START_STICKY;
     }
 
@@ -340,24 +517,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
 
         createNotificationChannel();
-        Intent notificationIntent = new Intent(this, FlutterOverlayWindowPlugin.class);
-        int pendingFlags;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            pendingFlags = PendingIntent.FLAG_IMMUTABLE;
-        } else {
-            pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
-        }
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, pendingFlags);
-        final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
-        Notification notification = new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
-                .setContentTitle(WindowSetup.overlayTitle)
-                .setContentText(WindowSetup.overlayContent)
-                .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
-                .setContentIntent(pendingIntent)
-                .setVisibility(WindowSetup.notificationVisibility)
-                .build();
-        startForeground(OverlayConstants.NOTIFICATION_ID, notification);
+        startForeground(OverlayConstants.NOTIFICATION_ID, buildServiceNotification(WindowSetup.overlayContent != null && !WindowSetup.overlayContent.isEmpty() ? WindowSetup.overlayContent : "Ketuk untuk membuka asisten aktivitas"));
         instance = this;
     }
 
@@ -395,7 +555,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         if (windowManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             windowManager.getDefaultDisplay().getSize(szWindow);
         }
-        int effectiveH = viewH > 0 ? viewH : dpToPx(76);
+        int effectiveH = viewH > 0 ? viewH : dpToPx(58);
         int sb = statusBarHeightPx();
         int nb = navigationBarHeightPx();
         boolean isCentered = (WindowSetup.gravity & Gravity.VERTICAL_GRAVITY_MASK) == Gravity.CENTER_VERTICAL;
@@ -421,8 +581,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
         cancelSnapAnimation();
 
         WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
-        int viewW = flutterView.getWidth() > 0 ? flutterView.getWidth() : dpToPx(76);
-        int viewH = flutterView.getHeight() > 0 ? flutterView.getHeight() : dpToPx(76);
+        int viewW = flutterView.getWidth() > 0 ? flutterView.getWidth() : dpToPx(58);
+        int viewH = flutterView.getHeight() > 0 ? flutterView.getHeight() : dpToPx(58);
 
         int startX = params.x;
         int targetX;
@@ -519,12 +679,14 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
                     boolean nearDismiss = event.getRawY() >= (szWindow.y - dpToPx(130));
+                    showDismissTarget(nearDismiss);
                     if (overlayMessageChannel != null) {
                         overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":" + nearDismiss + "}");
                     }
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    hideDismissTarget();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
@@ -532,7 +694,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         if (overlayMessageChannel != null) {
                             overlayMessageChannel.send("{\"type\":\"overlay_dismissed_by_user\"}");
                         }
-                        stopSelf();
+                        hideOverlay();
                         return false;
                     }
 

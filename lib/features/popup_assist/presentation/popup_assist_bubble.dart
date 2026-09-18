@@ -55,6 +55,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           return;
         }
 
+        if (data['type'] == 'request_expand') {
+          if (!_isExpanded) {
+            _expandOverlay();
+          }
+          return;
+        }
+
         if (data['type'] == 'sync_activity' || data.containsKey('title')) {
           setState(() {
             if (data['activityId'] != null) {
@@ -132,18 +139,21 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _expandOverlay() async {
     _idleTimer?.cancel();
+    await FlutterOverlayWindow.resizeOverlay(330, 290, false);
+    if (!mounted) return;
     setState(() {
       _isExpanded = true;
       _isIdle = false;
     });
-    await FlutterOverlayWindow.resizeOverlay(330, 290, false);
     _startAutoMinimizeTimer();
   }
 
   Future<void> _collapseOverlay() async {
     _autoMinimizeTimer?.cancel();
     setState(() => _isExpanded = false);
-    await FlutterOverlayWindow.resizeOverlay(76, 76, true);
+    await Future<void>.delayed(const Duration(milliseconds: 160));
+    if (!mounted || _isExpanded) return;
+    await FlutterOverlayWindow.resizeOverlay(58, 58, true);
     _resetIdleTimer();
   }
 
@@ -219,7 +229,20 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: Center(
-          child: _isExpanded ? _buildExpandedCard() : _buildCollapsedBubble(),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: _isExpanded
+                ? KeyedSubtree(
+                    key: const ValueKey<String>('expanded_card'),
+                    child: _buildExpandedCard(),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey<String>('collapsed_bubble'),
+                    child: _buildCollapsedBubble(),
+                  ),
+          ),
         ),
       ),
     );
@@ -234,8 +257,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         _expandOverlay();
       },
       child: Container(
-        width: 70,
-        height: 70,
+        width: 52,
+        height: 52,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -254,7 +277,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           border: Border.all(
             color: (_isNearDismiss ? const Color(0xFFFCA5A5) : Colors.white)
                 .withValues(alpha: a),
-            width: 2.5,
+            width: 2.0,
           ),
         ),
         child: Stack(
@@ -263,23 +286,23 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
             Icon(
               _isNearDismiss ? Icons.delete_outline : Icons.smart_toy_rounded,
               color: Colors.white.withValues(alpha: a),
-              size: 34,
+              size: 26,
             ),
             if (!_isNearDismiss && _streak > 0)
               Positioned(
-                right: 2,
-                top: 2,
+                right: 0,
+                top: 0,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1.5,
+                    horizontal: 4,
+                    vertical: 1.0,
                   ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEA580C).withValues(alpha: a),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: a),
-                      width: 1.5,
+                      width: 1.2,
                     ),
                   ),
                   child: Row(
@@ -288,13 +311,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                       Icon(
                         Icons.local_fire_department,
                         color: Colors.white.withValues(alpha: a),
-                        size: 9,
+                        size: 8,
                       ),
                       Text(
                         '$_streak',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: a),
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -304,8 +327,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
               ),
             if (!_isNearDismiss && _isCompleted)
               Positioned(
-                bottom: 2,
-                right: 2,
+                bottom: 0,
+                right: 0,
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
@@ -315,14 +338,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   child: Icon(
                     Icons.check,
                     color: Colors.white.withValues(alpha: a),
-                    size: 10,
+                    size: 9,
                   ),
                 ),
               )
             else if (!_isNearDismiss && _isSkipped)
               Positioned(
-                bottom: 2,
-                right: 2,
+                bottom: 0,
+                right: 0,
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
@@ -332,7 +355,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   child: Icon(
                     Icons.fast_forward,
                     color: Colors.white.withValues(alpha: a),
-                    size: 10,
+                    size: 9,
                   ),
                 ),
               ),
