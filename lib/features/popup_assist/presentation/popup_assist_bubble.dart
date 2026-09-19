@@ -26,6 +26,9 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   bool _isIdle = false;
   bool _isNearDismiss = false;
+  String _bubbleSide = 'right'; // which screen edge the bubble is on
+  bool _showSpeechLabel = false;
+  Timer? _speechTimer;
   Timer? _idleTimer;
   Timer? _autoMinimizeTimer;
   StreamSubscription<dynamic>? _overlaySubscription;
@@ -50,6 +53,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
               _isNearDismiss = isNear;
               if (isNear) {
                 _isIdle = false;
+                _showSpeechLabel = false;
+                _speechTimer?.cancel();
               }
             });
           }
@@ -68,6 +73,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         if (data['type'] == 'request_expand') {
           if (!_isExpanded) {
             _expandOverlay();
+          }
+          return;
+        }
+
+        if (data['type'] == 'bubble_side') {
+          final String side = data['side']?.toString() ?? 'right';
+          if (_bubbleSide != side) {
+            setState(() => _bubbleSide = side);
           }
           return;
         }
@@ -106,6 +119,12 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
               _isSkipped = data['isSkipped'] == true;
             }
           });
+          // Show speech label when a new activity with speechText arrives
+          if (data['speechText'] != null &&
+              data['speechText'].toString().isNotEmpty &&
+              !_isExpanded) {
+            _triggerSpeechLabel();
+          }
         }
       } catch (_) {}
     });
@@ -120,6 +139,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   void dispose() {
     _idleTimer?.cancel();
     _autoMinimizeTimer?.cancel();
+    _speechTimer?.cancel();
     _overlaySubscription?.cancel();
     super.dispose();
   }
@@ -138,6 +158,23 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     }
   }
 
+  Future<void> _triggerSpeechLabel() async {
+    if (_isExpanded || _speechText.isEmpty || _isNearDismiss) return;
+    _speechTimer?.cancel();
+    // Resize overlay wider to fit speech label
+    final int speechWidth = _bubbleSide == 'right' ? 230 : 230;
+    await FlutterOverlayWindow.resizeOverlay(speechWidth, 58, false);
+    if (!mounted) return;
+    setState(() => _showSpeechLabel = true);
+    _speechTimer = Timer(const Duration(seconds: 5), () async {
+      if (!mounted || _isExpanded) return;
+      setState(() => _showSpeechLabel = false);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted || _isExpanded) return;
+      await FlutterOverlayWindow.resizeOverlay(58, 58, true);
+    });
+  }
+
   void _startAutoMinimizeTimer() {
     _autoMinimizeTimer?.cancel();
     _autoMinimizeTimer = Timer(const Duration(seconds: 15), () {
@@ -150,9 +187,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   Future<void> _expandOverlay() async {
     _idleTimer?.cancel();
     _autoMinimizeTimer?.cancel();
+    _speechTimer?.cancel();
     if (_isTransitioning) return;
     setState(() {
       _isTransitioning = true;
+      _showSpeechLabel = false;
     });
     // Let Flutter render 1 transparent frame before native Window resize
     await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -265,12 +304,66 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       ),
       home: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: _isTransitioning
-              ? const SizedBox.shrink()
-              : (_isExpanded ? _buildExpandedCard() : _buildCollapsedBubble()),
+        body: _isTransitioning
+            ? const SizedBox.shrink()
+            : (_isExpanded
+                ? Center(child: _buildExpandedCard())
+                : _buildCollapsedWithSpeech()),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedWithSpeech() {
+    final Widget bubble = _buildCollapsedBubble();
+    if (!_showSpeechLabel || _speechText.isEmpty) {
+      return Center(child: bubble);
+    }
+
+    final Widget speechLabel = Flexible(
+      child: AnimatedOpacity(
+        opacity: _showSpeechLabel ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 250),
+        child: Container(
+          margin: EdgeInsets.only(
+            left: _bubbleSide == 'right' ? 0 : 4,
+            right: _bubbleSide == 'right' ? 4 : 0,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xF01E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 0.5,
+            ),
+          ),
+          child: Text(
+            _speechText,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+              decoration: TextDecoration.none,
+            ),
+          ),
         ),
       ),
+    );
+
+    // Bubble on the side that matches its screen edge
+    final List<Widget> children = _bubbleSide == 'right'
+        ? <Widget>[speechLabel, bubble]
+        : <Widget>[bubble, speechLabel];
+
+    return Row(
+      mainAxisAlignment: _bubbleSide == 'right'
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: children,
     );
   }
 

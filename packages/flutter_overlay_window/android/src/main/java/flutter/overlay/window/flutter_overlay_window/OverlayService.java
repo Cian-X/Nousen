@@ -87,6 +87,11 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private DismissTargetView dismissView;
     private WindowManager.LayoutParams dismissParams;
     private boolean isDismissViewAttached = false;
+    private static final int MAGNETIC_SNAP_RADIUS_DP = 40;
+    private boolean isMagneticallySnapped = false;
+    private int preMagnetX = 0;
+    private int preMagnetY = 0;
+
     private boolean wasNearDismiss = false;
     private boolean wasTouchingDismiss = false;
     private WindowManager.LayoutParams mOverlayParams;
@@ -243,6 +248,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 );
                 mOverlayParams.gravity = WindowSetup.gravity;
             }
+            // Reset to initial position (right-center: x=0, y=0 with CENTER|RIGHT gravity)
+            mOverlayParams.x = 0;
+            mOverlayParams.y = 0;
             try {
                 windowManager.addView(flutterView, mOverlayParams);
                 isViewAttached = true;
@@ -764,6 +772,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
         final int fTargetX = targetX;
         final int fStartY = startY;
         final int fTargetY = targetY;
+        final int fMidX = (szWindow.x - viewW) / 2;
+        final boolean fIsRightAligned = isRightAligned;
         mSnapAnimator.addUpdateListener(animation -> {
             if (windowManager == null || flutterView == null) return;
             float frac = animation.getAnimatedFraction();
@@ -773,6 +783,12 @@ public class OverlayService extends Service implements View.OnTouchListener {
             try {
                 windowManager.updateViewLayout(flutterView, lp);
             } catch (Exception ignored) {}
+
+            if (frac >= 1.0f && overlayMessageChannel != null) {
+                // Determine which side bubble snapped to
+                boolean isRight = fIsRightAligned ? (fTargetX <= fMidX) : (fTargetX >= fMidX);
+                overlayMessageChannel.send("{\"type\":\"bubble_side\",\"side\":\"" + (isRight ? "right" : "left") + "\"}");
+            }
         });
         mSnapAnimator.start();
     }
@@ -833,16 +849,51 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
                     float dxTarget = bubbleCenterX - targetCenterX;
                     float dyTarget = bubbleCenterY - targetCenterY;
-                    float distTargetSq = dxTarget * dxTarget + dyTarget * dyTarget;
-                    // Bubble's center must be deeply concentric inside '✕' circle (<= 18dp)
-                    float concentricRadius = dpToPx(18);
-                    boolean isTouchingDismiss = distTargetSq <= (concentricRadius * concentricRadius);
+                    float distTarget = (float) Math.sqrt(dxTarget * dxTarget + dyTarget * dyTarget);
+                    float magneticRadius = dpToPx(MAGNETIC_SNAP_RADIUS_DP);
+                    boolean inMagneticZone = distTarget <= magneticRadius;
 
-                    if (isTouchingDismiss && !wasTouchingDismiss) {
+                    if (inMagneticZone && !isMagneticallySnapped) {
+                        // Save pre-magnet position and snap bubble center onto ✕ center
+                        preMagnetX = params.x;
+                        preMagnetY = params.y;
+                        isMagneticallySnapped = true;
+
+                        // Calculate layout params that place bubble center at ✕ center
+                        int bubbleW = flutterView.getWidth() > 0 ? flutterView.getWidth() : dpToPx(58);
+                        int bubbleH = flutterView.getHeight() > 0 ? flutterView.getHeight() : dpToPx(58);
+                        boolean snapInvertX = WindowSetup.gravity == (Gravity.TOP | Gravity.RIGHT)
+                                || WindowSetup.gravity == (Gravity.CENTER | Gravity.RIGHT)
+                                || WindowSetup.gravity == (Gravity.BOTTOM | Gravity.RIGHT);
+                        boolean snapInvertY = WindowSetup.gravity == (Gravity.BOTTOM | Gravity.LEFT)
+                                || WindowSetup.gravity == Gravity.BOTTOM
+                                || WindowSetup.gravity == (Gravity.BOTTOM | Gravity.RIGHT);
+                        int snapX, snapY;
+                        if (snapInvertX) {
+                            snapX = szWindow.x - (int) targetCenterX - bubbleW / 2;
+                        } else {
+                            snapX = (int) targetCenterX - bubbleW / 2;
+                        }
+                        if (snapInvertY) {
+                            snapY = szWindow.y - (int) targetCenterY - bubbleH / 2;
+                        } else {
+                            snapY = (int) targetCenterY - bubbleH / 2;
+                        }
+                        params.x = snapX;
+                        params.y = snapY;
+                        try {
+                            windowManager.updateViewLayout(flutterView, params);
+                        } catch (Exception ignored) {}
+
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && dismissView != null) {
                             dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
                         }
+                    } else if (!inMagneticZone && isMagneticallySnapped) {
+                        // Exited magnetic zone — release snap
+                        isMagneticallySnapped = false;
                     }
+
+                    boolean isTouchingDismiss = isMagneticallySnapped;
                     wasTouchingDismiss = isTouchingDismiss;
 
                     boolean inLowerArea = bubbleCenterY >= (szWindow.y * 0.65f);
@@ -858,24 +909,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                        windowManager.getDefaultDisplay().getSize(szWindow);
-                    }
-                    int upDismissSize = dpToPx(56);
-                    float upTargetCenterX = szWindow.x / 2.0f;
-                    float upTargetCenterY = szWindow.y - dpToPx(48) - (upDismissSize / 2.0f);
-
-                    int[] upBubbleLoc = new int[2];
-                    flutterView.getLocationOnScreen(upBubbleLoc);
-                    float upBubbleCenterX = upBubbleLoc[0] + (flutterView.getWidth() / 2.0f);
-                    float upBubbleCenterY = upBubbleLoc[1] + (flutterView.getHeight() / 2.0f);
-
-                    float upDxTarget = upBubbleCenterX - upTargetCenterX;
-                    float upDyTarget = upBubbleCenterY - upTargetCenterY;
-                    float upDistTargetSq = upDxTarget * upDxTarget + upDyTarget * upDyTarget;
-                    float upConcentricRadius = dpToPx(18);
-                    boolean isUpTouchingDismiss = upDistTargetSq <= (upConcentricRadius * upConcentricRadius);
-
+                    boolean wasMagneticallySnapped = isMagneticallySnapped;
+                    isMagneticallySnapped = false;
                     wasTouchingDismiss = false;
                     hideDismissTarget();
 
@@ -883,7 +918,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
                     }
 
-                    if (isUpTouchingDismiss) {
+                    if (wasMagneticallySnapped) {
                         if (overlayMessageChannel != null) {
                             overlayMessageChannel.send("{\"type\":\"overlay_dismissed_by_user\"}");
                         }
