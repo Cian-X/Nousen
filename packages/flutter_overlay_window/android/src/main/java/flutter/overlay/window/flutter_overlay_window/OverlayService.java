@@ -64,6 +64,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     public static final String INTENT_EXTRA_IS_CLOSE_WINDOW = "IsCloseWindow";
     public static final String ACTION_TOGGLE_OR_SHOW_OVERLAY = "flutter.overlay.window.ACTION_TOGGLE_OR_SHOW";
     public static final String ACTION_RESTORE_NOTIFICATION = "flutter.overlay.window.ACTION_RESTORE_NOTIFICATION";
+    public static final String SILENT_CHANNEL_ID = "nousen_assist_silent_channel";
 
     private static OverlayService instance;
     public static boolean isRunning = false;
@@ -87,6 +88,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private WindowManager.LayoutParams dismissParams;
     private boolean isDismissViewAttached = false;
     private boolean wasNearDismiss = false;
+    private boolean wasTouchingDismiss = false;
     private WindowManager.LayoutParams mOverlayParams;
     private int savedBubbleX = 0;
     private int savedBubbleY = 0;
@@ -108,26 +110,20 @@ public class OverlayService extends Service implements View.OnTouchListener {
             }
 
             bgPaint.setStyle(Paint.Style.FILL);
-            bgPaint.setColor(Color.parseColor("#0F172A"));
+            bgPaint.setColor(Color.parseColor("#CC0F172A"));
 
             borderPaint.setStyle(Paint.Style.STROKE);
             borderPaint.setColor(Color.WHITE);
-            borderPaint.setStrokeWidth(dpToPx(2));
+            borderPaint.setStrokeWidth(dpToPx(1.8f));
 
             xPaint.setStyle(Paint.Style.STROKE);
             xPaint.setColor(Color.WHITE);
-            xPaint.setStrokeWidth(dpToPx(3));
+            xPaint.setStrokeWidth(dpToPx(2.6f));
             xPaint.setStrokeCap(Paint.Cap.ROUND);
         }
 
         public void setActive(boolean active) {
-            if (this.isTargetActive != active) {
-                this.isTargetActive = active;
-                bgPaint.setColor(active ? Color.parseColor("#EEEF4444") : Color.parseColor("#0F172A"));
-                setScaleX(active ? 1.18f : 1.0f);
-                setScaleY(active ? 1.18f : 1.0f);
-                invalidate();
-            }
+            this.isTargetActive = active;
         }
 
         @Override
@@ -267,7 +263,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         PendingIntent pendingDeleteIntent = PendingIntent.getService(this, 102, deleteIntent, pendingFlags);
 
         final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
-        Notification notification = new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
+        Notification notification = new NotificationCompat.Builder(this, SILENT_CHANNEL_ID)
                 .setContentTitle(WindowSetup.overlayTitle != null && !WindowSetup.overlayTitle.isEmpty() ? WindowSetup.overlayTitle : "NOUSEN Assist")
                 .setContentText(contentText)
                 .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
@@ -278,6 +274,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 .setOnlyAlertOnce(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setSilent(true)
                 .setVisibility(WindowSetup.notificationVisibility)
                 .build();
         notification.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR | Notification.FLAG_FOREGROUND_SERVICE;
@@ -440,6 +437,10 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
         mOverlayParams.gravity = WindowSetup.gravity;
         flutterView.setOnTouchListener(this);
+        flutterView.setHapticFeedbackEnabled(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            flutterView.setPointerIcon(android.view.PointerIcon.getSystemIcon(this, android.view.PointerIcon.TYPE_NULL));
+        }
         try {
             windowManager.addView(flutterView, mOverlayParams);
             isViewAttached = true;
@@ -629,10 +630,14 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
-                    OverlayConstants.CHANNEL_ID,
-                    "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    SILENT_CHANNEL_ID,
+                    "NOUSEN Assist Shortcut",
+                    NotificationManager.IMPORTANCE_LOW
             );
+            serviceChannel.setDescription("Shortcut asisten aktivitas senyap");
+            serviceChannel.setSound(null, null);
+            serviceChannel.enableVibration(false);
+            serviceChannel.setShowBadge(false);
             NotificationManager manager = getSystemService(NotificationManager.class);
             assert manager != null;
             manager.createNotificationChannel(serviceChannel);
@@ -648,12 +653,43 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 Float.parseFloat(dp + ""), mResources.getDisplayMetrics());
     }
 
+    private float dpToPx(float dp) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                dp, mResources.getDisplayMetrics());
+    }
+
     private double pxToDp(int px) {
         return (double) px / mResources.getDisplayMetrics().density;
     }
 
     private boolean inPortrait() {
         return mResources.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+    }
+
+    private int clampX(int x, int viewW) {
+        if (windowManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            windowManager.getDefaultDisplay().getSize(szWindow);
+        }
+        int effectiveW = viewW > 0 ? viewW : dpToPx(58);
+        int padding = dpToPx(4);
+
+        boolean isRightAligned = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.RIGHT;
+        boolean isCenterH = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.CENTER_HORIZONTAL;
+
+        if (isCenterH) {
+            int half = szWindow.x / 2;
+            int minX = -(half - padding);
+            int maxX = half - effectiveW + padding;
+            return Math.max(minX, Math.min(x, maxX));
+        } else if (isRightAligned) {
+            int minX = padding;
+            int maxX = szWindow.x - effectiveW - padding;
+            return Math.max(minX, Math.min(x, maxX));
+        } else {
+            int minX = padding;
+            int maxX = szWindow.x - effectiveW - padding;
+            return Math.max(minX, Math.min(x, maxX));
+        }
     }
 
     private int clampY(int y, int viewH) {
@@ -770,7 +806,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     int xx = params.x + ((int) dx * (invertX ? -1 : 1));
                     int yy = params.y + ((int) dy * (invertY ? -1 : 1));
 
+                    int viewWidth = flutterView.getWidth();
                     int viewHeight = flutterView.getHeight();
+                    xx = clampX(xx, viewWidth);
                     yy = clampY(yy, viewHeight);
 
                     params.x = xx;
@@ -796,9 +834,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     float dxTarget = bubbleCenterX - targetCenterX;
                     float dyTarget = bubbleCenterY - targetCenterY;
                     float distTargetSq = dxTarget * dxTarget + dyTarget * dyTarget;
-                    // Bubble physically touches/overlaps '✕' circle
-                    float touchRadius = dpToPx(42);
-                    boolean isTouchingDismiss = distTargetSq <= (touchRadius * touchRadius);
+                    // Bubble's center must be deeply concentric inside '✕' circle (<= 18dp)
+                    float concentricRadius = dpToPx(18);
+                    boolean isTouchingDismiss = distTargetSq <= (concentricRadius * concentricRadius);
+
+                    if (isTouchingDismiss && !wasTouchingDismiss) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && dismissView != null) {
+                            dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
+                        }
+                    }
+                    wasTouchingDismiss = isTouchingDismiss;
 
                     boolean inLowerArea = bubbleCenterY >= (szWindow.y * 0.65f);
                     if (inLowerArea || isTouchingDismiss) {
@@ -828,9 +873,10 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     float upDxTarget = upBubbleCenterX - upTargetCenterX;
                     float upDyTarget = upBubbleCenterY - upTargetCenterY;
                     float upDistTargetSq = upDxTarget * upDxTarget + upDyTarget * upDyTarget;
-                    float upTouchRadius = dpToPx(42);
-                    boolean isUpTouchingDismiss = upDistTargetSq <= (upTouchRadius * upTouchRadius);
+                    float upConcentricRadius = dpToPx(18);
+                    boolean isUpTouchingDismiss = upDistTargetSq <= (upConcentricRadius * upConcentricRadius);
 
+                    wasTouchingDismiss = false;
                     hideDismissTarget();
 
                     if (overlayMessageChannel != null) {

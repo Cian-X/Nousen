@@ -300,20 +300,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: _isNearDismiss
-                ? <Color>[
-                    const Color(0xFFEF4444).withValues(alpha: a),
-                    const Color(0xFFB91C1C).withValues(alpha: a),
-                  ]
-                : <Color>[
-                    const Color(0xFF2563EB).withValues(alpha: a),
-                    const Color(0xFF1D4ED8).withValues(alpha: a),
-                  ],
+            colors: <Color>[
+              const Color(0xFF2563EB).withValues(alpha: a),
+              const Color(0xFF1D4ED8).withValues(alpha: a),
+            ],
           ),
           shape: BoxShape.circle,
           border: Border.all(
-            color: (_isNearDismiss ? const Color(0xFFFCA5A5) : Colors.white)
-                .withValues(alpha: a),
+            color: Colors.white.withValues(alpha: a),
             width: 2.0,
           ),
         ),
@@ -321,11 +315,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           alignment: Alignment.center,
           children: <Widget>[
             Icon(
-              _isNearDismiss ? Icons.delete_outline : Icons.smart_toy_rounded,
+              Icons.smart_toy_rounded,
               color: Colors.white.withValues(alpha: a),
               size: 26,
             ),
-            if (!_isNearDismiss && _streak > 0)
+            if (_streak > 0)
               Positioned(
                 right: 0,
                 top: 0,
@@ -362,7 +356,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   ),
                 ),
               ),
-            if (!_isNearDismiss && _isCompleted)
+            if (_isCompleted)
               Positioned(
                 bottom: 0,
                 right: 0,
@@ -379,7 +373,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   ),
                 ),
               )
-            else if (!_isNearDismiss && _isSkipped)
+            else if (_isSkipped)
               Positioned(
                 bottom: 0,
                 right: 0,
