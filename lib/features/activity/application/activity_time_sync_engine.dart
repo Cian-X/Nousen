@@ -194,49 +194,6 @@ class ActivityTimeSyncEngine {
     );
   }
 
-  bool _shouldUseNeutralBaseline({
-    required SmartActivitySuggestion suggestion,
-    required AppSettingsModel settings,
-    required List<ActivityModel> existingActivities,
-  }) {
-    return suggestion.type == SmartActivityType.action &&
-        !suggestion.needsTitleDetail &&
-        suggestion.recommendedTimeMinutes != null &&
-        !settings.hasConfiguredWeeklyRoutine &&
-        !settings.hasExtraActivitiesNote &&
-        existingActivities.isEmpty;
-  }
-
-  SmartActivitySuggestion _applyNeutralBaseline(
-    SmartActivitySuggestion suggestion, {
-    required String localeCode,
-  }) {
-    final SmartActivityLocalPlan? plan = suggestion.localPlan;
-    if (plan == null) {
-      return suggestion;
-    }
-
-    final int neutralTime = _neutralTimeForPlan(plan);
-    if (neutralTime == suggestion.recommendedTimeMinutes) {
-      return suggestion.copyWith(
-        reason: _buildNeutralReason(
-          suggestion: suggestion,
-          localeCode: localeCode,
-          timeMinutes: neutralTime,
-        ),
-      );
-    }
-
-    return suggestion.copyWith(
-      recommendedTimeMinutes: neutralTime,
-      reason: _buildNeutralReason(
-        suggestion: suggestion,
-        localeCode: localeCode,
-        timeMinutes: neutralTime,
-      ),
-    );
-  }
-
   int _neutralTimeForPlan(SmartActivityLocalPlan plan) {
     final List<SmartActivityTimeWindow> windows = plan.preferredTimeWindows;
     if (windows.isEmpty) {

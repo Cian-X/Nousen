@@ -461,7 +461,6 @@ class _SettingsActionItem extends StatelessWidget {
     this.icon,
     required this.title,
     this.value,
-    this.trailing,
     this.enabled = true,
     required this.onTap,
   });
@@ -469,7 +468,6 @@ class _SettingsActionItem extends StatelessWidget {
   final IconData? icon;
   final String title;
   final String? value;
-  final Widget? trailing;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -480,7 +478,7 @@ class _SettingsActionItem extends StatelessWidget {
     final Color leadingColor = theme.colorScheme.onSurface.withValues(
       alpha: enabled ? 0.68 : 0.32,
     );
-    final Widget trailingWidget = trailing ?? const _Chevron();
+    const Widget trailingWidget = _Chevron();
 
     return Material(
       color: Colors.transparent,
@@ -879,39 +877,6 @@ class UserInfoPage extends ConsumerWidget {
   }
 }
 
-Widget _buildTimePreferenceItem({
-  required BuildContext context,
-  required String title,
-  required IconData icon,
-  required String value,
-  required Future<void> Function() onTap,
-  Future<void> Function()? onClear,
-}) {
-  return _SettingsActionItem(
-    icon: icon,
-    title: title,
-    value: value,
-    trailing: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (onClear != null)
-          IconButton(
-            onPressed: onClear,
-            icon: const Icon(Icons.close_rounded, size: 18),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-          ),
-        const SizedBox(width: 6),
-        const _Chevron(),
-      ],
-    ),
-    onTap: () {
-      onTap();
-    },
-  );
-}
-
 class _WeeklyRoutinePage extends ConsumerWidget {
   const _WeeklyRoutinePage();
 
@@ -1086,10 +1051,6 @@ class _RoutineDayEditorSheetState extends State<_RoutineDayEditorSheet> {
   late WeeklyRoutineDayKind _kind;
   late int? _startMinutes;
   late int? _endMinutes;
-  late int? _departureMinutes;
-  late int? _returnMinutes;
-  late int? _restStartMinutes;
-  late int? _restEndMinutes;
 
   bool get _isId => widget.localeCode == AppConstants.localeId;
 
@@ -1099,10 +1060,6 @@ class _RoutineDayEditorSheetState extends State<_RoutineDayEditorSheet> {
     _kind = widget.initialProfile.kind;
     _startMinutes = widget.initialProfile.startMinutes;
     _endMinutes = widget.initialProfile.endMinutes;
-    _departureMinutes = widget.initialProfile.departureMinutes;
-    _returnMinutes = widget.initialProfile.returnMinutes;
-    _restStartMinutes = widget.initialProfile.restStartMinutes;
-    _restEndMinutes = widget.initialProfile.restEndMinutes;
   }
 
   @override

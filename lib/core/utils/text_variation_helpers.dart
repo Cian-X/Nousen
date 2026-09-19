@@ -22,7 +22,6 @@ class TextVariationHelpers {
     final isEmpty = scheduledCount == 0;
     final isComplete = scheduledCount > 0 && completedCount == scheduledCount;
     final isMissed = missedCount > 0;
-    final isStreakHigh = streak >= 5;
 
     if (isEmpty) {
       return randomChoice([
@@ -102,10 +101,6 @@ class TextVariationHelpers {
     required List<dynamic> scheduledActivities,
     required int streak,
   }) {
-    final nextActivity = scheduledActivities.isNotEmpty
-        ? scheduledActivities.first
-        : null;
-
     if (scheduledCount == 0) {
       return randomChoice([
         'Tidak ada aktivitas mendatang',
@@ -495,7 +490,6 @@ class TextVariationHelpers {
     final diff = thisWeekRate - previousWeekRate;
     final isImproving = diff > 0.05;
     final isDeclining = diff < -0.05;
-    final isStable = !isImproving && !isDeclining;
 
     if (thisWeekRate >= 0.9) {
       if (isImproving) {

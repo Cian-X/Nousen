@@ -756,32 +756,6 @@ class _StatsSmartSummarySectionState
     final ThemeData theme = Theme.of(context);
     final bool isId = Localizations.localeOf(context).languageCode == 'id';
 
-    List<HighlightCardData> displayedHighlights;
-    String categoryTitle;
-    Color categoryColor;
-    IconData categoryIcon;
-
-    switch (_selectedHighlightCategory) {
-      case HighlightCategory.best:
-        displayedHighlights = widget.activityHighlights.best;
-        categoryTitle = isId ? 'Terbaik' : 'Best';
-        categoryColor = theme.colorScheme.primary;
-        categoryIcon = Icons.verified_rounded;
-        break;
-      case HighlightCategory.fair:
-        displayedHighlights = widget.activityHighlights.fair;
-        categoryTitle = isId ? 'Cukup baik' : 'Fair';
-        categoryColor = const Color(0xFFF59E0B);
-        categoryIcon = Icons.lightbulb_outline_rounded;
-        break;
-      case HighlightCategory.needsAttention:
-        displayedHighlights = widget.activityHighlights.needsAttention;
-        categoryTitle = isId ? 'Perlu perhatian' : 'Needs attention';
-        categoryColor = const Color(0xFFBA1A1A);
-        categoryIcon = Icons.warning_amber_rounded;
-        break;
-    }
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
