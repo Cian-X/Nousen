@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.app.PendingIntent;
 import android.graphics.Point;
@@ -61,6 +63,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     public static final String INTENT_EXTRA_IS_CLOSE_WINDOW = "IsCloseWindow";
     public static final String ACTION_TOGGLE_OR_SHOW_OVERLAY = "flutter.overlay.window.ACTION_TOGGLE_OR_SHOW";
+    public static final String ACTION_RESTORE_NOTIFICATION = "flutter.overlay.window.ACTION_RESTORE_NOTIFICATION";
 
     private static OverlayService instance;
     public static boolean isRunning = false;
@@ -80,7 +83,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private ValueAnimator mSnapAnimator;
 
     private boolean isViewAttached = false;
-    private FrameLayout dismissView;
+    private DismissTargetView dismissView;
     private WindowManager.LayoutParams dismissParams;
     private boolean isDismissViewAttached = false;
     private boolean wasNearDismiss = false;
@@ -88,6 +91,63 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private int savedBubbleX = 0;
     private int savedBubbleY = 0;
     private boolean hasSavedBubblePosition = false;
+
+    private class DismissTargetView extends View {
+        private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint xPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private boolean isTargetActive = false;
+
+        public DismissTargetView(Context context) {
+            super(context);
+            setElevation(0f);
+            setTranslationZ(0f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                setOutlineProvider(null);
+                setStateListAnimator(null);
+            }
+
+            bgPaint.setStyle(Paint.Style.FILL);
+            bgPaint.setColor(Color.parseColor("#0F172A"));
+
+            borderPaint.setStyle(Paint.Style.STROKE);
+            borderPaint.setColor(Color.WHITE);
+            borderPaint.setStrokeWidth(dpToPx(2));
+
+            xPaint.setStyle(Paint.Style.STROKE);
+            xPaint.setColor(Color.WHITE);
+            xPaint.setStrokeWidth(dpToPx(3));
+            xPaint.setStrokeCap(Paint.Cap.ROUND);
+        }
+
+        public void setActive(boolean active) {
+            if (this.isTargetActive != active) {
+                this.isTargetActive = active;
+                bgPaint.setColor(active ? Color.parseColor("#EEEF4444") : Color.parseColor("#0F172A"));
+                setScaleX(active ? 1.18f : 1.0f);
+                setScaleY(active ? 1.18f : 1.0f);
+                invalidate();
+            }
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float cx = getWidth() / 2.0f;
+            float cy = getHeight() / 2.0f;
+            float radius = (Math.min(getWidth(), getHeight()) / 2.0f) - dpToPx(3);
+
+            // 1. Draw solid circle
+            canvas.drawCircle(cx, cy, radius, bgPaint);
+            // 2. Draw crisp border
+            canvas.drawCircle(cx, cy, radius, borderPaint);
+
+            // 3. Draw clean '✕' (zero font shadow, zero elevation shadow)
+            float arm = radius * 0.38f;
+            canvas.drawLine(cx - arm, cy - arm, cx + arm, cy + arm, xPaint);
+            canvas.drawLine(cx - arm, cy + arm, cx + arm, cy - arm, xPaint);
+        }
+    }
 
     private void cancelSnapAnimation() {
         if (mSnapAnimator != null) {
@@ -98,41 +158,23 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     private void initDismissView() {
         if (dismissView != null) return;
-        dismissView = new FrameLayout(this);
-        dismissView.setElevation(0f);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            dismissView.setOutlineProvider(null);
-        }
-
-        GradientDrawable shape = new GradientDrawable();
-        shape.setShape(GradientDrawable.OVAL);
-        shape.setColor(Color.parseColor("#0F172A"));
-        shape.setStroke(dpToPx(2), Color.WHITE);
-        dismissView.setBackground(shape);
-
-        TextView xText = new TextView(this);
-        xText.setText("✕");
-        xText.setTextColor(Color.WHITE);
-        xText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
-        xText.setTypeface(Typeface.DEFAULT_BOLD);
-        xText.setGravity(Gravity.CENTER);
-
-        FrameLayout.LayoutParams textParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-        );
-        dismissView.addView(xText, textParams);
+        dismissView = new DismissTargetView(this);
 
         int size = dpToPx(56);
         dismissParams = new WindowManager.LayoutParams(
                 size,
                 size,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                        | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT
         );
         dismissParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         dismissParams.y = dpToPx(48);
+        dismissParams.windowAnimations = 0;
     }
 
     private void showDismissTarget(boolean nearDismiss) {
@@ -146,24 +188,18 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
         if (nearDismiss != wasNearDismiss) {
             wasNearDismiss = nearDismiss;
-            GradientDrawable shape = (GradientDrawable) dismissView.getBackground();
-            if (nearDismiss) {
-                if (shape != null) shape.setColor(Color.parseColor("#EEEF4444"));
-                dismissView.setScaleX(1.18f);
-                dismissView.setScaleY(1.18f);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
-                }
-            } else {
-                if (shape != null) shape.setColor(Color.parseColor("#0F172A"));
-                dismissView.setScaleX(1.0f);
-                dismissView.setScaleY(1.0f);
+            dismissView.setActive(nearDismiss);
+            if (nearDismiss && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
             }
         }
     }
 
     private void hideDismissTarget() {
         wasNearDismiss = false;
+        if (dismissView != null) {
+            dismissView.setActive(false);
+        }
         if (windowManager != null && dismissView != null && isDismissViewAttached) {
             try {
                 windowManager.removeView(dismissView);
@@ -226,15 +262,26 @@ public class OverlayService extends Service implements View.OnTouchListener {
         int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
         PendingIntent pendingIntent = PendingIntent.getService(this, 101, toggleIntent, pendingFlags);
 
+        Intent deleteIntent = new Intent(this, OverlayService.class);
+        deleteIntent.setAction(ACTION_RESTORE_NOTIFICATION);
+        PendingIntent pendingDeleteIntent = PendingIntent.getService(this, 102, deleteIntent, pendingFlags);
+
         final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
-        return new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
+        Notification notification = new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
                 .setContentTitle(WindowSetup.overlayTitle != null && !WindowSetup.overlayTitle.isEmpty() ? WindowSetup.overlayTitle : "NOUSEN Assist")
                 .setContentText(contentText)
                 .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
                 .setContentIntent(pendingIntent)
+                .setDeleteIntent(pendingDeleteIntent)
                 .setOngoing(true)
+                .setAutoCancel(false)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .setVisibility(WindowSetup.notificationVisibility)
                 .build();
+        notification.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR | Notification.FLAG_FOREGROUND_SERVICE;
+        return notification;
     }
 
     private void updateNotification(String contentText) {
@@ -290,6 +337,13 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         overlayMessageChannel.send("{\"type\":\"request_expand\"}");
                     }
                 }
+                return START_STICKY;
+            }
+
+            if (ACTION_RESTORE_NOTIFICATION.equals(intent.getAction())) {
+                updateNotification(!isViewAttached
+                        ? "Ketuk untuk memunculkan kembali bubble asisten"
+                        : (WindowSetup.overlayContent != null && !WindowSetup.overlayContent.isEmpty() ? WindowSetup.overlayContent : "Ketuk untuk membuka asisten aktivitas"));
                 return START_STICKY;
             }
 
@@ -729,19 +783,24 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
-                    float rawX = event.getRawX();
-                    float rawY = event.getRawY();
 
+                    int dismissSize = dpToPx(56);
                     float targetCenterX = szWindow.x / 2.0f;
-                    float targetCenterY = szWindow.y - dpToPx(48 + 28);
+                    float targetCenterY = szWindow.y - dpToPx(48) - (dismissSize / 2.0f);
 
-                    float dxTarget = rawX - targetCenterX;
-                    float dyTarget = rawY - targetCenterY;
+                    int[] bubbleLoc = new int[2];
+                    flutterView.getLocationOnScreen(bubbleLoc);
+                    float bubbleCenterX = bubbleLoc[0] + (flutterView.getWidth() / 2.0f);
+                    float bubbleCenterY = bubbleLoc[1] + (flutterView.getHeight() / 2.0f);
+
+                    float dxTarget = bubbleCenterX - targetCenterX;
+                    float dyTarget = bubbleCenterY - targetCenterY;
                     float distTargetSq = dxTarget * dxTarget + dyTarget * dyTarget;
-                    float touchRadius = dpToPx(65);
+                    // Bubble physically touches/overlaps '✕' circle
+                    float touchRadius = dpToPx(42);
                     boolean isTouchingDismiss = distTargetSq <= (touchRadius * touchRadius);
 
-                    boolean inLowerArea = rawY >= (szWindow.y * 0.65f);
+                    boolean inLowerArea = bubbleCenterY >= (szWindow.y * 0.65f);
                     if (inLowerArea || isTouchingDismiss) {
                         showDismissTarget(isTouchingDismiss);
                     } else {
@@ -757,14 +816,19 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         windowManager.getDefaultDisplay().getSize(szWindow);
                     }
-                    float upRawX = event.getRawX();
-                    float upRawY = event.getRawY();
+                    int upDismissSize = dpToPx(56);
                     float upTargetCenterX = szWindow.x / 2.0f;
-                    float upTargetCenterY = szWindow.y - dpToPx(48 + 28);
-                    float upDxTarget = upRawX - upTargetCenterX;
-                    float upDyTarget = upRawY - upTargetCenterY;
+                    float upTargetCenterY = szWindow.y - dpToPx(48) - (upDismissSize / 2.0f);
+
+                    int[] upBubbleLoc = new int[2];
+                    flutterView.getLocationOnScreen(upBubbleLoc);
+                    float upBubbleCenterX = upBubbleLoc[0] + (flutterView.getWidth() / 2.0f);
+                    float upBubbleCenterY = upBubbleLoc[1] + (flutterView.getHeight() / 2.0f);
+
+                    float upDxTarget = upBubbleCenterX - upTargetCenterX;
+                    float upDyTarget = upBubbleCenterY - upTargetCenterY;
                     float upDistTargetSq = upDxTarget * upDxTarget + upDyTarget * upDyTarget;
-                    float upTouchRadius = dpToPx(65);
+                    float upTouchRadius = dpToPx(42);
                     boolean isUpTouchingDismiss = upDistTargetSq <= (upTouchRadius * upTouchRadius);
 
                     hideDismissTarget();
