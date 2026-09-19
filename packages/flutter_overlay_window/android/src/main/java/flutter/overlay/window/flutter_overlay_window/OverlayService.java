@@ -85,6 +85,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private boolean isDismissViewAttached = false;
     private boolean wasNearDismiss = false;
     private WindowManager.LayoutParams mOverlayParams;
+    private int savedBubbleX = 0;
+    private int savedBubbleY = 0;
+    private boolean hasSavedBubblePosition = false;
 
     private void cancelSnapAnimation() {
         if (mSnapAnimator != null) {
@@ -467,7 +470,26 @@ public class OverlayService extends Service implements View.OnTouchListener {
             params.height = (height == -1999 || height == -1) ? -1 : dpToPx(height);
             WindowSetup.enableDrag = enableDrag;
             if (!enableDrag) {
-                params.x = 0;
+                // Expanding to card: save bubble position
+                savedBubbleX = params.x;
+                savedBubbleY = params.y;
+                hasSavedBubblePosition = true;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    windowManager.getDefaultDisplay().getSize(szWindow);
+                }
+                int targetW = (width == -1999 || width == -1) ? szWindow.x : dpToPx(width);
+                // Center horizontally on screen
+                params.x = Math.max(0, (szWindow.x - targetW) / 2);
+                // Center vertically
+                params.y = 0;
+            } else {
+                // Collapsing back to bubble: restore bubble position
+                if (hasSavedBubblePosition) {
+                    params.x = savedBubbleX;
+                    params.y = savedBubbleY;
+                    hasSavedBubblePosition = false;
+                }
             }
             windowManager.updateViewLayout(flutterView, params);
             result.success(true);

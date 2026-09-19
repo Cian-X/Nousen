@@ -12,6 +12,7 @@ class PopUpAssistBubbleApp extends StatefulWidget {
 
 class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   bool _isExpanded = false;
+  bool _isTransitioning = false;
   String _activityId = '';
   String _activityTitle = 'NOUSEN Assist';
   String _timeLabel = 'Siap mendampingi';
@@ -148,10 +149,18 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _expandOverlay() async {
     _idleTimer?.cancel();
+    _autoMinimizeTimer?.cancel();
+    if (_isTransitioning) return;
+    setState(() {
+      _isTransitioning = true;
+    });
+    // Let Flutter render 1 transparent frame before native Window resize
+    await Future<void>.delayed(const Duration(milliseconds: 30));
     await FlutterOverlayWindow.resizeOverlay(286, 240, false);
     if (!mounted) return;
     setState(() {
       _isExpanded = true;
+      _isTransitioning = false;
       _isIdle = false;
     });
     _startAutoMinimizeTimer();
@@ -159,9 +168,18 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _collapseOverlay() async {
     _autoMinimizeTimer?.cancel();
+    if (_isTransitioning) return;
+    setState(() {
+      _isTransitioning = true;
+    });
+    // Let Flutter render 1 transparent frame before native Window resize
+    await Future<void>.delayed(const Duration(milliseconds: 30));
     await FlutterOverlayWindow.resizeOverlay(58, 58, true);
     if (!mounted) return;
-    setState(() => _isExpanded = false);
+    setState(() {
+      _isExpanded = false;
+      _isTransitioning = false;
+    });
     _resetIdleTimer();
   }
 
@@ -248,7 +266,9 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: Center(
-          child: _isExpanded ? _buildExpandedCard() : _buildCollapsedBubble(),
+          child: _isTransitioning
+              ? const SizedBox.shrink()
+              : (_isExpanded ? _buildExpandedCard() : _buildCollapsedBubble()),
         ),
       ),
     );
@@ -256,13 +276,24 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Widget _buildCollapsedBubble() {
     final double a = _isIdle ? 0.45 : 1.0;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        _resetIdleTimer();
-        _expandOverlay();
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey<String>('collapsed_bubble_scale'),
+      tween: Tween<double>(begin: 0.88, end: 1.0),
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOutBack,
+      builder: (BuildContext context, double scale, Widget? child) {
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
       },
-      child: Container(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          _resetIdleTimer();
+          _expandOverlay();
+        },
+        child: Container(
         width: 52,
         height: 52,
         decoration: BoxDecoration(
@@ -368,11 +399,23 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           ],
         ),
       ),
+    ),
     );
   }
 
   Widget _buildExpandedCard() {
-    return Container(
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey<String>('expanded_card_scale'),
+      tween: Tween<double>(begin: 0.90, end: 1.0),
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double scale, Widget? child) {
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      child: Container(
       width: 276,
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
@@ -721,6 +764,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
             ),
         ],
       ),
+    ),
     );
   }
 }
