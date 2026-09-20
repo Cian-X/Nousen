@@ -83,6 +83,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           return;
         }
 
+        if (data['type'] == 'request_collapse') {
+          if (_isExpanded && !_isTransitioning && !_isCardClosing) {
+            _collapseOverlay();
+          }
+          return;
+        }
+
         if (data['type'] == 'bubble_side') {
           final String side = data['side']?.toString() ?? 'right';
           if (_bubbleSide != side) {
@@ -252,7 +259,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       _showSpeechLabel = false;
     });
     await Future<void>.delayed(const Duration(milliseconds: 25));
-    await FlutterOverlayWindow.resizeOverlay(286, 240, false);
+    await FlutterOverlayWindow.resizeOverlay(286, 265, false);
     // Allow native window to settle at screen center and restore alpha
     await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
@@ -661,34 +668,36 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           ),
           const SizedBox(height: 8),
 
-          // Speech Balloon / Proactive cue
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text('💬', style: TextStyle(fontSize: 12)),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    _speechText,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF334155),
-                      height: 1.25,
+          // Speech Balloon / Proactive cue (only shown when speech text is active)
+          if (_speechText.isNotEmpty) ...<Widget>[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('💬', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      _speechText,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                        height: 1.25,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+          ],
 
           // Activity Title & Time
           Row(

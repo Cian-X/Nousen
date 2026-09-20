@@ -539,25 +539,42 @@ public class OverlayService extends Service implements View.OnTouchListener {
             boolean isCollapsingToBubble = enableDrag && hasSavedBubblePosition;
             boolean isExpandingToCard = !enableDrag;
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                windowManager.getDefaultDisplay().getSize(szWindow);
+            }
+            int targetW = (width == -1999 || width == -1) ? szWindow.x : dpToPx(width);
+
             if (isExpandingToCard) {
-                // Expanding to card: save bubble position
+                // Expanding to card: save bubble position and enable watch outside touch
                 savedBubbleX = params.x;
                 savedBubbleY = params.y;
                 hasSavedBubblePosition = true;
+                params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    windowManager.getDefaultDisplay().getSize(szWindow);
-                }
-                int targetW = (width == -1999 || width == -1) ? szWindow.x : dpToPx(width);
                 // Center horizontally on screen
                 params.x = Math.max(0, (szWindow.x - targetW) / 2);
                 // Center vertically
                 params.y = 0;
             } else if (isCollapsingToBubble) {
-                // Collapsing back to bubble: restore bubble position
-                params.x = savedBubbleX;
-                params.y = savedBubbleY;
-                hasSavedBubblePosition = false;
+                // Collapsing back to bubble: restore bubble position and disable watch outside touch
+                params.flags &= ~WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+                if (hasSavedBubblePosition) {
+                    params.x = savedBubbleX;
+                    params.y = savedBubbleY;
+                    hasSavedBubblePosition = false;
+                }
+            } else if (enableDrag && width > 58) {
+                // Expanding for speech bubble: if bubble is on the left side, shift params.x to keep left edge at 0
+                int midX = (szWindow.x - dpToPx(58)) / 2;
+                if (params.x >= midX) {
+                    params.x = Math.max(0, szWindow.x - targetW);
+                }
+            } else if (enableDrag && width <= 58) {
+                // Collapsing speech bubble back to bubble: restore left edge position if on left side
+                int midX = (szWindow.x - targetW) / 2;
+                if (params.x > midX) {
+                    params.x = Math.max(0, szWindow.x - targetW);
+                }
             }
 
             if (isCollapsingToBubble || isExpandingToCard) {
@@ -716,12 +733,12 @@ public class OverlayService extends Service implements View.OnTouchListener {
             int maxX = half - effectiveW + padding;
             return Math.max(minX, Math.min(x, maxX));
         } else if (isRightAligned) {
-            int minX = padding;
-            int maxX = szWindow.x - effectiveW - padding;
+            int minX = 0;
+            int maxX = szWindow.x - effectiveW;
             return Math.max(minX, Math.min(x, maxX));
         } else {
-            int minX = padding;
-            int maxX = szWindow.x - effectiveW - padding;
+            int minX = 0;
+            int maxX = szWindow.x - effectiveW;
             return Math.max(minX, Math.min(x, maxX));
         }
     }
@@ -821,7 +838,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View view, MotionEvent event) {
-        if (windowManager != null && WindowSetup.enableDrag && flutterView != null) {
+        if (windowManager != null && flutterView != null) {
+            if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
+                if (overlayMessageChannel != null) {
+                    overlayMessageChannel.send("{\"type\":\"request_collapse\"}");
+                }
+                return false;
+            }
+            if (!WindowSetup.enableDrag) {
+                return false;
+            }
             WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
