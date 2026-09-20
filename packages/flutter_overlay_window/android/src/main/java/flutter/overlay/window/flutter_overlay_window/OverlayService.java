@@ -247,6 +247,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         PixelFormat.TRANSLUCENT
                 );
                 mOverlayParams.gravity = WindowSetup.gravity;
+                mOverlayParams.windowAnimations = 0;
             }
             // Reset to initial position (right-center: x=0, y=0 with CENTER|RIGHT gravity)
             mOverlayParams.x = 0;
@@ -444,6 +445,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
             mOverlayParams.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
         }
         mOverlayParams.gravity = WindowSetup.gravity;
+        mOverlayParams.windowAnimations = 0;
         flutterView.setOnTouchListener(this);
         flutterView.setHapticFeedbackEnabled(false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -529,10 +531,15 @@ public class OverlayService extends Service implements View.OnTouchListener {
         if (windowManager != null && flutterView != null) {
             cancelSnapAnimation();
             WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+            params.windowAnimations = 0;
             params.width = (width == -1999 || width == -1) ? -1 : dpToPx(width);
             params.height = (height == -1999 || height == -1) ? -1 : dpToPx(height);
             WindowSetup.enableDrag = enableDrag;
-            if (!enableDrag) {
+
+            boolean isCollapsingToBubble = enableDrag && hasSavedBubblePosition;
+            boolean isExpandingToCard = !enableDrag;
+
+            if (isExpandingToCard) {
                 // Expanding to card: save bubble position
                 savedBubbleX = params.x;
                 savedBubbleY = params.y;
@@ -546,15 +553,34 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 params.x = Math.max(0, (szWindow.x - targetW) / 2);
                 // Center vertically
                 params.y = 0;
-            } else {
+            } else if (isCollapsingToBubble) {
                 // Collapsing back to bubble: restore bubble position
-                if (hasSavedBubblePosition) {
-                    params.x = savedBubbleX;
-                    params.y = savedBubbleY;
-                    hasSavedBubblePosition = false;
-                }
+                params.x = savedBubbleX;
+                params.y = savedBubbleY;
+                hasSavedBubblePosition = false;
             }
-            windowManager.updateViewLayout(flutterView, params);
+
+            if (isCollapsingToBubble || isExpandingToCard) {
+                // Hide window at compositor level during reposition to avoid Mali gralloc buffer stretch artifact
+                final float originalAlpha = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && WindowSetup.flag == clickableFlag)
+                        ? MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER : 1.0f;
+                params.alpha = 0f;
+                windowManager.updateViewLayout(flutterView, params);
+
+                // Reveal window after SurfaceFlinger and WindowManager settle at target position
+                flutterView.postDelayed(() -> {
+                    if (windowManager != null && flutterView != null) {
+                        try {
+                            WindowManager.LayoutParams p = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+                            p.alpha = originalAlpha;
+                            p.windowAnimations = 0;
+                            windowManager.updateViewLayout(flutterView, p);
+                        } catch (Exception ignored) {}
+                    }
+                }, 110);
+            } else {
+                windowManager.updateViewLayout(flutterView, params);
+            }
             result.success(true);
         } else {
             result.success(false);

@@ -251,11 +251,10 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       _isTransitioning = true;
       _showSpeechLabel = false;
     });
-    // Let Flutter render 1 transparent frame before native Window resize
-    await Future<void>.delayed(const Duration(milliseconds: 35));
+    await Future<void>.delayed(const Duration(milliseconds: 25));
     await FlutterOverlayWindow.resizeOverlay(286, 240, false);
-    // Allow native window to settle at screen center
-    await Future<void>.delayed(const Duration(milliseconds: 65));
+    // Allow native window to settle at screen center and restore alpha
+    await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
     setState(() {
       _isExpanded = true;
@@ -268,11 +267,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   Future<void> _collapseOverlay() async {
     _autoMinimizeTimer?.cancel();
     if (_isTransitioning || _isCardClosing) return;
-    // 1. Animate card fade & scale out in place at screen center
+    // 1. Shrink card smoothly in place at screen center
     setState(() {
       _isCardClosing = true;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 130));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
 
     // 2. Set transparent buffer while native window repositions
@@ -280,16 +279,16 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       _isTransitioning = true;
       _isCardClosing = false;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await Future<void>.delayed(const Duration(milliseconds: 25));
 
-    // 3. Move and resize native window back to saved edge coordinates
+    // 3. Move and resize native window back to saved edge coordinates (native hides alpha=0f)
     await FlutterOverlayWindow.resizeOverlay(58, 58, true);
 
     // 4. Wait for Android WindowManager to complete surface relayout at screen edge
-    await Future<void>.delayed(const Duration(milliseconds: 90));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
 
-    // 5. Render bubble directly at screen edge with scale pop-in
+    // 5. Render bubble directly at screen edge with clean pop-in
     setState(() {
       _isExpanded = false;
       _isTransitioning = false;
@@ -446,17 +445,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     final double a = _isIdle ? 0.45 : 1.0;
     return TweenAnimationBuilder<double>(
       key: const ValueKey<String>('collapsed_bubble_scale'),
-      tween: Tween<double>(begin: 0.65, end: 1.0),
-      duration: const Duration(milliseconds: 170),
-      curve: Curves.easeOutBack,
+      tween: Tween<double>(begin: 0.80, end: 1.0),
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOutCubic,
       builder: (BuildContext context, double scale, Widget? child) {
-        final double popOpacity = ((scale - 0.65) / (1.0 - 0.65)).clamp(0.0, 1.0);
         return Transform.scale(
           scale: scale,
-          child: Opacity(
-            opacity: popOpacity,
-            child: child,
-          ),
+          child: child,
         );
       },
       child: GestureDetector(
@@ -573,20 +568,14 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     return TweenAnimationBuilder<double>(
       key: ValueKey<String>('expanded_card_${_isCardClosing ? "close" : "open"}'),
       tween: _isCardClosing
-          ? Tween<double>(begin: 1.0, end: 0.75)
+          ? Tween<double>(begin: 1.0, end: 0.80)
           : Tween<double>(begin: 0.88, end: 1.0),
-      duration: Duration(milliseconds: _isCardClosing ? 120 : 180),
+      duration: Duration(milliseconds: _isCardClosing ? 100 : 160),
       curve: _isCardClosing ? Curves.easeInCubic : Curves.easeOutCubic,
       builder: (BuildContext context, double scale, Widget? child) {
-        final double opacity = _isCardClosing
-            ? ((scale - 0.75) / (1.0 - 0.75)).clamp(0.0, 1.0)
-            : ((scale - 0.88) / (1.0 - 0.88)).clamp(0.0, 1.0);
         return Transform.scale(
           scale: scale,
-          child: Opacity(
-            opacity: opacity,
-            child: child,
-          ),
+          child: child,
         );
       },
       child: Container(
