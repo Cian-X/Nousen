@@ -18,6 +18,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   String _timeLabel = 'Siap mendampingi';
   String _speechText = '';
   String _lastTriggeredSpeechId = '';
+  bool _isFirstSync = true;
   int _streak = 0;
   List<String> _subActivities = <String>[];
   Set<String> _completedSubActivities = <String>{};
@@ -120,15 +121,23 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
               _isSkipped = data['isSkipped'] == true;
             }
           });
-          // Show speech label only when a NEW activity triggers speechText
-          if (data['speechText'] != null &&
-              data['speechText'].toString().isNotEmpty &&
-              _activityId.isNotEmpty &&
-              _activityId != _lastTriggeredSpeechId &&
+          // Show speech label on first sync (overlay just started) or activity transition
+          final bool hasNewSpeech = data['speechText'] != null &&
+              data['speechText'].toString().isNotEmpty;
+          final bool isNewActivity = _activityId.isNotEmpty &&
+              _activityId != _lastTriggeredSpeechId;
+          if ((hasNewSpeech || (_isFirstSync && _activityId.isNotEmpty)) &&
+              isNewActivity &&
               !_isExpanded) {
             _lastTriggeredSpeechId = _activityId;
+            _isFirstSync = false;
+            // Build speech text if not provided
+            if (_speechText.isEmpty) {
+              _speechText = 'Waktunya $_activityTitle!';
+            }
             _triggerSpeechLabel();
           }
+          if (_isFirstSync) _isFirstSync = false;
         }
       } catch (_) {}
     });

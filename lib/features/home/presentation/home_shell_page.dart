@@ -67,6 +67,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         final String? activityId = data['activityId']?.toString();
 
         if (type == 'request_sync') {
+          _lastSyncedSignature = '';  // Force fresh sync
+          _lastSpeechActivityId = ''; // Allow speech on first sync
           _syncCurrentFocusToOverlay();
           return;
         }
