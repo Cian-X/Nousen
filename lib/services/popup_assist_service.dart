@@ -21,6 +21,8 @@ class PopUpAssistService {
     String title = 'NOUSEN Assist',
     String time = 'Siap mendampingi',
     String? speechText,
+    bool isGreeting = false,
+    List<Map<String, dynamic>>? todaySchedules,
     int streak = 0,
     List<String> subActivities = const <String>[],
     List<String> completedSubActivities = const <String>[],
@@ -52,6 +54,8 @@ class PopUpAssistService {
       title: title,
       timeLabel: time,
       speechText: speechText,
+      isGreeting: isGreeting,
+      todaySchedules: todaySchedules,
       streak: streak,
       subActivities: subActivities,
       completedSubActivities: completedSubActivities,
@@ -65,6 +69,8 @@ class PopUpAssistService {
     required String title,
     required String timeLabel,
     String? speechText,
+    bool isGreeting = false,
+    List<Map<String, dynamic>>? todaySchedules,
     int streak = 0,
     List<String> subActivities = const <String>[],
     List<String> completedSubActivities = const <String>[],
@@ -72,23 +78,27 @@ class PopUpAssistService {
     bool isSkipped = false,
   }) async {
     try {
-      await FlutterOverlayWindow.shareData(
-        jsonEncode(<String, dynamic>{
-          'type': 'sync_activity',
-          'activityId': activityId,
-          'title': title,
-          'time': timeLabel,
-          'streak': streak,
-          'speechText': speechText ??
-              (title.isNotEmpty && title != 'NOUSEN Assist'
-                  ? 'Waktunya $title! Mau dikerjakan sekarang?'
-                  : 'Siap mendampingi aktivitasmu hari ini!'),
-          'subActivities': subActivities,
-          'completedSubActivities': completedSubActivities,
-          'isCompleted': isCompleted,
-          'isSkipped': isSkipped,
-        }),
-      );
+      final Map<String, dynamic> payload = <String, dynamic>{
+        'type': 'sync_activity',
+        'activityId': activityId,
+        'title': title,
+        'time': timeLabel,
+        'streak': streak,
+        'subActivities': subActivities,
+        'completedSubActivities': completedSubActivities,
+        'isCompleted': isCompleted,
+        'isSkipped': isSkipped,
+      };
+      if (speechText != null && speechText.isNotEmpty) {
+        payload['speechText'] = speechText;
+      }
+      if (isGreeting) {
+        payload['isGreeting'] = true;
+      }
+      if (todaySchedules != null) {
+        payload['todaySchedules'] = todaySchedules;
+      }
+      await FlutterOverlayWindow.shareData(jsonEncode(payload));
     } catch (_) {}
   }
 

@@ -17,8 +17,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   String _activityTitle = 'NOUSEN Assist';
   String _timeLabel = 'Siap mendampingi';
   String _speechText = '';
-  String _lastTriggeredSpeechId = '';
-  bool _isFirstSync = true;
+  List<dynamic> _todaySchedules = <dynamic>[];
+  final Set<String> _announcedScheduleKeys = <String>{};
   int _streak = 0;
   List<String> _subActivities = <String>[];
   Set<String> _completedSubActivities = <String>{};
@@ -31,6 +31,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   String _bubbleSide = 'right'; // which screen edge the bubble is on
   bool _showSpeechLabel = false;
   Timer? _speechTimer;
+  Timer? _scheduleTicker;
   Timer? _idleTimer;
   Timer? _autoMinimizeTimer;
   StreamSubscription<dynamic>? _overlaySubscription;
@@ -39,6 +40,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   void initState() {
     super.initState();
     _resetIdleTimer();
+    _startScheduleTicker();
 
     _overlaySubscription =
         FlutterOverlayWindow.overlayListener.listen((dynamic event) {
@@ -87,6 +89,21 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           return;
         }
 
+        if (data['todaySchedules'] is List) {
+          _todaySchedules = List<dynamic>.from(data['todaySchedules'] as List);
+          _checkScheduleTick();
+        }
+
+        if (data['isGreeting'] == true && data['speechText'] != null) {
+          final String greeting = data['speechText'].toString();
+          if (greeting.isNotEmpty && !_isExpanded && !_isNearDismiss) {
+            setState(() {
+              _speechText = greeting;
+            });
+            _triggerSpeechLabel();
+          }
+        }
+
         if (data['type'] == 'sync_activity' || data.containsKey('title')) {
           setState(() {
             if (data['activityId'] != null) {
@@ -97,9 +114,6 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
             }
             if (data['time'] != null) {
               _timeLabel = data['time'].toString();
-            }
-            if (data['speechText'] != null) {
-              _speechText = data['speechText'].toString();
             }
             if (data['streak'] != null) {
               _streak = int.tryParse(data['streak'].toString()) ?? 0;
@@ -121,23 +135,6 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
               _isSkipped = data['isSkipped'] == true;
             }
           });
-          // Show speech label on first sync (overlay just started) or activity transition
-          final bool hasNewSpeech = data['speechText'] != null &&
-              data['speechText'].toString().isNotEmpty;
-          final bool isNewActivity = _activityId.isNotEmpty &&
-              _activityId != _lastTriggeredSpeechId;
-          if ((hasNewSpeech || (_isFirstSync && _activityId.isNotEmpty)) &&
-              isNewActivity &&
-              !_isExpanded) {
-            _lastTriggeredSpeechId = _activityId;
-            _isFirstSync = false;
-            // Build speech text if not provided
-            if (_speechText.isEmpty) {
-              _speechText = 'Waktunya $_activityTitle!';
-            }
-            _triggerSpeechLabel();
-          }
-          if (_isFirstSync) _isFirstSync = false;
         }
       } catch (_) {}
     });
@@ -153,6 +150,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     _idleTimer?.cancel();
     _autoMinimizeTimer?.cancel();
     _speechTimer?.cancel();
+    _scheduleTicker?.cancel();
     _overlaySubscription?.cancel();
     super.dispose();
   }
@@ -171,11 +169,55 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     }
   }
 
+  void _startScheduleTicker() {
+    _scheduleTicker?.cancel();
+    _checkScheduleTick();
+    _scheduleTicker = Timer.periodic(const Duration(seconds: 10), (_) {
+      _checkScheduleTick();
+    });
+  }
+
+  void _checkScheduleTick() {
+    if (_isExpanded || _isNearDismiss || _todaySchedules.isEmpty) return;
+    final DateTime now = DateTime.now();
+    final int currentMinutes = now.hour * 60 + now.minute;
+    final String datePrefix = '${now.year}_${now.month}_${now.day}';
+
+    for (final dynamic item in _todaySchedules) {
+      if (item is! Map) continue;
+      final Map<String, dynamic> schedule = Map<String, dynamic>.from(item);
+      final int? timeMin = schedule['timeMinutes'] as int?;
+      final String id = schedule['id']?.toString() ?? '';
+      final String title = schedule['title']?.toString() ?? '';
+      final bool isDone = schedule['isCompleted'] == true;
+      final bool isSkip = schedule['isSkipped'] == true;
+
+      if (timeMin != null && timeMin == currentMinutes && !isDone && !isSkip && id.isNotEmpty) {
+        final String announceKey = '${datePrefix}_${id}_$timeMin';
+        if (!_announcedScheduleKeys.contains(announceKey)) {
+          _announcedScheduleKeys.add(announceKey);
+          setState(() {
+            _activityId = id;
+            _activityTitle = title;
+            final int h = timeMin ~/ 60;
+            final int m = timeMin % 60;
+            _timeLabel = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+            _speechText = 'Waktunya $title!';
+          });
+          _triggerSpeechLabel();
+          break;
+        }
+      }
+    }
+  }
+
   Future<void> _triggerSpeechLabel() async {
     if (_isExpanded || _speechText.isEmpty || _isNearDismiss) return;
     _speechTimer?.cancel();
+    _resetIdleTimer();
+    setState(() => _isIdle = false);
     // Resize overlay wider to fit speech label
-    final int speechWidth = _bubbleSide == 'right' ? 230 : 230;
+    const int speechWidth = 230;
     await FlutterOverlayWindow.resizeOverlay(speechWidth, 58, false);
     if (!mounted) return;
     setState(() => _showSpeechLabel = true);
@@ -185,6 +227,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       if (!mounted || _isExpanded) return;
       await FlutterOverlayWindow.resizeOverlay(58, 58, true);
+      _resetIdleTimer();
     });
   }
 

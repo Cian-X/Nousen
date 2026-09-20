@@ -200,7 +200,12 @@ class SettingsPage extends ConsumerWidget {
                               popUpAssistServiceProvider,
                             );
                             if (nextValue) {
-                              await popUpService.show();
+                              await popUpService.show(
+                                speechText: isId
+                                    ? 'NOUSEN Assist aktif! Siap mendampingi harimu.'
+                                    : 'NOUSEN Assist active! Ready to assist your day.',
+                                isGreeting: true,
+                              );
                             } else {
                               await popUpService.close();
                             }

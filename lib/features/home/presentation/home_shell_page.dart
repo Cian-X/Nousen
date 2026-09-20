@@ -39,7 +39,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   _ActivityTileData? _lastFocusItem;
   int _lastStreak = 0;
   String _lastSyncedSignature = '';
-  String _lastSpeechActivityId = '';
+  List<Map<String, dynamic>> _lastTodaySchedules = const <Map<String, dynamic>>[];
 
   @override
   void initState() {
@@ -67,8 +67,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         final String? activityId = data['activityId']?.toString();
 
         if (type == 'request_sync') {
-          _lastSyncedSignature = '';  // Force fresh sync
-          _lastSpeechActivityId = ''; // Allow speech on first sync
+          _lastSyncedSignature = ''; // Force fresh sync
           _syncCurrentFocusToOverlay();
           return;
         }
@@ -125,14 +124,15 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   void _syncCurrentFocusToOverlay() {
     final _ActivityTileData? item = _lastFocusItem;
     if (item == null) {
-      if (_lastSyncedSignature == 'empty') return;
-      _lastSyncedSignature = 'empty';
-      _lastSpeechActivityId = '';
+      final String sig = 'empty_${_lastTodaySchedules.length}';
+      if (_lastSyncedSignature == sig) return;
+      _lastSyncedSignature = sig;
       ref.read(popUpAssistServiceProvider).syncActivity(
             activityId: '',
             title: 'Belum ada jadwal',
             timeLabel: 'Hari ini santai',
             streak: _lastStreak,
+            todaySchedules: _lastTodaySchedules,
             subActivities: const <String>[],
             completedSubActivities: const <String>[],
             isCompleted: false,
@@ -147,23 +147,19 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       subActivities: activity.subActivities,
     );
 
+    final String schedulesSig = _lastTodaySchedules
+        .map((s) => '${s['id']}_${s['isCompleted']}_${s['isSkipped']}')
+        .join('|');
     final String sig =
-        '${activity.id}_${_lastStreak}_${item.isCompleted}_${item.isSkipped}_${completedSub.join(',')}';
+        '${activity.id}_${_lastStreak}_${item.isCompleted}_${item.isSkipped}_${completedSub.join(',')}_$schedulesSig';
     if (sig == _lastSyncedSignature) return;
     _lastSyncedSignature = sig;
-
-    // Only send speechText when a NEW activity comes into focus (transition)
-    String? speech;
-    if (activity.id != _lastSpeechActivityId) {
-      _lastSpeechActivityId = activity.id;
-      speech = 'Waktunya ${activity.title}!';
-    }
 
     ref.read(popUpAssistServiceProvider).syncActivity(
           activityId: activity.id,
           title: activity.title,
           timeLabel: formatMinutesAsTime(activity.timeMinutes),
-          speechText: speech,
+          todaySchedules: _lastTodaySchedules,
           streak: _lastStreak,
           subActivities: activity.subActivities,
           completedSubActivities: completedSub,
@@ -425,6 +421,36 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     _lastFocusItem =
         focusItem ?? (activityItems.isNotEmpty ? activityItems.first : null);
     _lastStreak = currentStreak;
+
+    final String todayDateKey = DateFormat('yyyy-MM-dd').format(now);
+    final List<ActivityModel> todayActivities = allActivities
+        .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
+        .toList()
+      ..sort((ActivityModel a, ActivityModel b) => a.timeMinutes.compareTo(b.timeMinutes));
+    final Map<String, ProgressEntryModel> todayProgressMap =
+        <String, ProgressEntryModel>{
+      for (final ProgressEntryModel entry in historicalProgress)
+        if (entry.dateKey == todayDateKey) entry.activityId: entry,
+    };
+    _lastTodaySchedules = todayActivities.map((ActivityModel a) {
+      final ProgressEntryModel? p = todayProgressMap[a.id];
+      final ActivityDailyProgressStatus s = resolveActivityDailyProgressStatus(
+        scheduledDate: now,
+        today: now,
+        scheduleUpdatedAt: a.scheduleUpdatedAt ?? a.createdAt,
+        subActivities: a.subActivities,
+        scheduledTimeMinutes: a.timeMinutes,
+        entry: p,
+      );
+      return <String, dynamic>{
+        'id': a.id,
+        'title': a.title,
+        'timeMinutes': a.timeMinutes,
+        'isCompleted': s == ActivityDailyProgressStatus.done,
+        'isSkipped': s == ActivityDailyProgressStatus.skipped,
+      };
+    }).toList();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _syncCurrentFocusToOverlay();
     });
