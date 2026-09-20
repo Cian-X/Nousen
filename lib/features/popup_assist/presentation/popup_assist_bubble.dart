@@ -13,6 +13,7 @@ class PopUpAssistBubbleApp extends StatefulWidget {
 class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   bool _isExpanded = false;
   bool _isTransitioning = false;
+  bool _isCardClosing = false;
   String _activityId = '';
   String _activityTitle = 'NOUSEN Assist';
   String _timeLabel = 'Siap mendampingi';
@@ -70,12 +71,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           setState(() {
             _isNearDismiss = false;
             _isIdle = false;
+            _isCardClosing = false;
           });
           return;
         }
 
         if (data['type'] == 'request_expand') {
-          if (!_isExpanded) {
+          if (!_isExpanded && !_isTransitioning && !_isCardClosing) {
             _expandOverlay();
           }
           return;
@@ -244,14 +246,16 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     _idleTimer?.cancel();
     _autoMinimizeTimer?.cancel();
     _speechTimer?.cancel();
-    if (_isTransitioning) return;
+    if (_isTransitioning || _isCardClosing) return;
     setState(() {
       _isTransitioning = true;
       _showSpeechLabel = false;
     });
     // Let Flutter render 1 transparent frame before native Window resize
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await Future<void>.delayed(const Duration(milliseconds: 35));
     await FlutterOverlayWindow.resizeOverlay(286, 240, false);
+    // Allow native window to settle at screen center
+    await Future<void>.delayed(const Duration(milliseconds: 65));
     if (!mounted) return;
     setState(() {
       _isExpanded = true;
@@ -263,14 +267,29 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Future<void> _collapseOverlay() async {
     _autoMinimizeTimer?.cancel();
-    if (_isTransitioning) return;
+    if (_isTransitioning || _isCardClosing) return;
+    // 1. Animate card fade & scale out in place at screen center
+    setState(() {
+      _isCardClosing = true;
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 130));
+    if (!mounted) return;
+
+    // 2. Set transparent buffer while native window repositions
     setState(() {
       _isTransitioning = true;
+      _isCardClosing = false;
     });
-    // Let Flutter render 1 transparent frame before native Window resize
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+
+    // 3. Move and resize native window back to saved edge coordinates
     await FlutterOverlayWindow.resizeOverlay(58, 58, true);
+
+    // 4. Wait for Android WindowManager to complete surface relayout at screen edge
+    await Future<void>.delayed(const Duration(milliseconds: 90));
     if (!mounted) return;
+
+    // 5. Render bubble directly at screen edge with scale pop-in
     setState(() {
       _isExpanded = false;
       _isTransitioning = false;
@@ -427,13 +446,17 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     final double a = _isIdle ? 0.45 : 1.0;
     return TweenAnimationBuilder<double>(
       key: const ValueKey<String>('collapsed_bubble_scale'),
-      tween: Tween<double>(begin: 0.88, end: 1.0),
-      duration: const Duration(milliseconds: 140),
+      tween: Tween<double>(begin: 0.65, end: 1.0),
+      duration: const Duration(milliseconds: 170),
       curve: Curves.easeOutBack,
       builder: (BuildContext context, double scale, Widget? child) {
+        final double popOpacity = ((scale - 0.65) / (1.0 - 0.65)).clamp(0.0, 1.0);
         return Transform.scale(
           scale: scale,
-          child: child,
+          child: Opacity(
+            opacity: popOpacity,
+            child: child,
+          ),
         );
       },
       child: GestureDetector(
@@ -548,14 +571,22 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   Widget _buildExpandedCard() {
     return TweenAnimationBuilder<double>(
-      key: const ValueKey<String>('expanded_card_scale'),
-      tween: Tween<double>(begin: 0.90, end: 1.0),
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
+      key: ValueKey<String>('expanded_card_${_isCardClosing ? "close" : "open"}'),
+      tween: _isCardClosing
+          ? Tween<double>(begin: 1.0, end: 0.75)
+          : Tween<double>(begin: 0.88, end: 1.0),
+      duration: Duration(milliseconds: _isCardClosing ? 120 : 180),
+      curve: _isCardClosing ? Curves.easeInCubic : Curves.easeOutCubic,
       builder: (BuildContext context, double scale, Widget? child) {
+        final double opacity = _isCardClosing
+            ? ((scale - 0.75) / (1.0 - 0.75)).clamp(0.0, 1.0)
+            : ((scale - 0.88) / (1.0 - 0.88)).clamp(0.0, 1.0);
         return Transform.scale(
           scale: scale,
-          child: child,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
         );
       },
       child: Container(
