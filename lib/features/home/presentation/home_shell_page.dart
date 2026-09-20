@@ -39,6 +39,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   _ActivityTileData? _lastFocusItem;
   int _lastStreak = 0;
   String _lastSyncedSignature = '';
+  String _lastSpeechActivityId = '';
 
   @override
   void initState() {
@@ -124,12 +125,11 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     if (item == null) {
       if (_lastSyncedSignature == 'empty') return;
       _lastSyncedSignature = 'empty';
+      _lastSpeechActivityId = '';
       ref.read(popUpAssistServiceProvider).syncActivity(
             activityId: '',
             title: 'Belum ada jadwal',
             timeLabel: 'Hari ini santai',
-            speechText:
-                'Belum ada aktivitas aktif saat ini. Mau buat jadwal baru?',
             streak: _lastStreak,
             subActivities: const <String>[],
             completedSubActivities: const <String>[],
@@ -150,10 +150,18 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     if (sig == _lastSyncedSignature) return;
     _lastSyncedSignature = sig;
 
+    // Only send speechText when a NEW activity comes into focus (transition)
+    String? speech;
+    if (activity.id != _lastSpeechActivityId) {
+      _lastSpeechActivityId = activity.id;
+      speech = 'Waktunya ${activity.title}!';
+    }
+
     ref.read(popUpAssistServiceProvider).syncActivity(
           activityId: activity.id,
           title: activity.title,
           timeLabel: formatMinutesAsTime(activity.timeMinutes),
+          speechText: speech,
           streak: _lastStreak,
           subActivities: activity.subActivities,
           completedSubActivities: completedSub,
