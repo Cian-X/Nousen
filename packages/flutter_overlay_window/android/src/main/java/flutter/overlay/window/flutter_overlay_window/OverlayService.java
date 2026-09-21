@@ -844,8 +844,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
 
         mSnapAnimator = ValueAnimator.ofFloat(0f, 1f);
-        mSnapAnimator.setDuration(220);
-        mSnapAnimator.setInterpolator(new DecelerateInterpolator());
+        mSnapAnimator.setDuration(260);
+        mSnapAnimator.setInterpolator(new DecelerateInterpolator(1.4f));
         final int fStartX = startX;
         final int fTargetX = targetX;
         final int fStartY = startY;

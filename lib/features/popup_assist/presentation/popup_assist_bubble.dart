@@ -238,8 +238,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       if (!mounted || _isExpanded) return;
       // 1. Fade out BOTH speech label and bubble TOGETHER (smooth fade-out)
       setState(() => _isSpeechFadingOut = true);
-      // Wait for the fade-out animation to complete (200ms)
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Wait for the fade-out animation to complete (240ms)
+      await Future<void>.delayed(const Duration(milliseconds: 240));
       if (!mounted || _isExpanded) return;
 
       // 2. Both are now completely transparent, hold transparent buffer
@@ -248,13 +248,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         _isSpeechFadingOut = false;
         _isTransitioning = true;
       });
-      await Future<void>.delayed(const Duration(milliseconds: 25));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
       if (!mounted || _isExpanded) return;
 
       // 3. Native resize while 100% invisible
       await FlutterOverlayWindow.resizeOverlay(58, 58, true);
       // 4. Wait for native window manager to settle at edge bubble position
-      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await Future<void>.delayed(const Duration(milliseconds: 140));
       if (!mounted) return;
 
       // 5. Reveal single bubble cleanly at edge
@@ -281,10 +281,10 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       _isTransitioning = true;
       _showSpeechLabel = false;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 25));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
     await FlutterOverlayWindow.resizeOverlay(286, 265, false);
     // Allow native window to settle at screen center and restore alpha
-    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await Future<void>.delayed(const Duration(milliseconds: 140));
     if (!mounted) return;
     setState(() {
       _isExpanded = true;
@@ -301,7 +301,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     setState(() {
       _isCardClosing = true;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 130));
     if (!mounted) return;
 
     // 2. Set transparent buffer while native window repositions
@@ -309,13 +309,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       _isTransitioning = true;
       _isCardClosing = false;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 25));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
 
     // 3. Move and resize native window back to saved edge coordinates (native hides alpha=0f)
     await FlutterOverlayWindow.resizeOverlay(58, 58, true);
 
     // 4. Wait for Android WindowManager to complete surface relayout at screen edge
-    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await Future<void>.delayed(const Duration(milliseconds: 140));
     if (!mounted) return;
 
     // 5. Render bubble directly at screen edge with clean pop-in
@@ -462,7 +462,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     // so both fade out together when _isSpeechFadingOut = true
     return AnimatedOpacity(
       opacity: _isSpeechFadingOut ? 0.0 : 1.0,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
       child: Row(
         mainAxisAlignment: _bubbleSide == 'right'
             ? MainAxisAlignment.end
@@ -477,9 +478,9 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     final double a = _isIdle ? 0.45 : 1.0;
     return TweenAnimationBuilder<double>(
       key: const ValueKey<String>('collapsed_bubble_scale'),
-      tween: Tween<double>(begin: 0.80, end: 1.0),
-      duration: const Duration(milliseconds: 140),
-      curve: Curves.easeOutCubic,
+      tween: Tween<double>(begin: 0.75, end: 1.0),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutBack,
       builder: (BuildContext context, double scale, Widget? child) {
         return Transform.scale(
           scale: scale,
@@ -600,9 +601,9 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     return TweenAnimationBuilder<double>(
       key: ValueKey<String>('expanded_card_${_isCardClosing ? "close" : "open"}'),
       tween: _isCardClosing
-          ? Tween<double>(begin: 1.0, end: 0.80)
-          : Tween<double>(begin: 0.88, end: 1.0),
-      duration: Duration(milliseconds: _isCardClosing ? 100 : 160),
+          ? Tween<double>(begin: 1.0, end: 0.82)
+          : Tween<double>(begin: 0.85, end: 1.0),
+      duration: Duration(milliseconds: _isCardClosing ? 130 : 200),
       curve: _isCardClosing ? Curves.easeInCubic : Curves.easeOutCubic,
       builder: (BuildContext context, double scale, Widget? child) {
         return Transform.scale(

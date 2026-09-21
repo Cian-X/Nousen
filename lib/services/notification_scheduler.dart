@@ -74,6 +74,25 @@ class NotificationScheduler {
 
     _initialized = true;
     await refreshCapabilities();
+
+    // Delete stale notification channels so Android picks up updated vibration pattern.
+    // Android caches channel settings; the only way to refresh is delete + recreate.
+    final AndroidFlutterLocalNotificationsPlugin? deletePlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (deletePlugin != null) {
+      for (final String ch in <String>[
+        'activity_reminders',
+        'activity_reminders_no_vib',
+        'one_time_reminders',
+        'one_time_reminders_no_vib',
+      ]) {
+        try {
+          await deletePlugin.deleteNotificationChannel(ch);
+        } catch (_) {}
+      }
+    }
   }
 
   Future<NotificationAppLaunchDetails?> launchDetails() {
@@ -400,7 +419,7 @@ class NotificationScheduler {
         priority: Priority.high,
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
-            ? Int64List.fromList(<int>[0, 400, 200, 400, 200, 400])
+            ? Int64List.fromList(<int>[0, 500, 150, 500, 150, 500])
             : null,
         actions: const <AndroidNotificationAction>[
           AndroidNotificationAction(
@@ -434,7 +453,7 @@ class NotificationScheduler {
         priority: Priority.high,
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
-            ? Int64List.fromList(<int>[0, 400, 200, 400, 200, 400])
+            ? Int64List.fromList(<int>[0, 500, 150, 500, 150, 500])
             : null,
       ),
       iOS: const DarwinNotificationDetails(),
