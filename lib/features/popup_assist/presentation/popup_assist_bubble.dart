@@ -31,6 +31,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   bool _isNearDismiss = false;
   String _bubbleSide = 'right'; // which screen edge the bubble is on
   bool _showSpeechLabel = false;
+  bool _isSpeechFadingOut = false; // unified fade-out for speech + icon together
   Timer? _speechTimer;
   Timer? _scheduleTicker;
   Timer? _idleTimer;
@@ -224,7 +225,10 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     if (_isExpanded || _speechText.isEmpty || _isNearDismiss) return;
     _speechTimer?.cancel();
     _resetIdleTimer();
-    setState(() => _isIdle = false);
+    setState(() {
+      _isIdle = false;
+      _isSpeechFadingOut = false;
+    });
     // Resize overlay wider to fit speech label
     const int speechWidth = 230;
     await FlutterOverlayWindow.resizeOverlay(speechWidth, 58, true);
@@ -232,20 +236,28 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     setState(() => _showSpeechLabel = true);
     _speechTimer = Timer(const Duration(seconds: 5), () async {
       if (!mounted || _isExpanded) return;
-      // 1. Hide EVERYTHING at once (speech + icon) — both vanish simultaneously
+      // 1. Fade out BOTH speech label and bubble TOGETHER (smooth fade-out)
+      setState(() => _isSpeechFadingOut = true);
+      // Wait for the fade-out animation to complete (200ms)
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted || _isExpanded) return;
+
+      // 2. Both are now completely transparent, hold transparent buffer
       setState(() {
         _showSpeechLabel = false;
+        _isSpeechFadingOut = false;
         _isTransitioning = true;
       });
-      // 2. Flush frame so transparent buffer renders before native resize
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+      await Future<void>.delayed(const Duration(milliseconds: 25));
       if (!mounted || _isExpanded) return;
-      // 3. Native resize while fully invisible (OverlayService alpha-hides too)
+
+      // 3. Native resize while 100% invisible
       await FlutterOverlayWindow.resizeOverlay(58, 58, true);
-      // 4. Wait for native window manager to settle at bubble position
+      // 4. Wait for native window manager to settle at edge bubble position
       await Future<void>.delayed(const Duration(milliseconds: 120));
       if (!mounted) return;
-      // 5. Reveal bubble cleanly at edge — no intermediate frame visible
+
+      // 5. Reveal single bubble cleanly at edge
       setState(() => _isTransitioning = false);
       _resetIdleTimer();
     });
@@ -412,34 +424,30 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     }
 
     final Widget speechLabel = Flexible(
-      child: AnimatedOpacity(
-        opacity: _showSpeechLabel ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 250),
-        child: Container(
-          margin: EdgeInsets.only(
-            left: _bubbleSide == 'right' ? 0 : 4,
-            right: _bubbleSide == 'right' ? 4 : 0,
+      child: Container(
+        margin: EdgeInsets.only(
+          left: _bubbleSide == 'right' ? 0 : 4,
+          right: _bubbleSide == 'right' ? 4 : 0,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xF01E293B),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 0.5,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xF01E293B),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-          ),
-          child: Text(
-            _speechText,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              decoration: TextDecoration.none,
-            ),
+        ),
+        child: Text(
+          _speechText,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            height: 1.3,
+            decoration: TextDecoration.none,
           ),
         ),
       ),
@@ -450,12 +458,18 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         ? <Widget>[speechLabel, bubble]
         : <Widget>[bubble, speechLabel];
 
-    return Row(
-      mainAxisAlignment: _bubbleSide == 'right'
-          ? MainAxisAlignment.end
-          : MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: children,
+    // Wrap entire row (speech + icon) in a SINGLE AnimatedOpacity
+    // so both fade out together when _isSpeechFadingOut = true
+    return AnimatedOpacity(
+      opacity: _isSpeechFadingOut ? 0.0 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: Row(
+        mainAxisAlignment: _bubbleSide == 'right'
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: children,
+      ),
     );
   }
 
