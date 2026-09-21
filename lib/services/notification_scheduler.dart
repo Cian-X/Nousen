@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -26,11 +27,17 @@ class NotificationScheduler {
   String _activeTimezone = 'UTC';
   bool _canScheduleExact = false;
   bool _notificationsEnabled = true;
+  bool _vibrationEnabled = true;
 
   String get activeTimezone => _activeTimezone;
   bool get canScheduleExact => _canScheduleExact;
   bool get notificationsEnabled => _notificationsEnabled;
+  bool get vibrationEnabled => _vibrationEnabled;
   String get effectiveScheduleMode => _androidScheduleMode.name;
+
+  void updateVibration(bool enabled) {
+    _vibrationEnabled = enabled;
+  }
 
   Future<void> initialize({NotificationTapHandler? onTap}) async {
     tz.initializeTimeZones();
@@ -93,6 +100,7 @@ class NotificationScheduler {
     AppSettingsModel settings,
     Map<String, Map<int, ActivityReminderCopy>>? reminderCopiesByActivity,
   ) async {
+    _vibrationEnabled = settings.notificationVibration;
     for (final ActivityModel activity in activities) {
       await rescheduleAllForActivity(
         activity,
@@ -106,6 +114,7 @@ class NotificationScheduler {
     List<OneTimeReminderModel> reminders,
     AppSettingsModel settings,
   ) async {
+    _vibrationEnabled = settings.notificationVibration;
     for (final OneTimeReminderModel reminder in reminders) {
       await rescheduleOneTimeReminder(reminder, settings);
     }
@@ -116,6 +125,7 @@ class NotificationScheduler {
     AppSettingsModel settings,
     {Map<int, ActivityReminderCopy>? copiesByWeekday}
   ) async {
+    _vibrationEnabled = settings.notificationVibration;
     await initialize();
     await cancelAllForActivity(activity.id);
 
@@ -381,14 +391,18 @@ class NotificationScheduler {
   }
 
   NotificationDetails _notificationDetails() {
-    return const NotificationDetails(
+    return NotificationDetails(
       android: AndroidNotificationDetails(
-        'activity_reminders',
+        _vibrationEnabled ? 'activity_reminders' : 'activity_reminders_no_vib',
         'Activity reminders',
         channelDescription: 'Weekly schedule reminders',
         importance: Importance.high,
         priority: Priority.high,
-        actions: <AndroidNotificationAction>[
+        enableVibration: _vibrationEnabled,
+        vibrationPattern: _vibrationEnabled
+            ? Int64List.fromList(<int>[0, 400, 200, 400, 200, 400])
+            : null,
+        actions: const <AndroidNotificationAction>[
           AndroidNotificationAction(
             'open_activity',
             'Buka aktivitas',
@@ -406,20 +420,24 @@ class NotificationScheduler {
           ),
         ],
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     );
   }
 
   NotificationDetails _oneTimeNotificationDetails() {
-    return const NotificationDetails(
+    return NotificationDetails(
       android: AndroidNotificationDetails(
-        'one_time_reminders',
+        _vibrationEnabled ? 'one_time_reminders' : 'one_time_reminders_no_vib',
         'One-time reminders',
         channelDescription: 'Date and time specific reminders',
         importance: Importance.high,
         priority: Priority.high,
+        enableVibration: _vibrationEnabled,
+        vibrationPattern: _vibrationEnabled
+            ? Int64List.fromList(<int>[0, 400, 200, 400, 200, 400])
+            : null,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     );
   }
 

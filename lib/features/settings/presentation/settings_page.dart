@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
@@ -122,6 +123,33 @@ class SettingsPage extends ConsumerWidget {
                               settings: settings,
                               enabled: nextValue,
                             );
+                          },
+                        ),
+                        _SettingsSwitchItem(
+                          icon: Icons.vibration_rounded,
+                          title: isId
+                              ? 'Getar notifikasi'
+                              : 'Notification vibration',
+                          value: settings.notificationVibration,
+                          enabled: settings.notificationsEnabled,
+                          onChanged: (bool nextValue) async {
+                            if (nextValue) {
+                              await HapticFeedback.vibrate();
+                            }
+                            await ref.read(settingsRepositoryProvider).save(
+                              settings.copyWith(
+                                notificationVibration: nextValue,
+                              ),
+                            );
+                            ref
+                                .read(notificationSchedulerProvider)
+                                .updateVibration(nextValue);
+                            await ref
+                                .read(activityActionsProvider)
+                                .bootstrapRescheduleAndEvaluate();
+                            await ref
+                                .read(oneTimeReminderActionsProvider)
+                                .bootstrapReschedule();
                           },
                         ),
                         _SettingsActionItem(
@@ -539,36 +567,45 @@ class _SettingsSwitchItem extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final IconData icon;
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            icon,
-            size: 18,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
+    final double opacity = enabled ? 1.0 : 0.42;
+    return Opacity(
+      opacity: opacity,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          Switch.adaptive(value: value, onChanged: onChanged),
-        ],
+            Switch.adaptive(
+              value: value,
+              onChanged: enabled ? onChanged : null,
+            ),
+          ],
+        ),
       ),
     );
   }

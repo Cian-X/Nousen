@@ -174,7 +174,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 PixelFormat.TRANSLUCENT
         );
         dismissParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        dismissParams.y = dpToPx(48);
+        dismissParams.y = dpToPx(38);
         dismissParams.windowAnimations = 0;
     }
 
@@ -183,13 +183,29 @@ public class OverlayService extends Service implements View.OnTouchListener {
         if (windowManager == null || dismissView == null) return;
         if (!isDismissViewAttached) {
             try {
+                dismissView.setScaleX(0f);
+                dismissView.setScaleY(0f);
+                dismissView.setAlpha(0f);
                 windowManager.addView(dismissView, dismissParams);
                 isDismissViewAttached = true;
+                // Smooth appear animation
+                dismissView.animate()
+                    .scaleX(1f).scaleY(1f).alpha(1f)
+                    .setDuration(180)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
             } catch (Exception ignored) {}
         }
         if (nearDismiss != wasNearDismiss) {
             wasNearDismiss = nearDismiss;
             dismissView.setActive(nearDismiss);
+            // Pulse scale on magnetic snap
+            float targetScale = nearDismiss ? 1.15f : 1.0f;
+            dismissView.animate()
+                .scaleX(targetScale).scaleY(targetScale)
+                .setDuration(120)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
             if (nearDismiss && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 dismissView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
             }
@@ -202,10 +218,20 @@ public class OverlayService extends Service implements View.OnTouchListener {
             dismissView.setActive(false);
         }
         if (windowManager != null && dismissView != null && isDismissViewAttached) {
-            try {
-                windowManager.removeView(dismissView);
-            } catch (Exception ignored) {}
-            isDismissViewAttached = false;
+            // Smooth disappear animation before removing view
+            dismissView.animate()
+                .scaleX(0f).scaleY(0f).alpha(0f)
+                .setDuration(140)
+                .setInterpolator(new DecelerateInterpolator())
+                .withEndAction(() -> {
+                    if (windowManager != null && dismissView != null && isDismissViewAttached) {
+                        try {
+                            windowManager.removeView(dismissView);
+                        } catch (Exception ignored) {}
+                        isDismissViewAttached = false;
+                    }
+                })
+                .start();
         }
     }
 
@@ -536,8 +562,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
             params.height = (height == -1999 || height == -1) ? -1 : dpToPx(height);
             WindowSetup.enableDrag = enableDrag;
 
-            boolean isCollapsingToBubble = enableDrag && hasSavedBubblePosition;
-            boolean isExpandingToCard = !enableDrag;
+            boolean isCardSize = (height > 100 || height == -1 || height == -1999);
+            boolean isCollapsingToBubble = enableDrag && hasSavedBubblePosition && !isCardSize;
+            boolean isExpandingToCard = !enableDrag && isCardSize;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 windowManager.getDefaultDisplay().getSize(szWindow);
@@ -563,21 +590,29 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     params.y = savedBubbleY;
                     hasSavedBubblePosition = false;
                 }
-            } else if (enableDrag && width > 58) {
-                // Expanding for speech bubble: if bubble is on the left side, shift params.x to keep left edge at 0
-                int midX = (szWindow.x - dpToPx(58)) / 2;
+            } else if (width > 58 && height <= 100) {
+                // Speech bubble active: stay strictly anchored to current edge, DO NOT center X or Y
+                int midX = szWindow.x / 2;
+                if (params.x >= midX) {
+                    // Bubble is on the left side: flush to left edge
+                    params.x = Math.max(0, szWindow.x - targetW);
+                } else {
+                    // Bubble is on the right side: flush to right edge
+                    params.x = 0;
+                }
+            } else if (width <= 58 && height <= 100) {
+                // Speech bubble collapsed back to small bubble: keep edge anchor, apply alpha-hide
+                int midX = szWindow.x / 2;
                 if (params.x >= midX) {
                     params.x = Math.max(0, szWindow.x - targetW);
-                }
-            } else if (enableDrag && width <= 58) {
-                // Collapsing speech bubble back to bubble: restore left edge position if on left side
-                int midX = (szWindow.x - targetW) / 2;
-                if (params.x > midX) {
-                    params.x = Math.max(0, szWindow.x - targetW);
+                } else {
+                    params.x = 0;
                 }
             }
 
-            if (isCollapsingToBubble || isExpandingToCard) {
+            boolean needsAlphaHide = isCollapsingToBubble || isExpandingToCard || (width <= 58 && height <= 100 && !isCollapsingToBubble);
+
+            if (needsAlphaHide) {
                 // Hide window at compositor level during reposition to avoid Mali gralloc buffer stretch artifact
                 final float originalAlpha = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && WindowSetup.flag == clickableFlag)
                         ? MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER : 1.0f;
@@ -892,7 +927,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
                     int dismissSize = dpToPx(56);
                     float targetCenterX = szWindow.x / 2.0f;
-                    float targetCenterY = szWindow.y - dpToPx(48) - (dismissSize / 2.0f);
+                    float targetCenterY = szWindow.y - dpToPx(38) - (dismissSize / 2.0f);
 
                     int[] bubbleLoc = new int[2];
                     flutterView.getLocationOnScreen(bubbleLoc);

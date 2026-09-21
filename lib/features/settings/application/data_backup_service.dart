@@ -148,6 +148,7 @@ class DataBackupService {
       'endOfDayReminderMinutes': settings.endOfDayReminderMinutes,
       'localeCode': settings.localeCode,
       'notificationsEnabled': settings.notificationsEnabled,
+      'notificationVibration': settings.notificationVibration,
       'profileName': settings.profileName,
       'extraActivitiesNote': settings.extraActivitiesNote,
       'profileAvatarPath': settings.profileAvatarPath,
@@ -237,6 +238,10 @@ class DataBackupService {
       raw['notificationsEnabled'],
       fallback: true,
     );
+    final bool notificationVibration = _asBool(
+      raw['notificationVibration'],
+      fallback: true,
+    );
     final String? profileName = _asNullableString(raw['profileName']);
     final String? extraActivitiesNote = _asNullableString(
       raw['extraActivitiesNote'],
@@ -261,6 +266,7 @@ class DataBackupService {
       endOfDayReminderMinutes: endOfDayReminderMinutes,
       localeCode: localeCode,
       notificationsEnabled: notificationsEnabled,
+      notificationVibration: notificationVibration,
       profileName: profileName,
       extraActivitiesNote: extraActivitiesNote,
       profileAvatarPath: profileAvatarPath,

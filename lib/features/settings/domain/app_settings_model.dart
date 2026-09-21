@@ -6,6 +6,7 @@ class AppSettingsModel {
     required this.endOfDayReminderMinutes,
     required this.localeCode,
     this.notificationsEnabled = true,
+    this.notificationVibration = true,
     this.profileName,
     this.extraActivitiesNote,
     this.profileAvatarPath,
@@ -21,6 +22,7 @@ class AppSettingsModel {
   final int endOfDayReminderMinutes;
   final String localeCode;
   final bool notificationsEnabled;
+  final bool notificationVibration;
   final String? profileName;
   final String? extraActivitiesNote;
   final String? profileAvatarPath;
@@ -36,6 +38,7 @@ class AppSettingsModel {
     int? endOfDayReminderMinutes,
     String? localeCode,
     bool? notificationsEnabled,
+    bool? notificationVibration,
     String? profileName,
     bool clearProfileName = false,
     String? extraActivitiesNote,
@@ -60,6 +63,8 @@ class AppSettingsModel {
           endOfDayReminderMinutes ?? this.endOfDayReminderMinutes,
       localeCode: localeCode ?? this.localeCode,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      notificationVibration:
+          notificationVibration ?? this.notificationVibration,
       profileName: clearProfileName ? null : (profileName ?? this.profileName),
       extraActivitiesNote: clearExtraActivitiesNote
           ? null

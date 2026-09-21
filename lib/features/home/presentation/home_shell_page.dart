@@ -30,6 +30,11 @@ class HomeShellPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<HomeShellPage> createState() => _HomeShellPageState();
+
+  /// Whether Navigator can pop above this page (used by [PopScope]).
+  static bool canPopAbove(BuildContext context) {
+    return Navigator.of(context).canPop();
+  }
 }
 
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
@@ -455,7 +460,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       if (mounted) _syncCurrentFocusToOverlay();
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        // Prevent back gesture from freezing the app when at root route.
+        // We intentionally do nothing — the app stays open.
+      },
+      child: Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _openActivityForm,
         tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
@@ -664,6 +675,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
             );
           },
         ),
+      ),
       ),
     );
   }

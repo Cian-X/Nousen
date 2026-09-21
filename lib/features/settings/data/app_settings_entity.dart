@@ -35,6 +35,7 @@ extension AppSettingsEntityMapper on AppSettingsEntity {
       endOfDayReminderMinutes: endOfDayReminderMinutes,
       localeCode: localeCode,
       notificationsEnabled: notificationsEnabled,
+      notificationVibration: payload.notificationVibration,
       profileName: profileName,
       extraActivitiesNote: payload.extraActivitiesNote,
       profileAvatarPath: profileAvatarPath,
@@ -61,6 +62,7 @@ AppSettingsEntity settingsEntityFromDomain(AppSettingsModel model) {
       model.weeklyRoutine,
       model.extraActivitiesNote,
       model.hasSeededData,
+      model.notificationVibration,
     )
     ..wakeUpMinutes = model.wakeUpMinutes
     ..sleepMinutes = model.sleepMinutes
@@ -82,12 +84,14 @@ String? _encodeSettingsPayload(
   List<WeeklyRoutineDayProfile> routine,
   String? extraActivitiesNote,
   bool hasSeededData,
+  bool notificationVibration,
 ) {
   final List<WeeklyRoutineDayProfile> normalized = normalizeWeeklyRoutine(routine);
   final String? trimmedNote = _normalizeNullableString(extraActivitiesNote);
   if (normalized.every((WeeklyRoutineDayProfile day) => day.kind == WeeklyRoutineDayKind.unspecified) &&
       trimmedNote == null &&
-      !hasSeededData) {
+      !hasSeededData &&
+      notificationVibration == true) {
     return null;
   }
   return jsonEncode(<String, dynamic>{
@@ -96,6 +100,7 @@ String? _encodeSettingsPayload(
         .toList(growable: false),
     'extraActivitiesNote': trimmedNote,
     'hasSeededData': hasSeededData,
+    'notificationVibration': notificationVibration,
   });
 }
 
@@ -105,6 +110,7 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
+      notificationVibration: true,
     );
   }
 
@@ -115,30 +121,35 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
         routine: _decodeWeeklyRoutineEntries(decoded),
         extraActivitiesNote: null,
         hasSeededData: false,
+        notificationVibration: true,
       );
     }
     if (decoded is Map) {
       final Object? rawRoutine = decoded['routine'];
       final Object? rawExtraActivitiesNote = decoded['extraActivitiesNote'];
       final Object? rawHasSeededData = decoded['hasSeededData'];
+      final Object? rawNotificationVibration = decoded['notificationVibration'];
       return _DecodedSettingsPayload(
         routine: _decodeWeeklyRoutineEntries(rawRoutine),
         extraActivitiesNote: _normalizeNullableString(
           rawExtraActivitiesNote?.toString(),
         ),
         hasSeededData: rawHasSeededData == true,
+        notificationVibration: rawNotificationVibration is bool ? rawNotificationVibration : true,
       );
     }
     return const _DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
+      notificationVibration: true,
     );
   } catch (_) {
     return const _DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
+      notificationVibration: true,
     );
   }
 }
@@ -172,9 +183,11 @@ class _DecodedSettingsPayload {
     required this.routine,
     required this.extraActivitiesNote,
     required this.hasSeededData,
+    this.notificationVibration = true,
   });
 
   final List<WeeklyRoutineDayProfile> routine;
   final String? extraActivitiesNote;
   final bool hasSeededData;
+  final bool notificationVibration;
 }

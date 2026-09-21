@@ -227,15 +227,27 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     setState(() => _isIdle = false);
     // Resize overlay wider to fit speech label
     const int speechWidth = 230;
-    await FlutterOverlayWindow.resizeOverlay(speechWidth, 58, false);
+    await FlutterOverlayWindow.resizeOverlay(speechWidth, 58, true);
     if (!mounted) return;
     setState(() => _showSpeechLabel = true);
     _speechTimer = Timer(const Duration(seconds: 5), () async {
       if (!mounted || _isExpanded) return;
+      // 1. Fade out speech label visually in Flutter
       setState(() => _showSpeechLabel = false);
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // 2. Brief pause for fade-out to render
+      await Future<void>.delayed(const Duration(milliseconds: 180));
       if (!mounted || _isExpanded) return;
+      // 3. Set transitioning to render transparent buffer
+      setState(() => _isTransitioning = true);
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+      if (!mounted || _isExpanded) return;
+      // 4. Native resize with alpha-hide (OverlayService handles it for non-card resize)
       await FlutterOverlayWindow.resizeOverlay(58, 58, true);
+      // 5. Wait for native settle
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+      // 6. Reveal bubble cleanly at edge
+      setState(() => _isTransitioning = false);
       _resetIdleTimer();
     });
   }
