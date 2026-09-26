@@ -44,7 +44,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   _ActivityTileData? _lastFocusItem;
   int _lastStreak = 0;
   String _lastSyncedSignature = '';
-  List<Map<String, dynamic>> _lastTodaySchedules = const <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _lastTodaySchedules =
+      const <Map<String, dynamic>>[];
 
   @override
   void initState() {
@@ -61,8 +62,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   }
 
   void _setupOverlayActionListener() {
-    _overlayActionSubscription =
-        FlutterOverlayWindow.overlayListener.listen((dynamic event) async {
+    _overlayActionSubscription = FlutterOverlayWindow.overlayListener.listen((
+      dynamic event,
+    ) async {
       if (event == null || !mounted) return;
       try {
         final Map<String, dynamic> data = event is String
@@ -91,15 +93,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         if (activity == null) return;
 
         if (type == 'action_complete') {
-          await ref.read(activityActionsProvider).toggleTodayCompletion(
-                activity: activity,
-                completed: true,
-              );
+          await ref
+              .read(activityActionsProvider)
+              .toggleTodayCompletion(activity: activity, completed: true);
         } else if (type == 'action_skip') {
-          await ref.read(activityActionsProvider).skipToday(
-                activity: activity,
-                note: 'Lewati dari Pop Up Assist',
-              );
+          await ref
+              .read(activityActionsProvider)
+              .skipToday(activity: activity, note: 'Lewati dari Pop Up Assist');
         } else if (type == 'action_postpone') {
           final int minutes =
               int.tryParse(data['minutes']?.toString() ?? '') ?? 10;
@@ -110,7 +110,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           final String? sub = data['subActivity']?.toString();
           final bool completed = data['completed'] == true;
           if (sub != null && sub.isNotEmpty) {
-            await ref.read(activityActionsProvider).toggleTodaySubActivity(
+            await ref
+                .read(activityActionsProvider)
+                .toggleTodaySubActivity(
                   activity: activity,
                   subActivity: sub,
                   completed: completed,
@@ -132,7 +134,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       final String sig = 'empty_${_lastTodaySchedules.length}';
       if (_lastSyncedSignature == sig) return;
       _lastSyncedSignature = sig;
-      ref.read(popUpAssistServiceProvider).syncActivity(
+      ref
+          .read(popUpAssistServiceProvider)
+          .syncActivity(
             activityId: '',
             title: 'Belum ada jadwal',
             timeLabel: 'Hari ini santai',
@@ -160,7 +164,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     if (sig == _lastSyncedSignature) return;
     _lastSyncedSignature = sig;
 
-    ref.read(popUpAssistServiceProvider).syncActivity(
+    ref
+        .read(popUpAssistServiceProvider)
+        .syncActivity(
           activityId: activity.id,
           title: activity.title,
           timeLabel: formatMinutesAsTime(activity.timeMinutes),
@@ -428,15 +434,19 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     _lastStreak = currentStreak;
 
     final String todayDateKey = DateFormat('yyyy-MM-dd').format(now);
-    final List<ActivityModel> todayActivities = allActivities
-        .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
-        .toList()
-      ..sort((ActivityModel a, ActivityModel b) => a.timeMinutes.compareTo(b.timeMinutes));
+    final List<ActivityModel> todayActivities =
+        allActivities
+            .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
+            .toList()
+          ..sort(
+            (ActivityModel a, ActivityModel b) =>
+                a.timeMinutes.compareTo(b.timeMinutes),
+          );
     final Map<String, ProgressEntryModel> todayProgressMap =
         <String, ProgressEntryModel>{
-      for (final ProgressEntryModel entry in historicalProgress)
-        if (entry.dateKey == todayDateKey) entry.activityId: entry,
-    };
+          for (final ProgressEntryModel entry in historicalProgress)
+            if (entry.dateKey == todayDateKey) entry.activityId: entry,
+        };
     _lastTodaySchedules = todayActivities.map((ActivityModel a) {
       final ProgressEntryModel? p = todayProgressMap[a.id];
       final ActivityDailyProgressStatus s = resolveActivityDailyProgressStatus(
@@ -467,215 +477,222 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         // We intentionally do nothing — the app stays open.
       },
       child: Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openActivityForm,
-        tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        shape: const CircleBorder(),
-        elevation: 6,
-        child: const Icon(Icons.add, size: 28),
-      ),
-      bottomNavigationBar: Container(
-        height: 72,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0.95),
-          border: Border(
-            top: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              width: 1,
+        floatingActionButton: FloatingActionButton(
+          onPressed: _openActivityForm,
+          tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          shape: const CircleBorder(),
+          elevation: 6,
+          child: const Icon(Icons.add, size: 28),
+        ),
+        bottomNavigationBar: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0.95),
+            border: Border(
+              top: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: <Widget>[
+              _buildNavItem(
+                context: context,
+                icon: Icons.home_rounded,
+                label: localeCode == 'id' ? 'Beranda' : 'Home',
+                isSelected: true,
+                onTap: () {},
+              ),
+              _buildNavItem(
+                context: context,
+                icon: Icons.insights_rounded,
+                label: localeCode == 'id' ? 'Analitik' : 'Analytics',
+                isSelected: false,
+                onTap: _openStatsSummary,
+              ),
+              _buildNavItem(
+                context: context,
+                icon: Icons.calendar_today_rounded,
+                label: localeCode == 'id' ? 'Jadwal' : 'Schedule',
+                isSelected: false,
+                onTap: () {
+                  ref.read(homeSelectedWeekdayProvider.notifier).state =
+                      DateTime.now().weekday;
+                },
+              ),
+              _buildNavItem(
+                context: context,
+                icon: Icons.person_rounded,
+                label: localeCode == 'id' ? 'Profil' : 'Profile',
+                isSelected: false,
+                onTap: _openSettings,
+              ),
+            ],
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            _buildNavItem(
-              context: context,
-              icon: Icons.home_rounded,
-              label: localeCode == 'id' ? 'Beranda' : 'Home',
-              isSelected: true,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              context: context,
-              icon: Icons.insights_rounded,
-              label: localeCode == 'id' ? 'Analitik' : 'Analytics',
-              isSelected: false,
-              onTap: _openStatsSummary,
-            ),
-            _buildNavItem(
-              context: context,
-              icon: Icons.calendar_today_rounded,
-              label: localeCode == 'id' ? 'Jadwal' : 'Schedule',
-              isSelected: false,
-              onTap: () {
-                ref.read(homeSelectedWeekdayProvider.notifier).state =
-                    DateTime.now().weekday;
-              },
-            ),
-            _buildNavItem(
-              context: context,
-              icon: Icons.person_rounded,
-              label: localeCode == 'id' ? 'Profil' : 'Profile',
-              isSelected: false,
-              onTap: _openSettings,
-            ),
-          ],
-        ),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool isWide = constraints.maxWidth >= 700;
-            final bool isLarge = constraints.maxWidth >= 1100;
-            final double sidePadding = isWide ? 24 : 16;
-            final double contentMaxWidth = isLarge ? 980 : 760;
-            final double contentWidth = constraints.maxWidth < contentMaxWidth
-                ? constraints.maxWidth
-                : contentMaxWidth;
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool isWide = constraints.maxWidth >= 700;
+              final bool isLarge = constraints.maxWidth >= 1100;
+              final double sidePadding = isWide ? 24 : 16;
+              final double contentMaxWidth = isLarge ? 980 : 760;
+              final double contentWidth = constraints.maxWidth < contentMaxWidth
+                  ? constraints.maxWidth
+                  : contentMaxWidth;
 
-            return Stack(
-              children: <Widget>[
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 260,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: <Color>[
-                          theme.colorScheme.primary.withValues(alpha: 0.06),
-                          theme.colorScheme.surface.withValues(alpha: 0.0),
-                        ],
+              return Stack(
+                children: <Widget>[
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 260,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[
+                            theme.colorScheme.primary.withValues(alpha: 0.06),
+                            theme.colorScheme.surface.withValues(alpha: 0.0),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Center(
-              child: SizedBox(
-                width: contentWidth,
-                child: ListView.builder(
-                  cacheExtent: 720,
-                  padding: EdgeInsets.only(bottom: AppSpacing.screenPadding),
-                  itemCount: hasActivities ? activityItems.length + 2 : 2,
-                  itemBuilder: (BuildContext context, int index) {
-                    if (index == 0) {
-                      return RepaintBoundary(
-                        child: _HomeTopContent(
-                          profileName: profileName,
-                          contextualGreeting: contextualGreeting,
-                          todayDate: today,
-                          heroTitle: selectedIsToday
-                              ? todayHeroTitle
-                              : nonTodayHeroTitle,
-                          heroValue: selectedIsToday
-                              ? todayHeroMain
-                              : nonTodayHeroValue,
-                          heroSummary: selectedIsToday
-                              ? todayHeroSummary
-                              : nonTodayHeroSummary,
-                          heroActionCue: heroActionCue,
-                          heroProgress: todayHeroProgress,
-                          heroProgressColor: heroProgressColor,
-                          heroMascotMood: heroMascotMood,
-                          heroMascotColor: heroMascotColor,
-                          showHeroProgress: selectedIsToday,
-                          selectedWeekday: selectedWeekday,
-                          localeCode: localeCode,
-                          brief: homeAiBrief,
-                          sidePadding: sidePadding,
-                          currentStreak: currentStreak,
-                          onDaySelected: (int weekday) {
-                            ref
-                                    .read(homeSelectedWeekdayProvider.notifier)
-                                    .state =
-                                weekday;
-                          },
-                          onSettingsTap: _openSettings,
-                        ),
-                      );
-                    }
-
-                    if (!hasActivities) {
-                      return Padding(
-                        key: ValueKey<String>(
-                          'activity-empty-$selectedWeekday',
-                        ),
+                  Center(
+                    child: SizedBox(
+                      width: contentWidth,
+                      child: ListView.builder(
+                        cacheExtent: 720,
                         padding: EdgeInsets.only(
-                          top: 18,
-                          left: sidePadding,
-                          right: sidePadding,
+                          bottom: AppSpacing.screenPadding,
                         ),
-                        child: RepaintBoundary(
-                          child: _EmptyActivitiesPanel(
-                            localeCode: localeCode,
-                            onAddTap: _openActivityForm,
-                          ),
-                        ),
-                      );
-                    }
+                        itemCount: hasActivities ? activityItems.length + 2 : 2,
+                        itemBuilder: (BuildContext context, int index) {
+                          if (index == 0) {
+                            return RepaintBoundary(
+                              child: _HomeTopContent(
+                                profileName: profileName,
+                                contextualGreeting: contextualGreeting,
+                                todayDate: today,
+                                heroTitle: selectedIsToday
+                                    ? todayHeroTitle
+                                    : nonTodayHeroTitle,
+                                heroValue: selectedIsToday
+                                    ? todayHeroMain
+                                    : nonTodayHeroValue,
+                                heroSummary: selectedIsToday
+                                    ? todayHeroSummary
+                                    : nonTodayHeroSummary,
+                                heroActionCue: heroActionCue,
+                                heroProgress: todayHeroProgress,
+                                heroProgressColor: heroProgressColor,
+                                heroMascotMood: heroMascotMood,
+                                heroMascotColor: heroMascotColor,
+                                showHeroProgress: selectedIsToday,
+                                selectedWeekday: selectedWeekday,
+                                localeCode: localeCode,
+                                brief: homeAiBrief,
+                                sidePadding: sidePadding,
+                                currentStreak: currentStreak,
+                                onDaySelected: (int weekday) {
+                                  ref
+                                          .read(
+                                            homeSelectedWeekdayProvider
+                                                .notifier,
+                                          )
+                                          .state =
+                                      weekday;
+                                },
+                                onSettingsTap: _openSettings,
+                              ),
+                            );
+                          }
 
-                    if (hasActivities && index == activityItems.length + 1) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          top: 32, // Sesuaikan jarak agar lebih ke atas
-                          bottom: 32,
-                          left: sidePadding,
-                          right: sidePadding,
-                        ),
-                        child: Text(
-                          localeCode == 'id'
-                              ? 'Tekan + untuk menambah aktivitas'
-                              : 'Tap + to add an activity',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.4,
+                          if (!hasActivities) {
+                            return Padding(
+                              key: ValueKey<String>(
+                                'activity-empty-$selectedWeekday',
+                              ),
+                              padding: EdgeInsets.only(
+                                top: 18,
+                                left: sidePadding,
+                                right: sidePadding,
+                              ),
+                              child: RepaintBoundary(
+                                child: _EmptyActivitiesPanel(
+                                  localeCode: localeCode,
+                                  onAddTap: _openActivityForm,
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (hasActivities &&
+                              index == activityItems.length + 1) {
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                top: 32, // Sesuaikan jarak agar lebih ke atas
+                                bottom: 32,
+                                left: sidePadding,
+                                right: sidePadding,
+                              ),
+                              child: Text(
+                                localeCode == 'id'
+                                    ? 'Tekan + untuk menambah aktivitas'
+                                    : 'Tap + to add an activity',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final int itemIndex = index - 1;
+                          final _ActivityTileData item =
+                              activityItems[itemIndex];
+                          return Padding(
+                            key: ValueKey<String>(
+                              '$selectedDateKey-${item.activity.id}',
                             ),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final int itemIndex = index - 1;
-                    final _ActivityTileData item = activityItems[itemIndex];
-                    return Padding(
-                      key: ValueKey<String>(
-                        '$selectedDateKey-${item.activity.id}',
+                            padding: EdgeInsets.only(
+                              top: itemIndex == 0 ? 0 : 10,
+                              left: sidePadding,
+                              right: sidePadding,
+                            ),
+                            child: RepaintBoundary(
+                              child: _ActivityCard(
+                                item: item,
+                                canToggleToday: selectedIsToday,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      padding: EdgeInsets.only(
-                        top: itemIndex == 0 ? 0 : 10,
-                        left: sidePadding,
-                        right: sidePadding,
-                      ),
-                      child: RepaintBoundary(
-                        child: _ActivityCard(
-                          item: item,
-                          canToggleToday: selectedIsToday,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            ],
-            );
-          },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -845,10 +862,7 @@ class _HeroActionCue {
 enum _HeroMascotMood { happy, encouraging, disappointed, neutral }
 
 class _HeroReactionMascot extends StatelessWidget {
-  const _HeroReactionMascot({
-    required this.mood,
-    required this.color,
-  });
+  const _HeroReactionMascot({required this.mood, required this.color});
 
   final _HeroMascotMood mood;
   final Color color;
@@ -937,7 +951,6 @@ Color _heroMascotColor({
   };
 }
 
-
 class _TodayHeroCard extends StatelessWidget {
   const _TodayHeroCard({
     required this.localeCode,
@@ -991,10 +1004,7 @@ class _TodayHeroCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _HeroReactionMascot(
-                mood: heroMascotMood,
-                color: heroMascotColor,
-              ),
+              _HeroReactionMascot(mood: heroMascotMood, color: heroMascotColor),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1329,11 +1339,13 @@ class _HomeTopContent extends StatelessWidget {
                     Row(
                       children: <Widget>[
                         Text(
-                          toBeginningOfSentenceCase(formattedDate) ?? formattedDate,
+                          toBeginningOfSentenceCase(formattedDate) ??
+                              formattedDate,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                         if (currentStreak > 0) ...<Widget>[
@@ -1341,7 +1353,9 @@ class _HomeTopContent extends StatelessWidget {
                           Icon(
                             Icons.local_fire_department_rounded,
                             size: 16,
-                            color: theme.colorScheme.tertiary, // Use tertiary for a "fire" color
+                            color: theme
+                                .colorScheme
+                                .tertiary, // Use tertiary for a "fire" color
                           ),
                           const SizedBox(width: 4),
                           Text(

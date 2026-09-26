@@ -117,10 +117,13 @@ class SyntheticProgressEntryEntity {
 extension SyntheticProgressEntryEntityToDomain on SyntheticProgressEntryEntity {
   ProgressEntryModel toDomain() {
     return ProgressEntryModel(
-      id: activityId + '_' + dateKey,
+      id: '${activityId}_$dateKey',
       activityId: activityId,
       dateKey: dateKey,
-      status: activityDayStatusFromStorage(status, fallbackCompleted: status == 'completed'),
+      status: activityDayStatusFromStorage(
+        status,
+        fallbackCompleted: status == 'completed',
+      ),
       subCompleted: subCompleted,
       subTotal: subTotal,
       completedSubActivities: completedSubActivities,

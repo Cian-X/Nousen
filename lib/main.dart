@@ -61,6 +61,7 @@ Future<void> main() async {
     ],
     directory: directory.path,
     name: 'reminder_schedule_v2',
+    inspector: false,
   );
 
   final NotificationScheduler scheduler = NotificationScheduler();
