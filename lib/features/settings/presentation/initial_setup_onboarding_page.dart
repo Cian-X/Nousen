@@ -1247,8 +1247,6 @@ class _OnboardingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
     return SizedBox(
       height: 52,
       child: Row(
@@ -1260,17 +1258,14 @@ class _OnboardingActions extends StatelessWidget {
               child: IconButton(
                 onPressed: isBusy ? null : onBack,
                 style: IconButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  size: 20,
+                icon: const Icon(
+                  Icons.chevron_left_rounded,
+                  color: Color(0xFF0F172A),
+                  size: 18,
                 ),
               ),
             ),

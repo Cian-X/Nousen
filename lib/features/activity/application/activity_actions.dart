@@ -72,20 +72,21 @@ class ActivityActions {
       subTotal: activity.subActivities.length,
       now: now,
     );
-    final List<String> nextCompletedSubActivities =
-        activity.subActivities.isEmpty
-        ? _normalizeCompletedSubActivities(
-            base.completedSubActivities,
-            activity.subActivities,
-          )
-        : completed
-        ? List<String>.from(activity.subActivities)
-        : const <String>[];
+    // Model induk-sebagai-unit: tap lingkaran hanya menandai unit induk,
+    // daftar sub dibiarkan apa adanya. Selesai keseluruhan hanya bila
+    // induk dan semua sub selesai.
+    final List<String> keptCompletedSubActivities =
+        _normalizeCompletedSubActivities(
+          base.completedSubActivities,
+          activity.subActivities,
+        );
     final int nextSubTotal = activity.subActivities.length;
-    final int nextSubCompleted = nextCompletedSubActivities.length;
+    final int nextSubCompleted = keptCompletedSubActivities.length;
+    final bool allSubsDone =
+        nextSubCompleted >= nextSubTotal;
 
     final ProgressEntryModel updated = base.copyWith(
-      completedSubActivities: nextCompletedSubActivities,
+      completedSubActivities: keptCompletedSubActivities,
       status: completed ? ActivityDayStatus.done : ActivityDayStatus.notDone,
       subCompleted: nextSubCompleted,
       subTotal: nextSubTotal,
@@ -97,7 +98,7 @@ class ActivityActions {
     await _progressRepository.upsert(updated);
 
     final settings = await _settingsRepository.get();
-    if (completed) {
+    if (completed && allSubsDone) {
       await _scheduler.suppressTodayEndOfDay(
         activity: activity,
         settings: settings,
@@ -184,34 +185,21 @@ class ActivityActions {
     final List<String> orderedCompleted = activity.subActivities
         .where((String item) => completedSet.contains(item))
         .toList();
-    final bool allDone =
-        activity.subActivities.isNotEmpty &&
-        orderedCompleted.length == activity.subActivities.length;
+    // Model induk-sebagai-unit: sub selesai TIDAK otomatis menuntaskan
+    // induk, dan melepas sub TIDAK membuka induk. Status done hanya via
+    // toggleTodayCompletion (tap lingkaran); toggle sub hanya ubah daftar.
     final int subTotal = activity.subActivities.length;
     final int subCompleted = orderedCompleted.length;
-    final ActivityDayStatus nextStatus = allDone
-        ? ActivityDayStatus.done
-        : ActivityDayStatus.notDone;
 
     final ProgressEntryModel updated = base.copyWith(
       completedSubActivities: orderedCompleted,
-      status: nextStatus,
+      status: base.status,
       subCompleted: subCompleted,
       subTotal: subTotal,
-      completionTime: allDone ? now : null,
-      clearCompletionTime: !allDone,
       updatedAt: now,
     );
     await _progressRepository.upsert(updated);
 
-    if (allDone) {
-      final settings = await _settingsRepository.get();
-      await _scheduler.suppressTodayEndOfDay(
-        activity: activity,
-        settings: settings,
-        today: today,
-      );
-    }
     await _refreshActivityNotifications(activity);
 
     final List<ActivityModel> allActivities = await _activityRepository

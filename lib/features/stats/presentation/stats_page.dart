@@ -1,8 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
+import 'package:liburan_create/core/constants/ai_demo_config.dart';
+import 'package:liburan_create/core/theme/app_theme.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
+import 'package:liburan_create/core/utils/weekday_utils.dart';
+import 'package:liburan_create/features/activity/domain/activity_category.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
@@ -16,66 +20,11 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-  StatsFilterMode _selectedFilter = StatsFilterMode.currentWeek;
-  DateTimeRange? _customRange;
   static const double _heroToInsightSpacing = 16;
 
-  String _periodLabel(String localeCode, DateTime start, DateTime end) {
-    // Check if range matches current week (Mon–Sun) for display
-    final week = currentWeekRange();
-    if (_selectedFilter == StatsFilterMode.currentWeek &&
-        isSameDay(week.start, start) &&
-        isSameDay(week.end, end)) {
-      return localeCode == 'id' ? 'Minggu Ini' : 'This Week';
-    }
-    return '${formatDateShort(start, localeCode)} - ${formatDateShort(end, localeCode)}';
-  }
-
   ({DateTime start, DateTime end}) _resolveActiveRange() {
-    if (_selectedFilter == StatsFilterMode.custom && _customRange != null) {
-      return (
-        start: dateOnly(_customRange!.start),
-        end: dateOnly(_customRange!.end),
-      );
-    }
-    // Default: current Monday–Sunday week (dynamic from today)
+    // Current Monday–Sunday week (dynamic from today)
     return currentWeekRange();
-  }
-
-  Future<void> _pickCustomRange() async {
-    final week = currentWeekRange();
-    final DateTimeRange initialRange =
-        _customRange ??
-        DateTimeRange(
-          start: week.start,
-          end: week.end,
-        );
-
-    if (!mounted) return;
-    final String localeCode =
-        ref.read(settingsStreamProvider).value?.localeCode ?? 'id';
-    final DateTime today = dateOnly(DateTime.now());
-
-    final DateTimeRange? picked = await showModalBottomSheet<DateTimeRange>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => StatsDateRangeSheet(
-        initialRange: initialRange,
-        firstDate: DateTime(today.year - 5, 1, 1),
-        lastDate: DateTime(today.year + 1, 12, 31),
-        localeCode: localeCode,
-      ),
-    );
-
-    if (picked == null || !mounted) return;
-    setState(() {
-      _customRange = DateTimeRange(
-        start: dateOnly(picked.start),
-        end: dateOnly(picked.end),
-      );
-      _selectedFilter = StatsFilterMode.custom;
-    });
   }
 
   @override
@@ -113,6 +62,17 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           start: start,
           end: end,
         );
+    final double previousGlobalRate = calculator.getGlobalCompletionRate(
+      start.subtract(const Duration(days: 7)),
+      start.subtract(const Duration(days: 1)),
+    );
+    final Map<String, _CategorySlice> categoryDistribution =
+        _buildCategoryDistribution(periodActivityStats);
+    final int distributionCompleted = categoryDistribution.values.fold<int>(
+      0,
+      (int sum, _CategorySlice item) => sum + item.completed,
+    );
+    final _PeakInfo peakInfo = _buildPeakInfo(dailyStats, localeCode);
 
     final StatsAiSummaryData summary = _buildStatsAiSummary(
       localeCode: localeCode,
@@ -124,23 +84,44 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       ),
       averageDailyRate: _computeAverageDailyRate(dailyStats),
       currentGlobalRate: globalRate,
-      previousGlobalRate: calculator.getGlobalCompletionRate(
-        start.subtract(const Duration(days: 7)),
-        start.subtract(const Duration(days: 1)),
-      ),
+      previousGlobalRate: previousGlobalRate,
       hasActiveScheduleInPeriod: dailyStats.any(
         (item) => item.totalScheduled > 0,
       ),
     );
 
-    final ActivityHighlightsData activityHighlights = _buildActivityHighlights(
-      periodActivityStats,
-      localeCode: localeCode,
-    );
-
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leadingWidth: 64,
+        leading: (ModalRoute.of(context)?.canPop ?? false)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(localeCode == 'id' ? 'Statistik' : 'Statistics'),
       ),
       body: SafeArea(
@@ -150,21 +131,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             StatsHeroSection(
               percent: overallPercent,
               rate: globalRate,
+              previousRate: previousGlobalRate,
+              activeCount: periodActivityStats.length,
               totalCompleted: totalCompleted,
               totalScheduled: totalScheduled,
-              periodLabel: _periodLabel(localeCode, start, end),
-              onPeriodTap: _pickCustomRange,
-              onReportTap: () => Navigator.of(context).pushNamed(
-                AppRoutes.statsReport,
-                arguments: <String, dynamic>{
-                  'dailyStats': dailyStats,
-                  'periodActivityStats': periodActivityStats,
-                  'start': start,
-                  'end': end,
-                  'totalScheduled': totalScheduled,
-                  'localeCode': localeCode,
-                },
-              ),
               statsMascotMood: _statsMascotMood(
                 rate: globalRate,
                 totalScheduled: totalScheduled,
@@ -185,15 +155,87 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               isId: localeCode == 'id',
             ),
             const SizedBox(height: _heroToInsightSpacing),
-            StatsSmartSummarySection(
-              summary: summary,
-              activityHighlights: activityHighlights,
-              activityStats: periodActivityStats,
+            if (distributionCompleted > 0) ...<Widget>[
+              _CategoryDistributionSection(
+                distribution: categoryDistribution,
+                totalCompleted: distributionCompleted,
+                localeCode: localeCode,
+              ),
+              const SizedBox(height: _heroToInsightSpacing),
+            ],
+            _MatrixEntrySection(
+              peakLabel: peakInfo.dayLabels,
+              activeDays: peakInfo.activeDays,
+              localeCode: localeCode,
+              mlEnabled: AiDemoConfig.onDeviceMlEnabled,
+              onOpenReport: () => Navigator.of(context).pushNamed(
+                AppRoutes.statsReport,
+                arguments: <String, dynamic>{
+                  'dailyStats': dailyStats,
+                  'periodActivityStats': periodActivityStats,
+                  'start': start,
+                  'end': end,
+                  'totalScheduled': totalScheduled,
+                  'localeCode': localeCode,
+                },
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Map<String, _CategorySlice> _buildCategoryDistribution(
+    List<PeriodActivityStat> stats,
+  ) {
+    final Map<String, _CategorySlice> result = <String, _CategorySlice>{};
+    for (final String id in ActivityCategory.values) {
+      int scheduled = 0;
+      int completed = 0;
+      for (final PeriodActivityStat stat in stats) {
+        if (ActivityCategory.safeId(stat.activity.category) != id) {
+          continue;
+        }
+        scheduled += stat.scheduled;
+        completed += stat.completed;
+      }
+      if (scheduled > 0) {
+        result[id] = _CategorySlice(scheduled: scheduled, completed: completed);
+      }
+    }
+    return result;
+  }
+
+  _PeakInfo _buildPeakInfo(List<DailyStat> stats, String localeCode) {
+    final Map<int, List<double>> ratesByWeekday = <int, List<double>>{};
+    int activeDays = 0;
+    for (final DailyStat item in stats) {
+      if (item.isNeutral || item.totalScheduled == 0) {
+        continue;
+      }
+      activeDays++;
+      ratesByWeekday
+          .putIfAbsent(item.date.weekday, () => <double>[])
+          .add(item.completionRate);
+    }
+    if (ratesByWeekday.isEmpty) {
+      return const _PeakInfo(dayLabels: '', activeDays: 0);
+    }
+    final List<MapEntry<int, double>> averaged = ratesByWeekday.entries
+        .map(
+          (MapEntry<int, List<double>> e) => MapEntry<int, double>(
+            e.key,
+            e.value.reduce((a, b) => a + b) / e.value.length,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final String labels = averaged
+        .take(2)
+        .map((e) => weekdayShortLabel(e.key, localeCode))
+        .join(' & ');
+    return _PeakInfo(dayLabels: labels, activeDays: activeDays);
   }
 
   double _computeAverageDailyRate(List<DailyStat> stats) {
@@ -320,42 +362,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     );
   }
 
-  ActivityHighlightsData _buildActivityHighlights(
-    List<PeriodActivityStat> stats, {
-    required String localeCode,
-  }) {
-    final bool isId = localeCode == 'id';
-    final List<HighlightCardData> best = [];
-    final List<HighlightCardData> fair = [];
-    final List<HighlightCardData> needsAttention = [];
-
-    for (final stat in stats) {
-      final card = HighlightCardData(
-        title: stat.activity.title,
-        value: '${(stat.completionRate * 100).round()}%',
-        detail: isId
-            ? '${stat.completed} dari ${stat.scheduled} selesai'
-            : '${stat.completed} of ${stat.scheduled} completed',
-        icon: Icons
-            .verified_rounded, // Fallback icon - need to check ActivityModel
-      );
-
-      if (stat.completionRate >= 0.8) {
-        best.add(card);
-      } else if (stat.completionRate > 0.4) {
-        fair.add(card);
-      } else {
-        needsAttention.add(card);
-      }
-    }
-
-    return ActivityHighlightsData(
-      best: best,
-      fair: fair,
-      needsAttention: needsAttention,
-    );
-  }
-
   StatsMascotMood _statsMascotMood({
     required double rate,
     required int totalScheduled,
@@ -395,6 +401,22 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 enum StatsMascotMood { neutral, happy, excited, concerned }
 
 enum StatsFilterMode { currentWeek, custom }
+
+class _CategorySlice {
+  const _CategorySlice({required this.scheduled, required this.completed});
+
+  final int scheduled;
+  final int completed;
+
+  double get rate => scheduled == 0 ? 0 : completed / scheduled;
+}
+
+class _PeakInfo {
+  const _PeakInfo({required this.dayLabels, required this.activeDays});
+
+  final String dayLabels;
+  final int activeDays;
+}
 
 class StatsDateRangeSheet extends StatefulWidget {
   const StatsDateRangeSheet({
@@ -567,11 +589,10 @@ class StatsHeroSection extends StatelessWidget {
     super.key,
     required this.percent,
     required this.rate,
+    required this.previousRate,
+    required this.activeCount,
     required this.totalCompleted,
     required this.totalScheduled,
-    required this.periodLabel,
-    required this.onPeriodTap,
-    required this.onReportTap,
     required this.statsMascotMood,
     required this.statsMascotColor,
     required this.statsSummaryHeadline,
@@ -583,11 +604,10 @@ class StatsHeroSection extends StatelessWidget {
 
   final int percent;
   final double rate;
+  final double previousRate;
+  final int activeCount;
   final int totalCompleted;
   final int totalScheduled;
-  final String periodLabel;
-  final VoidCallback onPeriodTap;
-  final VoidCallback onReportTap;
   final StatsMascotMood statsMascotMood;
   final Color statsMascotColor;
   final String statsSummaryHeadline;
@@ -599,43 +619,150 @@ class StatsHeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool showTrend = previousRate > 0;
+    final int trendPoints = ((rate - previousRate) * 100).round();
+    final bool trendUp = trendPoints >= 0;
+    // Warna ring mengikuti status performa agregat, mirror Detail Aktivitas:
+    // tanpa jadwal → abu-abu; ≥80% → biru; parsial → amber; 0% → merah.
+    final Color statusColor;
+    if (totalScheduled <= 0) {
+      statusColor = theme.habitColors.inactive;
+    } else if (rate >= 0.8) {
+      statusColor = theme.habitColors.completed;
+    } else if (rate > 0) {
+      statusColor = theme.habitColors.pending;
+    } else {
+      statusColor = theme.habitColors.missed;
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F3FF),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+          color: const Color(0xFFE2E8F0),
+          width: 1,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  isId ? 'PERFORMA KESELURUHAN' : 'OVERALL PERFORMANCE',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.05,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              if (showTrend)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: trendUp
+                        ? const Color(0xFFECFDF5)
+                        : const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        trendUp
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        size: 13,
+                        color: trendUp
+                            ? const Color(0xFF059669)
+                            : const Color(0xFFD97706),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isId
+                            ? '${trendUp ? '+' : ''}$trendPoints% vs periode lalu'
+                            : '${trendUp ? '+' : ''}$trendPoints% vs prev period',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: trendUp
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFD97706),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              SizedBox(
+                width: 112,
+                height: 112,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: 112,
+                      height: 112,
+                      child: CircularProgressIndicator(
+                        value: percent.clamp(0, 100) / 100,
+                        strokeWidth: 10,
+                        backgroundColor:
+                            statusColor.withValues(alpha: 0.15),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(statusColor),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          '$percent%',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                            height: 1.0,
+                          ),
+                        ),
+                        const Text(
+                          'TARGET',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      isId ? 'STATISTIK HARI INI' : 'TODAY\'S STATS',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.72,
-                        ),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$percent%',
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontSize: 44,
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.primary,
+                      isId
+                          ? '/100 poin konsistensi'
+                          : '/100 consistency points',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -655,14 +782,40 @@ class StatsHeroSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            periodLabel,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _HeroMiniStat(
+                  icon: Icons.assignment_rounded,
+                  iconColor: const Color(0xFF2563EB),
+                  label: isId ? 'Aktivitas' : 'Activities',
+                  value: '$activeCount',
+                  sub: isId ? 'Terdaftar aktif' : 'Active',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeroMiniStat(
+                  icon: Icons.check_circle_rounded,
+                  iconColor: const Color(0xFF1A5BAD),
+                  label: isId ? 'Selesai' : 'Done',
+                  value: '$totalCompleted',
+                  sub: isId ? 'Sesi tuntas' : 'Sessions',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeroMiniStat(
+                  icon: Icons.calendar_month_rounded,
+                  iconColor: const Color(0xFF6366F1),
+                  label: isId ? 'Terjadwal' : 'Scheduled',
+                  value: '$totalScheduled',
+                  sub: isId ? 'Slot sesi' : 'Slots',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             statsSummaryHeadline,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -687,24 +840,6 @@ class StatsHeroSection extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onPeriodTap,
-                  child: Text(isId ? 'Ganti rentang' : 'Change range'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: onReportTap,
-                  child: Text(isId ? 'Lihat laporan' : 'View report'),
-                ),
-              ),
-            ],
-          ),
           if (!hasScheduledActivities) ...<Widget>[
             const SizedBox(height: 12),
             Text(
@@ -716,11 +851,77 @@ class StatsHeroSection extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: rate.clamp(0, 1),
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(999),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroMiniStat extends StatelessWidget {
+  const _HeroMiniStat({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    required this.sub,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final String sub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFF1F5F9),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          Text(
+            sub,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Color(0xFF64748B),
+            ),
           ),
         ],
       ),
@@ -728,33 +929,46 @@ class StatsHeroSection extends StatelessWidget {
   }
 }
 
-class StatsSmartSummarySection extends ConsumerStatefulWidget {
-  const StatsSmartSummarySection({
-    super.key,
-    required this.summary,
-    required this.activityHighlights,
-    required this.activityStats,
+class _CategoryDistributionSection extends StatelessWidget {
+  const _CategoryDistributionSection({
+    required this.distribution,
+    required this.totalCompleted,
+    required this.localeCode,
   });
 
-  final StatsAiSummaryData summary;
-  final ActivityHighlightsData activityHighlights;
-  final List<PeriodActivityStat> activityStats;
+  final Map<String, _CategorySlice> distribution;
+  final int totalCompleted;
+  final String localeCode;
 
-  @override
-  ConsumerState<StatsSmartSummarySection> createState() =>
-      _StatsSmartSummarySectionState();
-}
-
-enum HighlightCategory { best, fair, needsAttention }
-
-class _StatsSmartSummarySectionState
-    extends ConsumerState<StatsSmartSummarySection> {
-  HighlightCategory _selectedHighlightCategory = HighlightCategory.best;
+  static Color _colorFor(String id) {
+    return switch (id) {
+      ActivityCategory.work => const Color(0xFFE76F51),
+      ActivityCategory.learning => const Color(0xFF6C63FF),
+      ActivityCategory.health => const Color(0xFF2A9D8F),
+      ActivityCategory.personal => const Color(0xFFE9A23B),
+      _ => const Color(0xFF64748B),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    final bool isId = localeCode == 'id';
+    final List<MapEntry<String, _CategorySlice>> entries = distribution.entries
+        .where((e) => e.value.completed > 0)
+        .toList()
+      ..sort((a, b) => b.value.completed.compareTo(a.value.completed));
+    if (entries.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    MapEntry<String, _CategorySlice>? best;
+    for (final e in distribution.entries) {
+      if (e.value.scheduled == 0) {
+        continue;
+      }
+      if (best == null || e.value.rate > best.value.rate) {
+        best = e;
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -762,217 +976,280 @@ class _StatsSmartSummarySectionState
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          color: const Color(0xFFE2E8F0),
+          width: 1,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            widget.summary.eyebrow,
-            style: theme.textTheme.titleMedium?.copyWith(
+            isId ? 'Distribusi & Keseimbangan' : 'Distribution & Balance',
+            style: const TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            widget.summary.headline,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+            isId
+                ? 'Rasio penyelesaian antar kategori'
+                : 'Completion ratio across categories',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            widget.summary.body,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.4,
-            ),
-          ),
-          if (widget.summary.support != null) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              widget.summary.support!,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
           const SizedBox(height: 16),
-          if (widget.activityStats.isNotEmpty) ...<Widget>[
-            Text(
-              isId ? 'Sorotan aktivitas' : 'Activity highlights',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Row(
+              children: <Widget>[
+                ...entries.map(
+                  (MapEntry<String, _CategorySlice> e) => Expanded(
+                    flex: (((e.value.completed / totalCompleted) * 100)
+                            .round())
+                        .clamp(4, 100),
+                    child: Container(
+                      height: 10,
+                      color: _colorFor(e.key),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...entries.map((e) {
+            final int pct =
+                ((e.value.completed / totalCompleted) * 100).round();
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _colorFor(e.key),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          ActivityCategory.labelOf(e.key, localeCode),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          isId
+                              ? '${e.value.completed} sesi terlaksana'
+                              : '${e.value.completed} sessions done',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '$pct%',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            _buildExpansionTile(
-              context,
-              category: HighlightCategory.best,
-              title: isId ? 'Terbaik' : 'Best',
-              icon: Icons.verified_rounded,
-              color: theme.colorScheme.primary,
-              highlights: widget.activityHighlights.best,
-            ),
+            );
+          }),
+          if (best != null) ...<Widget>[
             const SizedBox(height: 8),
-            _buildExpansionTile(
-              context,
-              category: HighlightCategory.fair,
-              title: isId ? 'Cukup baik' : 'Fair',
-              icon: Icons.lightbulb_outline_rounded,
-              color: const Color(0xFFF59E0B),
-              highlights: widget.activityHighlights.fair,
-            ),
-            const SizedBox(height: 8),
-            _buildExpansionTile(
-              context,
-              category: HighlightCategory.needsAttention,
-              title: isId ? 'Perlu perhatian' : 'Needs attention',
-              icon: Icons.warning_amber_rounded,
-              color: const Color(0xFFBA1A1A),
-              highlights: widget.activityHighlights.needsAttention,
-              isWarning: true,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFFDBEAFE),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(
+                    Icons.lightbulb_rounded,
+                    size: 16,
+                    color: Color(0xFF2563EB),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isId
+                          ? 'Kategori ${ActivityCategory.labelOf(best.key, localeCode)} menunjukkan konsistensi tertinggi.'
+                          : '${ActivityCategory.labelOf(best.key, localeCode)} shows the highest consistency.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpansionTile(
-    BuildContext context, {
-    required HighlightCategory category,
-    required String title,
-    required IconData icon,
-    required Color color,
-    required List<HighlightCardData> highlights,
-    bool isWarning = false,
-  }) {
-    final ThemeData theme = Theme.of(context);
-    final bool isId = Localizations.localeOf(context).languageCode == 'id';
-
-    return Theme(
-      data: theme.copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        key: PageStorageKey(category),
-        initiallyExpanded: _selectedHighlightCategory == category,
-        onExpansionChanged: (bool expanded) {
-          if (expanded) {
-            setState(() {
-              _selectedHighlightCategory = category;
-            });
-          }
-        },
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Icon(icon, color: color),
-        title: Text(
-          '$title (${highlights.length} ${isId ? 'aktivitas' : 'activities'})',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        children: <Widget>[
-          if (highlights.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                isId
-                    ? 'Tidak ada aktivitas di kategori ini.'
-                    : 'No activities in this category.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            )
-          else
-            ...highlights.map(
-              (highlight) => Padding(
-                padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-                child: _ActivityHighlightRow(
-                  title: title,
-                  highlight: highlight,
-                  color: color,
-                  icon: icon,
-                  isWarning: isWarning,
-                ),
-              ),
-            ),
-          const SizedBox(height: 8),
         ],
       ),
     );
   }
 }
 
-class _ActivityHighlightRow extends StatelessWidget {
-  const _ActivityHighlightRow({
-    required this.title,
-    required this.highlight,
-    required this.color,
-    required this.icon,
-    this.isWarning = false,
+class _MatrixEntrySection extends StatelessWidget {
+  const _MatrixEntrySection({
+    required this.peakLabel,
+    required this.activeDays,
+    required this.localeCode,
+    required this.mlEnabled,
+    required this.onOpenReport,
   });
 
-  final String title;
-  final HighlightCardData highlight;
-  final Color color;
-  final IconData icon;
-  final bool isWarning;
+  final String peakLabel;
+  final int activeDays;
+  final String localeCode;
+  final bool mlEnabled;
+  final VoidCallback onOpenReport;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool isId = localeCode == 'id';
+    final String title =
+        isId ? 'Matriks & Evaluasi${mlEnabled ? ' AI' : ''}' : 'Matrix & Evaluation${mlEnabled ? ' AI' : ''}';
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isWarning ? const Color(0xFFFFF7F7) : const Color(0xFFF1F3FF),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isWarning
-              ? const Color(0xFFFAD7D9)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+          color: const Color(0xFFE2E8F0),
+          width: 1,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
+          Row(
+            children: <Widget>[
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.grid_view_rounded,
+                  size: 16,
+                  color: Color(0xFF2563EB),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 8),
+          Text(
+            isId
+                ? 'Ringkasan konsistensi dan tren puncak dari data aktual.'
+                : 'Consistency overview and peak trends from actual data.',
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFF1F5F9),
+                width: 1,
+              ),
+            ),
+            child: Row(
               children: <Widget>[
-                Text(
-                  highlight.title,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                const Icon(
+                  Icons.insights_rounded,
+                  size: 16,
+                  color: Color(0xFF10B981),
                 ),
-                Text(
-                  highlight.value,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  highlight.detail,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    peakLabel.isEmpty
+                        ? (isId
+                              ? 'Belum ada data performa.'
+                              : 'No performance data yet.')
+                        : (isId
+                              ? 'Puncak performa: $peakLabel ($activeDays hari aktif)'
+                              : 'Peak performance: $peakLabel ($activeDays active days)'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF475569),
+                    ),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.habitColors.primaryAction,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: onOpenReport,
+              child: Text(
+                isId
+                    ? 'Buka Detail Matriks & Insight'
+                    : 'Open Matrix & Insight Details',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

@@ -10,10 +10,12 @@ import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
+import 'package:liburan_create/core/theme/app_theme.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/time_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/core/widgets/checklist_confirm_dialog.dart';
+import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
 import 'package:liburan_create/features/activity/presentation/activity_status_visuals.dart';
 import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
@@ -96,6 +98,10 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           await ref
               .read(activityActionsProvider)
               .toggleTodayCompletion(activity: activity, completed: true);
+        } else if (type == 'action_reopen') {
+          await ref
+              .read(activityActionsProvider)
+              .toggleTodayCompletion(activity: activity, completed: false);
         } else if (type == 'action_skip') {
           await ref
               .read(activityActionsProvider)
@@ -211,6 +217,10 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
   Future<void> _openStatsSummary() async {
     await Navigator.of(context).pushNamed(AppRoutes.activitySummary);
+  }
+
+  Future<void> _openScheduleAgenda() async {
+    await Navigator.of(context).pushNamed(AppRoutes.scheduleAgenda);
   }
 
   int _countCompletedSubActivities(
@@ -477,69 +487,40 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         // We intentionally do nothing — the app stays open.
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
         floatingActionButton: FloatingActionButton(
           onPressed: _openActivityForm,
           tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
+          backgroundColor: const Color(0xFF1D4ED8),
+          foregroundColor: Colors.white,
           shape: const CircleBorder(),
-          elevation: 6,
+          elevation: 8,
           child: const Icon(Icons.add, size: 28),
         ),
-        bottomNavigationBar: Container(
-          height: 72,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0.95),
-            border: Border(
-              top: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                width: 1,
-              ),
+        bottomNavigationBar: NousenBottomNavBar(
+          tabs: <NousenNavTab>[
+            NousenNavTab(
+              icon: Icons.home_rounded,
+              label: localeCode == 'id' ? 'Harian' : 'Daily',
+              isSelected: true,
+              onTap: () {},
             ),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              _buildNavItem(
-                context: context,
-                icon: Icons.home_rounded,
-                label: localeCode == 'id' ? 'Beranda' : 'Home',
-                isSelected: true,
-                onTap: () {},
-              ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.insights_rounded,
-                label: localeCode == 'id' ? 'Analitik' : 'Analytics',
-                isSelected: false,
-                onTap: _openStatsSummary,
-              ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.calendar_today_rounded,
-                label: localeCode == 'id' ? 'Jadwal' : 'Schedule',
-                isSelected: false,
-                onTap: () {
-                  ref.read(homeSelectedWeekdayProvider.notifier).state =
-                      DateTime.now().weekday;
-                },
-              ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.person_rounded,
-                label: localeCode == 'id' ? 'Profil' : 'Profile',
-                isSelected: false,
-                onTap: _openSettings,
-              ),
-            ],
-          ),
+            NousenNavTab(
+              icon: Icons.calendar_today_rounded,
+              label: localeCode == 'id' ? 'Agenda' : 'Agenda',
+              onTap: _openScheduleAgenda,
+            ),
+            NousenNavTab(
+              icon: Icons.insights_rounded,
+              label: localeCode == 'id' ? 'Statistik' : 'Analytics',
+              onTap: _openStatsSummary,
+            ),
+            NousenNavTab(
+              icon: Icons.person_rounded,
+              label: localeCode == 'id' ? 'Pengaturan' : 'Profile',
+              onTap: _openSettings,
+            ),
+          ],
         ),
         body: SafeArea(
           child: LayoutBuilder(
@@ -554,24 +535,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
               return Stack(
                 children: <Widget>[
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 260,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: <Color>[
-                            theme.colorScheme.primary.withValues(alpha: 0.06),
-                            theme.colorScheme.surface.withValues(alpha: 0.0),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                   Center(
                     child: SizedBox(
                       width: contentWidth,
@@ -585,6 +548,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           if (index == 0) {
                             return RepaintBoundary(
                               child: _HomeTopContent(
+                                compactEmptyState: false,
                                 profileName: profileName,
                                 contextualGreeting: contextualGreeting,
                                 todayDate: today,
@@ -617,25 +581,29 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                                           .state =
                                       weekday;
                                 },
-                                onSettingsTap: _openSettings,
                               ),
                             );
                           }
 
                           if (!hasActivities) {
-                            return Padding(
-                              key: ValueKey<String>(
-                                'activity-empty-$selectedWeekday',
-                              ),
-                              padding: EdgeInsets.only(
-                                top: 18,
-                                left: sidePadding,
-                                right: sidePadding,
-                              ),
-                              child: RepaintBoundary(
-                                child: _EmptyActivitiesPanel(
-                                  localeCode: localeCode,
-                                  onAddTap: _openActivityForm,
+                            // Penyelarasan visual dengan panel kosong Agenda:
+                            // konten di atas panel Beranda lebih pendek,
+                            // jadi panel digeser turun agar titik awalnya
+                            // sejajar. Nilai dari pengukuran screenshot.
+                            return Transform.translate(
+                              offset: const Offset(0, -40),
+                              child: Padding(
+                                key: ValueKey<String>(
+                                  'activity-empty-$selectedWeekday',
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: sidePadding,
+                                ),
+                                child: RepaintBoundary(
+                                  child: _EmptyActivitiesPanel(
+                                    localeCode: localeCode,
+                                    onAddTap: _openActivityForm,
+                                  ),
                                 ),
                               ),
                             );
@@ -656,9 +624,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                                     : 'Tap + to add an activity',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.4,
-                                  ),
+                                  color: const Color(0xFF94A3B8),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -804,47 +770,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     return '+$value';
   }
 
-  Widget _buildNavItem({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final ThemeData theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(
-              icon,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _HeroActionCue {
@@ -985,10 +910,14 @@ class _TodayHeroCard extends StatelessWidget {
 
     return Container(
       constraints: const BoxConstraints(minHeight: 156),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface, // bg-white
-        borderRadius: BorderRadius.circular(16), // rounded-xl
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+          width: 1,
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: const Color(0x141A5BAD), // soft elevation
@@ -1011,20 +940,21 @@ class _TodayHeroCard extends StatelessWidget {
                   brief.headline,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 20, // headline-md
-                    color: theme.colorScheme.onSurface,
+                    fontSize: 18,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
+                  color: const Color(0xFFE0F2FE),
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0xFFDBEAFE), width: 1),
                 ),
                 child: Text(
                   brief.source == HomeAiBriefSource.ml
@@ -1033,9 +963,7 @@ class _TodayHeroCard extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: const Color(
-                      0xFF00458E,
-                    ), // text-on-primary-fixed-variant
+                    color: theme.colorScheme.primary,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -1049,10 +977,15 @@ class _TodayHeroCard extends StatelessWidget {
               fontSize: 14, // body-md
               height: 1.45,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              color: const Color(0xFF475569),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
@@ -1103,32 +1036,28 @@ class _TodayHeroCard extends StatelessWidget {
                                   ? '$left dari $right selesai'
                                   : '$left of $right done');
 
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             RichText(
                               text: TextSpan(
                                 style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontSize: 28,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.w800,
                                   color: progressColor,
                                 ),
                                 text: '$left / $right',
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                statusText,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.right,
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: progressColor.withValues(alpha: 0.9),
-                                ),
+                            const SizedBox(height: 2),
+                            Text(
+                              statusText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: progressColor.withValues(alpha: 0.9),
                               ),
                             ),
                           ],
@@ -1180,39 +1109,47 @@ class _TodayHeroCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text.rich(
-                          TextSpan(
-                            children: <InlineSpan>[
-                              TextSpan(
-                                text: actionCue!.timeLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.colorScheme.primary.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' \u2022 ',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                ),
-                              ),
-                              TextSpan(
-                                text: actionCue!.countdown,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: const Color(0xFFDBEAFE),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text.rich(
+                            TextSpan(
+                              children: <InlineSpan>[
+                                TextSpan(
+                                  text: actionCue!.timeLabel,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                                const TextSpan(
+                                  text: ' \u2022 ',
+                                  style: TextStyle(color: Color(0xFF1D4ED8)),
+                                ),
+                                TextSpan(
+                                  text: actionCue!.countdown,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -1264,6 +1201,7 @@ class _TodayHeroCard extends StatelessWidget {
 
 class _HomeTopContent extends StatelessWidget {
   const _HomeTopContent({
+    required this.compactEmptyState,
     required this.profileName,
     required this.contextualGreeting,
     required this.todayDate,
@@ -1281,10 +1219,10 @@ class _HomeTopContent extends StatelessWidget {
     required this.brief,
     required this.sidePadding,
     required this.onDaySelected,
-    required this.onSettingsTap,
     required this.currentStreak,
   });
 
+  final bool compactEmptyState;
   final String profileName;
   final String contextualGreeting;
   final DateTime todayDate;
@@ -1302,7 +1240,6 @@ class _HomeTopContent extends StatelessWidget {
   final HomeAiBrief brief;
   final double sidePadding;
   final ValueChanged<int> onDaySelected;
-  final VoidCallback onSettingsTap;
   final int currentStreak;
 
   @override
@@ -1330,9 +1267,9 @@ class _HomeTopContent extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.onSurface,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1342,10 +1279,9 @@ class _HomeTopContent extends StatelessWidget {
                           toBeginningOfSentenceCase(formattedDate) ??
                               formattedDate,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFF64748B),
                           ),
                         ),
                         if (currentStreak > 0) ...<Widget>[
@@ -1372,85 +1308,79 @@ class _HomeTopContent extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: onSettingsTap,
-                style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.5),
-                ),
-                icon: Icon(
-                  Icons.settings_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: sidePadding),
-          child: _TodayHeroCard(
-            localeCode: localeCode,
-            title: heroTitle,
-            value: heroValue,
-            summary: heroSummary,
-            actionCue: heroActionCue,
-            progress: heroProgress,
-            progressColor: heroProgressColor,
-            brief: brief,
-            heroMascotMood: heroMascotMood,
-            heroMascotColor: heroMascotColor,
-            showProgress: showHeroProgress,
+        if (!compactEmptyState) ...<Widget>[
+          const SizedBox(height: 16),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sidePadding),
+            child: _TodayHeroCard(
+              localeCode: localeCode,
+              title: heroTitle,
+              value: heroValue,
+              summary: heroSummary,
+              actionCue: heroActionCue,
+              progress: heroProgress,
+              progressColor: heroProgressColor,
+              brief: brief,
+              heroMascotMood: heroMascotMood,
+              heroMascotColor: heroMascotColor,
+              showProgress: showHeroProgress,
+            ),
           ),
-        ),
-        const SizedBox(height: 18),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: sidePadding),
-          child: _HomeDaySelector(
-            selectedWeekday: selectedWeekday,
-            localeCode: localeCode,
-            selectedDayColor: heroProgressColor,
-            onSelected: onDaySelected,
+          const SizedBox(height: 18),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sidePadding),
+            child: _HomeDaySelector(
+              selectedWeekday: selectedWeekday,
+              localeCode: localeCode,
+              onSelected: onDaySelected,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: sidePadding),
-          child: Divider(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-            height: 1,
+          const SizedBox(height: 10),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sidePadding),
+            child: Divider(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+              height: 1,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: sidePadding + 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                localeCode == 'id'
-                    ? 'AKTIVITAS TERJADWAL'
-                    : 'SCHEDULED ACTIVITIES',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
+          const SizedBox(height: 10),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sidePadding + 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  localeCode == 'id'
+                      ? 'AKTIVITAS TERJADWAL'
+                      : 'SCHEDULED ACTIVITIES',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: const Color(0xFF64748B),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.filter_list_rounded,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant.withValues(
-                  alpha: 0.6,
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Center(
+                    child: Icon(
+                      Icons.filter_list_rounded,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
       ],
     );
   }
@@ -1460,30 +1390,24 @@ class _HomeDaySelector extends StatelessWidget {
   const _HomeDaySelector({
     required this.selectedWeekday,
     required this.localeCode,
-    required this.selectedDayColor,
     required this.onSelected,
   });
 
   final int selectedWeekday;
   final String localeCode;
-  final Color selectedDayColor;
   final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final int selectedIndex = allWeekdays
-        .indexOf(selectedWeekday)
-        .clamp(0, allWeekdays.length - 1);
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      // Tinggi strip tetap 66px (spec 64-68): padding 12 + pill 50 + border.
+      // Isi pill deterministik (50px) sehingga tidak mungkin overflow.
+      height: 66,
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -1494,68 +1418,65 @@ class _HomeDaySelector extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
+          final ThemeData theme = Theme.of(context);
           final double itemWidth = constraints.maxWidth / allWeekdays.length;
-          return SizedBox(
-            height: 36,
-            child: Stack(
-              children: <Widget>[
-                // Titik meluncur (sliding dot)
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutCubic,
-                  left: selectedIndex * itemWidth,
-                  bottom: 0,
-                  width: itemWidth,
-                  height: 6,
-                  child: Center(
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
+          // Lebar pill mengikuti kolom (maks 48) agar muat di layar sempit.
+          final double pillWidth = itemWidth > 48 ? 42 : itemWidth - 4;
+          return Row(
+            children: allWeekdays
+                .map((int day) {
+                  final bool selected = selectedWeekday == day;
+                  return SizedBox(
+                    width: itemWidth,
+                    height: 54,
+                    child: GestureDetector(
+                      onTap: () => onSelected(day),
+                      behavior: HitTestBehavior.opaque,
+                      child: Center(
+                        child: Container(
+                          width: pillWidth,
+                          height: 50,
+                          decoration: selected
+                              ? BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                )
+                              : null,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Text(
+                                weekdayShortLabel(day, localeCode),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: selected
+                                      ? theme.colorScheme.onPrimary
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withValues(alpha: 0.5),
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: 4,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? theme.colorScheme.onPrimary
+                                      : Colors.transparent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Row(
-                  children: allWeekdays
-                      .map((int day) {
-                        final bool selected = selectedWeekday == day;
-                        return SizedBox(
-                          width: itemWidth,
-                          child: GestureDetector(
-                            onTap: () => onSelected(day),
-                            behavior: HitTestBehavior.opaque,
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    weekdayShortLabel(day, localeCode),
-                                    style: theme.textTheme.labelMedium
-                                        ?.copyWith(
-                                          color: selected
-                                              ? selectedDayColor
-                                              : theme.colorScheme.onSurface
-                                                    .withValues(alpha: 0.5),
-                                          fontWeight: selected
-                                              ? FontWeight.w800
-                                              : FontWeight.w600,
-                                          fontSize: 11,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      })
-                      .toList(growable: false),
-                ),
-              ],
-            ),
+                  );
+                })
+                .toList(growable: false),
           );
         },
       ),
@@ -1595,74 +1516,6 @@ class _ActivityCard extends ConsumerStatefulWidget {
 class _ActivityCardState extends ConsumerState<_ActivityCard> {
   bool _isExpanded = false;
 
-  IconData _getActivityIcon(String title) {
-    final String t = title.toLowerCase();
-    if (t.contains('game') ||
-        t.contains('main') ||
-        t.contains('play') ||
-        t.contains('esport')) {
-      return Icons.sports_esports_rounded;
-    }
-    if (t.contains('belajar') ||
-        t.contains('buku') ||
-        t.contains('read') ||
-        t.contains('study') ||
-        t.contains('modul') ||
-        t.contains('kuliah')) {
-      return Icons.menu_book_rounded;
-    }
-    if (t.contains('olahraga') ||
-        t.contains('gym') ||
-        t.contains('lari') ||
-        t.contains('jogging') ||
-        t.contains('sehat') ||
-        t.contains('sport') ||
-        t.contains('fit')) {
-      return Icons.fitness_center_rounded;
-    }
-    if (t.contains('makan') ||
-        t.contains('sarapan') ||
-        t.contains('lunch') ||
-        t.contains('dinner') ||
-        t.contains('malam') ||
-        t.contains('siang')) {
-      return Icons.restaurant_rounded;
-    }
-    if (t.contains('minum') ||
-        t.contains('air') ||
-        t.contains('hidrasi') ||
-        t.contains('drink') ||
-        t.contains('water')) {
-      return Icons.local_drink_rounded;
-    }
-    if (t.contains('tidur') ||
-        t.contains('begadang') ||
-        t.contains('istirahat') ||
-        t.contains('sleep') ||
-        t.contains('rest')) {
-      return Icons.bedtime_rounded;
-    }
-    if (t.contains('kerja') ||
-        t.contains('coding') ||
-        t.contains('rapat') ||
-        t.contains('meeting') ||
-        t.contains('tugas') ||
-        t.contains('work')) {
-      return Icons.work_rounded;
-    }
-    if (t.contains('sosial') ||
-        t.contains('chat') ||
-        t.contains('teman') ||
-        t.contains('keluarga') ||
-        t.contains('nongkrong') ||
-        t.contains('ngobrol') ||
-        t.contains('call') ||
-        t.contains('telpon')) {
-      return Icons.people_rounded;
-    }
-    return Icons.event_note_rounded;
-  }
-
   Color _subActivityCompletedColor({
     required ThemeData theme,
     required ActivityDailyProgressStatus activityStatus,
@@ -1675,15 +1528,12 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
     required ActivityDailyProgressStatus activityStatus,
   }) {
     return switch (activityStatus) {
-      ActivityDailyProgressStatus.partial ||
-      ActivityDailyProgressStatus.missed => const Color(0xFFBA1A1A),
+      ActivityDailyProgressStatus.partial => theme.habitColors.pending,
+      ActivityDailyProgressStatus.missed => theme.habitColors.missed,
       ActivityDailyProgressStatus.skipped ||
-      ActivityDailyProgressStatus.future =>
+      ActivityDailyProgressStatus.future ||
+      ActivityDailyProgressStatus.done =>
         theme.colorScheme.onSurface.withValues(alpha: 0.45),
-      ActivityDailyProgressStatus.done => activityStatusColor(
-        theme: theme,
-        status: activityStatus,
-      ),
     };
   }
 
@@ -1705,15 +1555,27 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
     );
     final int subTotal = activity.subActivities.length;
 
-    final bool highlightFocus =
-        item.isFocus && !item.isCompleted && !item.isSkipped;
-    final Color borderColor = highlightFocus
-        ? theme.colorScheme.primary.withValues(alpha: 0.24)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
-
-    final Color cardBg = highlightFocus
-        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
-        : theme.colorScheme.surface; // bg-white
+    final Color borderColor;
+    final Color cardBg;
+    switch (dailyStatus) {
+      case ActivityDailyProgressStatus.done:
+        borderColor = theme.colorScheme.primary;
+        cardBg = Colors.white;
+        break;
+      case ActivityDailyProgressStatus.partial:
+        borderColor = theme.habitColors.pending;
+        cardBg = Colors.white;
+        break;
+      case ActivityDailyProgressStatus.missed:
+        borderColor = theme.habitColors.missed.withValues(alpha: 0.4);
+        cardBg = Colors.white;
+        break;
+      case ActivityDailyProgressStatus.skipped:
+      case ActivityDailyProgressStatus.future:
+        borderColor = const Color(0xFFE2E8F0);
+        cardBg = Colors.white;
+        break;
+    }
 
     return Opacity(
       opacity: item.isCompleted ? 0.5 : 1.0,
@@ -1725,15 +1587,20 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: borderColor,
-              width: highlightFocus ? 1.5 : 1,
+              width: dailyStatus == ActivityDailyProgressStatus.done ||
+                      dailyStatus == ActivityDailyProgressStatus.partial
+                  ? 1.5
+                  : 1,
             ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: highlightFocus
+                color: dailyStatus == ActivityDailyProgressStatus.done
                     ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                    : dailyStatus == ActivityDailyProgressStatus.partial
+                    ? theme.habitColors.pending.withValues(alpha: 0.12)
                     : const Color(0x141A5BAD), // soft-elevation
-                blurRadius: highlightFocus ? 24 : 20,
-                spreadRadius: highlightFocus ? 0 : -4,
+                blurRadius: 20,
+                spreadRadius: -4,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -1757,54 +1624,28 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      // Left: Circle Icon (Checklist toggle on click)
-                      GestureDetector(
-                        onTap: canToggleToday
-                            ? () async {
-                                final bool confirmed =
-                                    await showChecklistConfirmDialog(
-                                      context: context,
-                                      title: t.checklistConfirmTitle,
-                                      message: t.checklistConfirmMessage,
-                                      cancelLabel: t.cancel,
-                                      confirmLabel: t.checklistConfirmAction,
-                                    );
-                                if (!confirmed) {
-                                  return;
-                                }
-                                await ref
-                                    .read(activityActionsProvider)
-                                    .toggleTodayCompletion(
-                                      activity: activity,
-                                      completed:
-                                          dailyStatus !=
-                                          ActivityDailyProgressStatus.done,
-                                    );
-                              }
-                            : null,
-                        child: Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: activityStatusColor(
-                              theme: theme,
-                              status: dailyStatus,
-                            ).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              _getActivityIcon(activity.title),
-                              color: activityStatusColor(
-                                theme: theme,
-                                status: dailyStatus,
-                              ),
-                              size: 24,
-                            ),
+                      // Kolom waktu (kiri) mengikuti pola kartu Agenda.
+                      SizedBox(
+                        width: 56,
+                        child: Text(
+                          formatMinutesAsTime(activity.timeMinutes),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: dailyStatus ==
+                                    ActivityDailyProgressStatus.done
+                                ? theme.colorScheme.primary
+                                : dailyStatus ==
+                                      ActivityDailyProgressStatus.partial
+                                ? theme.habitColors.pending
+                                : dailyStatus ==
+                                      ActivityDailyProgressStatus.missed
+                                ? theme.habitColors.missed
+                                : theme.habitColors.inactive,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       // Middle: Title & Subtitle
                       Expanded(
                         child: Column(
@@ -1815,94 +1656,92 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.onSurface,
+                                color: const Color(0xFF0F172A),
                                 decoration: null,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               activity.subActivities.isNotEmpty
-                                  ? activity.subActivities.join(', ')
+                                  ? (localeCode == 'id'
+                                        ? '${activity.subActivities.length} sub aktivitas'
+                                        : '${activity.subActivities.length} sub-activities')
                                   : (localeCode == 'id'
                                         ? 'Rutinitas harian'
                                         : 'Daily routine'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 13,
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.7),
+                                fontSize: 12,
+                                color: const Color(0xFF64748B),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Right: Time & Period Label / Chevron
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              if (subTotal == 0) ...[
-                                Text(
-                                  '',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontSize: 9,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                              ],
-                              Text(
-                                formatMinutesAsTime(activity.timeMinutes),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (subTotal > 0) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _isExpanded = !_isExpanded;
-                                });
-                              },
-                              child: AnimatedRotation(
-                                turns: isExpanded ? 0.25 : 0,
-                                duration: const Duration(milliseconds: 150),
-                                curve: Curves.easeOut,
-                                child: Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.4),
-                                  size: 24,
-                                ),
-                              ),
+                      const SizedBox(width: 10),
+                      // Kanan: chevron dropdown sub (ala kartu Agenda).
+                      if (subTotal > 0)
+                        InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              isExpanded
+                                  ? Icons.expand_less_rounded
+                                  : Icons.expand_more_rounded,
+                              size: 22,
+                              color: const Color(0xFF64748B),
                             ),
-                          ] else ...[
-                            const SizedBox(width: 32),
-                          ],
-                        ],
+                          ),
+                        ),
+                      // Paling kanan: tombol Selesai (tukar posisi dengan dropdown).
+                      // Lingkaran mencerminkan unit induk (entry.status),
+                      // sedangkan redup kartu mengikuti selesai keseluruhan.
+                      InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: canToggleToday
+                            ? () async {
+                                await ref
+                                    .read(activityActionsProvider)
+                                    .toggleTodayCompletion(
+                                      activity: activity,
+                                      completed:
+                                          !(entry?.isCompleted == true),
+                                    );
+                              }
+                            : null,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            entry?.isCompleted == true
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            size: 26,
+                            color: entry?.isCompleted == true
+                                ? theme.colorScheme.primary
+                                : (canToggleToday
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.3,
+                                        )),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   // Expandable subtasks checklist
                   if (subTotal > 0 && isExpanded)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12, left: 72),
+                      padding: const EdgeInsets.only(top: 12, left: 70),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: activity.subActivities.map((

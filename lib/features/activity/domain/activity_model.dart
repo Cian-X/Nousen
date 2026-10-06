@@ -3,7 +3,7 @@ class ActivityModel {
     required this.id,
     required this.title,
     this.family = 'general',
-    this.category = 'general',
+    this.category = 'other',
     this.tags = const <String>[],
     this.duration = 0,
     this.isAnomali = false,

@@ -17,6 +17,7 @@ import android.graphics.Point;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -77,6 +78,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     private Handler mAnimationHandler = new Handler();
     private float lastX, lastY;
+    private float downX = 0f;
     private int lastYPosition;
     private boolean dragging;
     private static final float MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER = 0.8f;
@@ -98,6 +100,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private int savedBubbleX = 0;
     private int savedBubbleY = 0;
     private boolean hasSavedBubblePosition = false;
+    // Last known bubble position across hide/show cycles (re-activation).
+    // Separate from card-flow saved position above.
+    private int lastBubbleX = 0;
+    private int lastBubbleY = 0;
+    private boolean hasLastBubblePosition = false;
+
+    // Guard: suppress snapToEdge while a speech expand/collapse resize is in
+    // flight (a mid-resize window looks "not at edge" and would get yanked).
+    private volatile boolean isSpeechResizing = false;
+    private final Handler snapGuardHandler = new Handler(Looper.getMainLooper());
 
     private class DismissTargetView extends View {
         private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -244,6 +256,17 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
         if (windowManager != null && flutterView != null && isViewAttached) {
             try {
+                WindowManager.LayoutParams lp = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+                if (lp != null) {
+                    lastBubbleX = lp.x;
+                    lastBubbleY = lp.y;
+                    hasLastBubblePosition = true;
+                    Log.d("OverlayNative", "[hide] saved x=" + lp.x + " y=" + lp.y);
+                    if (mOverlayParams != null) {
+                        mOverlayParams.x = lp.x;
+                        mOverlayParams.y = lp.y;
+                    }
+                }
                 windowManager.removeView(flutterView);
             } catch (Exception ignored) {}
             isViewAttached = false;
@@ -275,14 +298,30 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 mOverlayParams.gravity = WindowSetup.gravity;
                 mOverlayParams.windowAnimations = 0;
             }
-            // Reset to initial position (right-center: x=0, y=0 with CENTER|RIGHT gravity)
-            mOverlayParams.x = 0;
-            mOverlayParams.y = 0;
+            // Restore last known position (or default right-center for
+            // CENTER|RIGHT gravity) instead of always resetting to 0,0 —
+            // resetting spawns the icon away from where the user left it.
+            if (hasLastBubblePosition) {
+                mOverlayParams.x = lastBubbleX;
+                mOverlayParams.y = lastBubbleY;
+            } else {
+                mOverlayParams.x = 0;
+                mOverlayParams.y = 0;
+            }
+            // Clamp agar tidak terdampar di tengah/luar layar (stale coords).
+            mOverlayParams.x = clampX(mOverlayParams.x, dpToPx(58));
+            mOverlayParams.y = clampY(mOverlayParams.y, dpToPx(58));
+            Log.d("OverlayNative", "[restore] x=" + mOverlayParams.x
+                    + " y=" + mOverlayParams.y
+                    + " gravity=" + WindowSetup.gravity);
             try {
                 windowManager.addView(flutterView, mOverlayParams);
                 isViewAttached = true;
             } catch (Exception ignored) {}
-            snapToEdge();
+            // NO snapToEdge() here: gravity already places the window at the
+            // edge; snapping would slide it in from center on every activation.
+            // Arm the guard instead so any stray snap is suppressed.
+            armSnapGuard();
         }
         updateNotification("Ketuk untuk membuka asisten aktivitas");
     }
@@ -418,6 +457,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 int height = call.argument("height");
                 boolean enableDrag = call.argument("enableDrag");
                 resizeOverlay(width, height, enableDrag, result);
+            } else if (call.method.equals("ensureOverlayVisible")) {
+                showOverlayView();
+                result.success(isViewAttached);
             } else if (call.method.equals("openApp")) {
                 try {
                     Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
@@ -591,26 +633,27 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     hasSavedBubblePosition = false;
                 }
             } else if (width > 58 && height <= 100) {
-                // Speech bubble active: stay strictly anchored to current edge, DO NOT center X or Y
-                int midX = szWindow.x / 2;
-                if (params.x >= midX) {
-                    // Bubble is on the left side: flush to left edge
-                    params.x = Math.max(0, szWindow.x - targetW);
-                } else {
-                    // Bubble is on the right side: flush to right edge
-                    params.x = 0;
-                }
+                // x NOT changed — icon stays pinned. snapToEdge handles edge correction natively.
+                Log.d("OverlayNative", "[expand] x preserved=" + params.x + " w=" + targetW);
+                armSnapGuard();
+                sendBubbleSide(params.x);
             } else if (width <= 58 && height <= 100) {
-                // Speech bubble collapsed back to small bubble: keep edge anchor, apply alpha-hide
-                int midX = szWindow.x / 2;
-                if (params.x >= midX) {
-                    params.x = Math.max(0, szWindow.x - targetW);
-                } else {
-                    params.x = 0;
-                }
+                // x intentionally NOT changed — window is already at the correct edge.
+                // Modifying x here (even with edgePinnedX) causes snapToEdge to misfire.
+                Log.d("OverlayNative", "[collapse] x preserved=" + params.x + " w=" + targetW);
+                armSnapGuard();
+                // Kirim sisi bubble ke Dart — tanpa ini Dart tidak tahu kiri/kanan
+                // karena snapToEdge di-suppress saat speech resize.
+                sendBubbleSide(params.x);
             }
 
-            boolean needsAlphaHide = isCollapsingToBubble || isExpandingToCard || (width <= 58 && height <= 100 && !isCollapsingToBubble);
+            // Speech collapse (230 -> 58): hide 60ms agar buffer lama di
+            // origin baru tidak tampil sebagai lompatan tengah layar.
+            // (Expand tidak di-hide: entrance sudah oke tanpa itu.)
+            boolean hideForSpeechCollapse = (width <= 58 && height <= 100)
+                    && !isCollapsingToBubble && !isExpandingToCard;
+            boolean needsAlphaHide = isCollapsingToBubble || isExpandingToCard || hideForSpeechCollapse;
+            int settleDelayMs = hideForSpeechCollapse ? 60 : 110;
 
             if (needsAlphaHide) {
                 // Hide window at compositor level during reposition to avoid Mali gralloc buffer stretch artifact
@@ -629,7 +672,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                             windowManager.updateViewLayout(flutterView, p);
                         } catch (Exception ignored) {}
                     }
-                }, 110);
+                }, settleDelayMs);
             } else {
                 windowManager.updateViewLayout(flutterView, params);
             }
@@ -752,8 +795,81 @@ public class OverlayService extends Service implements View.OnTouchListener {
         return mResources.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
     }
 
-    private int clampX(int x, int viewW) {
+    /**
+     * Pin the overlay window to the screen edge matching its current side,
+     * using the active window gravity convention. Windows already sitting on
+     * an edge keep their exact x (zero drift). A mid-screen x (e.g. a snap
+     * animation that was cancelled mid-flight by resizeOverlay) pins to the
+     * NEAREST edge instead of teleporting across the screen.
+     */
+    private int edgePinnedX(int currentX, int targetW, String phase) {
         if (windowManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            windowManager.getDefaultDisplay().getSize(szWindow);
+        }
+        boolean isRightAligned = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.RIGHT;
+        boolean isCenterH = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.CENTER_HORIZONTAL;
+        int edgeRightX;
+        int edgeLeftX;
+        if (isRightAligned) {
+            // x is measured FROM the right edge: 0 = flush right.
+            edgeRightX = 0;
+            edgeLeftX = Math.max(0, szWindow.x - targetW);
+        } else if (isCenterH) {
+            // x is relative to screen center.
+            int half = Math.max(0, (szWindow.x - targetW) / 2);
+            edgeRightX = half;
+            edgeLeftX = -half;
+        } else {
+            // LEFT gravity: x is measured from the left edge.
+            edgeRightX = Math.max(0, szWindow.x - targetW);
+            edgeLeftX = 0;
+        }
+        int slop = dpToPx(8);
+        int pinned;
+        if (Math.abs(currentX - edgeRightX) <= slop) {
+            pinned = edgeRightX;
+        } else if (Math.abs(currentX - edgeLeftX) <= slop) {
+            pinned = edgeLeftX;
+        } else {
+            int distRight = Math.abs(currentX - edgeRightX);
+            int distLeft = Math.abs(currentX - edgeLeftX);
+            pinned = (distRight <= distLeft) ? edgeRightX : edgeLeftX;
+        }
+        Log.d("OverlayNative", "[edgePin/" + phase + "] gravity=" + WindowSetup.gravity
+                + " w=" + targetW + " inX=" + currentX + " outX=" + pinned);
+        return pinned;
+    }
+
+    /**
+     * Report the current bubble side to Dart so _bubbleSide never goes stale
+     * (snapToEdge is suppressed during speech resizes, so its own side
+     * message may never arrive). With CENTER|RIGHT gravity x is measured
+     * FROM the right edge: x near 0 = right side, large x = left side.
+     */
+    private void sendBubbleSide(int currentX) {
+        if (overlayMessageChannel == null) return;
+        try {
+            boolean isRightAligned = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.RIGHT;
+            int midX = windowManager != null ? szWindow.x / 2 : 540;
+            boolean isRight = isRightAligned ? (currentX <= midX / 2) : (currentX < midX);
+            overlayMessageChannel.send("{\"type\":\"bubble_side\",\"side\":\"" + (isRight ? "right" : "left") + "\"}");
+            Log.d("OverlayNative", "[bubble_side] side=" + (isRight ? "right" : "left") + " x=" + currentX);
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Raise the snap guard for 2000ms (covers the 260ms snapToEdge animation
+     * plus buffer for settle + late collapse callbacks) so a resize in flight
+     * is never "corrected" mid-way.
+     * Only used by speech expand/collapse — never by card collapse.
+     */
+    private void armSnapGuard() {
+        isSpeechResizing = true;
+        snapGuardHandler.removeCallbacksAndMessages(null);
+        snapGuardHandler.postDelayed(() -> isSpeechResizing = false, 2000);
+    }
+
+    private int clampX(int x, int viewW) {        if (windowManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             windowManager.getDefaultDisplay().getSize(szWindow);
         }
         int effectiveW = viewW > 0 ? viewW : dpToPx(58);
@@ -804,7 +920,13 @@ public class OverlayService extends Service implements View.OnTouchListener {
     }
 
     private void snapToEdge() {
+        if (!dragging) return;
+        if (isSpeechResizing) return;
         if (windowManager == null || flutterView == null) return;
+        // Skip snap saat window dalam mode speech: baca dari params WM, bukan view width
+        // (flutterView.getWidth() belum diupdate saat ACTION_UP).
+        WindowManager.LayoutParams guardLp = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+        if (guardLp != null && guardLp.width > dpToPx(60)) return;
         cancelSnapAnimation();
 
         WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
@@ -890,6 +1012,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     dragging = false;
                     lastX = event.getRawX();
                     lastY = event.getRawY();
+                    downX = event.getRawX();
                     break;
                 case MotionEvent.ACTION_MOVE:
                     cancelSnapAnimation();
@@ -1013,9 +1136,41 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         return false;
                     }
 
-                    if (!WindowSetup.positionGravity.equals("none")) {
+                    if (!WindowSetup.positionGravity.equals("none") && dragging) {
+                        // Flick cepat (>25% lebar layar): lempar langsung ke
+                        // sisi berlawanan tanpa perlu drag penuh.
+                        float totalDx = event.getRawX() - downX;
+                        if (Math.abs(totalDx) > szWindow.x * 0.25f) {
+                            boolean isRightAligned = (WindowSetup.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.RIGHT;
+                            int vw = flutterView.getWidth() > 0 ? flutterView.getWidth() : dpToPx(58);
+                            int mid = (szWindow.x - vw) / 2;
+                            // Sisi saat ini (konvensi sama seperti snapToEdge),
+                            // lalu pin ke sisi BERLAWANAN.
+                            boolean onRight = isRightAligned ? (params.x < mid) : (params.x >= mid);
+                            int edgeRightX;
+                            int edgeLeftX;
+                            if (isRightAligned) {
+                                edgeRightX = 0;
+                                edgeLeftX = Math.max(0, szWindow.x - vw);
+                            } else {
+                                edgeRightX = Math.max(0, szWindow.x - vw);
+                                edgeLeftX = 0;
+                            }
+                            params.x = onRight ? edgeLeftX : edgeRightX;
+                            // Commit langsung + simpan posisi: jangan andalkan
+                            // snapToEdge() (guard bisa me-return tanpa apply).
+                            try {
+                                windowManager.updateViewLayout(flutterView, params);
+                            } catch (Exception ignored) {}
+                            lastBubbleX = params.x;
+                            lastBubbleY = params.y;
+                            hasLastBubblePosition = true;
+                            Log.d("OverlayNative", "[flick] x=" + params.x
+                                    + " gravity=" + WindowSetup.gravity);
+                        }
                         snapToEdge();
                     }
+                    dragging = false;
                     return false;
                 default:
                     return false;

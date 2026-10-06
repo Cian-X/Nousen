@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:liburan_create/core/theme/app_theme.dart';
 import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
 
 IconData activityStatusIcon(ActivityDailyProgressStatus status) {
@@ -16,11 +17,11 @@ Color activityStatusColor({
   required ActivityDailyProgressStatus status,
 }) {
   return switch (status) {
-    ActivityDailyProgressStatus.done    => const Color(0xFF1A5BAD), // Biru
-    ActivityDailyProgressStatus.partial => const Color(0xFFF59E0B), // Orange
-    ActivityDailyProgressStatus.missed  => const Color(0xFFBA1A1A), // Merah
-    ActivityDailyProgressStatus.skipped => const Color(0xFF9E9E9E), // Abu-abu
-    ActivityDailyProgressStatus.future  => const Color(0xFF9E9E9E), // Abu-abu
+    ActivityDailyProgressStatus.done => theme.habitColors.completed,
+    ActivityDailyProgressStatus.partial => theme.habitColors.pending,
+    ActivityDailyProgressStatus.missed => theme.habitColors.missed,
+    ActivityDailyProgressStatus.skipped => theme.habitColors.inactive,
+    ActivityDailyProgressStatus.future => theme.habitColors.inactive,
   };
 }
 

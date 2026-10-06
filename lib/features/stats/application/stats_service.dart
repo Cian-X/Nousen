@@ -1,8 +1,19 @@
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
+
+/// Selesai keseluruhan model induk-sebagai-unit: induk DAN semua sub selesai.
+bool _isOverallComplete(ActivityModel activity, ProgressEntryModel? entry) {
+  if (entry == null) {
+    return false;
+  }
+  return resolveActivityProgressSummary(
+    subActivities: activity.subActivities,
+    entry: entry,
+  ).isComplete;
+}
 
 class StatsService {
   GlobalStats buildGlobalStats({
@@ -39,7 +50,7 @@ class StatsService {
             continue;
           }
           scheduled++;
-          if (entry?.isCompleted == true) {
+          if (_isOverallComplete(activity, entry)) {
             completed++;
           }
         }
@@ -149,7 +160,7 @@ class StatsService {
           continue;
         }
         scheduled++;
-        if (entry?.isCompleted == true) {
+        if (_isOverallComplete(activity, entry)) {
           completed++;
         }
       }
@@ -190,7 +201,7 @@ class StatsService {
         cursor = cursor.subtract(const Duration(days: 1));
         continue;
       }
-      if (entry?.isCompleted == true) {
+      if (_isOverallComplete(activity, entry)) {
         streak++;
       } else {
         break;
@@ -227,7 +238,7 @@ class StatsService {
           continue;
         }
         scheduled++;
-        if (entry?.isCompleted == true) {
+        if (_isOverallComplete(activity, entry)) {
           completed++;
         }
       }
@@ -274,7 +285,7 @@ class StatsService {
           continue;
         }
         scheduled++;
-        if (entry?.isCompleted == true) {
+        if (_isOverallComplete(activity, entry)) {
           completed++;
         }
       }
@@ -315,7 +326,7 @@ class StatsService {
           continue;
         }
         scheduled++;
-        if (entry?.isCompleted == true) {
+        if (_isOverallComplete(activity, entry)) {
           completed++;
         }
       }
@@ -355,7 +366,7 @@ class StatsService {
           continue;
         }
         scheduled++;
-        if (entry?.isCompleted == true) {
+        if (_isOverallComplete(activity, entry)) {
           completed++;
         }
       }
@@ -378,11 +389,11 @@ class StatsService {
     final Map<int, int> hourFrequency = <int, int>{};
 
     for (final ProgressEntryModel entry in progressEntries) {
-      if (!entry.isCompleted) {
-        continue;
-      }
       final ActivityModel? activity = activityById[entry.activityId];
       if (activity == null) {
+        continue;
+      }
+      if (!_isOverallComplete(activity, entry)) {
         continue;
       }
       final int minutes = activity.timeMinutes;
@@ -453,17 +464,13 @@ class GlobalScheduledStatsCalculator {
   GlobalScheduledStatsCalculator({
     required List<ActivityModel> activities,
     required List<ProgressEntryModel> progressEntries,
-    List<OneTimeReminderModel> oneTimeReminders =
-        const <OneTimeReminderModel>[],
   }) : _activities = activities,
-       _oneTimeReminders = oneTimeReminders,
        _progressByActivityAndDate = <String, ProgressEntryModel>{
-         for (final ProgressEntryModel entry in progressEntries)
-           '${entry.activityId}|${entry.dateKey}': entry,
-       };
+          for (final ProgressEntryModel entry in progressEntries)
+            '${entry.activityId}|${entry.dateKey}': entry,
+        };
 
   final List<ActivityModel> _activities;
-  final List<OneTimeReminderModel> _oneTimeReminders;
   final Map<String, ProgressEntryModel> _progressByActivityAndDate;
 
   List<DailyStat> getDailyStats(DateTime start, DateTime end) {
@@ -527,29 +534,13 @@ class GlobalScheduledStatsCalculator {
         continue;
       }
       scheduled++;
-      if (entry?.isCompleted == true) {
-        completed++;
-      }
-    }
-
-    for (final OneTimeReminderModel reminder in _oneTimeReminders) {
-      if (!_isSameDay(reminder.scheduledAt, date)) {
-        continue;
-      }
-      scheduled++;
-      if (reminder.isCompleted) {
+      if (_isOverallComplete(activity, entry)) {
         completed++;
       }
     }
 
     return (scheduled: scheduled, completed: completed);
   }
-}
-
-bool _isSameDay(DateTime first, DateTime second) {
-  return first.year == second.year &&
-      first.month == second.month &&
-      first.day == second.day;
 }
 
 _DateRange _normalizeRange(DateTime start, DateTime end) {

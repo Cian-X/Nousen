@@ -12,6 +12,7 @@ import 'package:liburan_create/features/activity/application/activity_day_recomm
 import 'package:liburan_create/features/activity/application/activity_form_ml_service.dart';
 import 'package:liburan_create/features/activity/application/activity_time_sync_engine.dart';
 import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
+import 'package:liburan_create/features/activity/domain/activity_category.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
@@ -36,6 +37,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _subActivityController = TextEditingController();
+  static const int _maxSubActivities = 15;
+  static const int _maxSubActivityLength = 60;
   final FocusNode _titleFocusNode = FocusNode();
   final Uuid _uuid = const Uuid();
   static const List<int> _preReminderOptions = <int>[0, 5, 10, 15, 30, 60];
@@ -45,6 +48,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
   late int _timeMinutes;
   late int _preReminderMinutes;
   late bool _isNotificationEnabled;
+  String? _selectedCategoryId;
 
   SmartActivitySuggestion? _geminiSuggestion;
   String? _geminiAnalyzedTitle;
@@ -57,7 +61,9 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
   ActivityModel? get _existingActivity => widget.args?.activity;
 
   bool get _canSubmitForm =>
-      _titleController.text.trim().isNotEmpty && _selectedDays.isNotEmpty;
+      _titleController.text.trim().isNotEmpty &&
+      _selectedDays.isNotEmpty &&
+      _selectedCategoryId != null;
 
   void _handleTitleChanged() {
     if (!mounted) {
@@ -89,6 +95,9 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     _timeMinutes = existingActivity?.timeMinutes ?? fallbackMinutes;
     _preReminderMinutes = existingActivity?.preReminderMinutes ?? 0;
     _isNotificationEnabled = existingActivity?.isNotificationEnabled ?? true;
+    _selectedCategoryId = ActivityCategory.isValid(existingActivity?.category)
+        ? existingActivity!.category
+        : null;
     _titleController.addListener(_handleTitleChanged);
     _titleFocusNode.addListener(() {
       if (!mounted) {
@@ -137,7 +146,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
         _geminiSuggestion ?? localSuggestion;
     return baseSuggestion == null
         ? null
-        : (baseSuggestion.localPlan == null && localSuggestion?.localPlan != null
+        : (baseSuggestion.localPlan == null &&
+                  localSuggestion?.localPlan != null
               ? baseSuggestion.copyWith(localPlan: localSuggestion!.localPlan)
               : baseSuggestion);
   }
@@ -181,8 +191,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       );
     }
 
-    final SmartActivitySuggestion synchronizedSuggestion =
-        _timeSyncEngine.synchronize(
+    final SmartActivitySuggestion synchronizedSuggestion = _timeSyncEngine
+        .synchronize(
           suggestion: seededSuggestion,
           selectedDays: dayAwareSuggestion.recommendedDays.isNotEmpty
               ? dayAwareSuggestion.recommendedDays
@@ -214,7 +224,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     if (trimmedTitle.isEmpty || suggestion == null) {
       return null;
     }
-    if (suggestion.type != SmartActivityType.action || suggestion.needsTitleDetail) {
+    if (suggestion.type != SmartActivityType.action ||
+        suggestion.needsTitleDetail) {
       return null;
     }
 
@@ -230,14 +241,16 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
         .map((WeeklyRoutineDayProfile item) => item.endMinutes)
         .whereType<int>()
         .toList(growable: false);
-    final int avgRoutineStart = _averageMinutes(routineStarts, fallback: 8 * 60);
+    final int avgRoutineStart = _averageMinutes(
+      routineStarts,
+      fallback: 8 * 60,
+    );
     final int avgRoutineEnd = _averageMinutes(routineEnds, fallback: 17 * 60);
     final bool hasRoutineDays = routineDays.isNotEmpty;
 
     return ActivityFormMlRequest(
       activityTitle: trimmedTitle,
-      recommendedTimeMinutes:
-          suggestion.recommendedTimeMinutes ?? _timeMinutes,
+      recommendedTimeMinutes: suggestion.recommendedTimeMinutes ?? _timeMinutes,
       userWakeUpMinutes:
           settings.wakeUpMinutes ??
           _estimatedWakeUpMinutes(
@@ -246,10 +259,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
           ),
       userSleepMinutes:
           settings.sleepMinutes ??
-          _estimatedSleepMinutes(
-            avgRoutineEnd,
-            hasRoutineDays: hasRoutineDays,
-          ),
+          _estimatedSleepMinutes(avgRoutineEnd, hasRoutineDays: hasRoutineDays),
       numWorkdays: routineDays.length,
       avgRoutineStartMinutes: avgRoutineStart,
       avgRoutineEndMinutes: avgRoutineEnd,
@@ -410,14 +420,16 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     if (suggestion == null) {
       return;
     }
-    await ref.read(aiFeedbackLogServiceProvider).logRecommendationSave(
-      title: title,
-      suggestion: suggestion,
-      source: source,
-      finalTimeMinutes: _timeMinutes,
-      finalSelectedDays: _selectedDays.toList()..sort(),
-      settings: settings,
-    );
+    await ref
+        .read(aiFeedbackLogServiceProvider)
+        .logRecommendationSave(
+          title: title,
+          suggestion: suggestion,
+          source: source,
+          finalTimeMinutes: _timeMinutes,
+          finalSelectedDays: _selectedDays.toList()..sort(),
+          settings: settings,
+        );
   }
 
   ThemeData _pickerTheme(BuildContext context) {
@@ -682,7 +694,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       return;
     }
     final String title = _titleController.text.trim();
-    if (title.isEmpty || _selectedDays.isEmpty) {
+    final String? categoryId = _selectedCategoryId;
+    if (title.isEmpty || _selectedDays.isEmpty || categoryId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(t.formValidationMessage)));
@@ -753,6 +766,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       final ActivityModel model = ActivityModel(
         id: existing?.id ?? _uuid.v4(),
         title: title,
+        category: categoryId,
         selectedDays: normalizedSelectedDays,
         subActivities: _normalizedSubActivities(_subActivities),
         timeMinutes: _timeMinutes,
@@ -912,9 +926,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       return;
     }
 
-    final _SuggestionApplyMode? picked = await showModalBottomSheet<
-      _SuggestionApplyMode
-    >(
+    final _SuggestionApplyMode?
+    picked = await showModalBottomSheet<_SuggestionApplyMode>(
       context: context,
       showDragHandle: true,
       builder: (BuildContext context) {
@@ -937,17 +950,15 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                 _SuggestionApplyOptionTile(
                   label: localeCode == 'id' ? 'Jam saja' : 'Time only',
                   icon: Icons.schedule_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pop(_SuggestionApplyMode.timeOnly),
+                  onTap: () =>
+                      Navigator.of(context).pop(_SuggestionApplyMode.timeOnly),
                 ),
                 const SizedBox(height: 10),
                 _SuggestionApplyOptionTile(
                   label: localeCode == 'id' ? 'Hari saja' : 'Days only',
                   icon: Icons.date_range_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pop(_SuggestionApplyMode.daysOnly),
+                  onTap: () =>
+                      Navigator.of(context).pop(_SuggestionApplyMode.daysOnly),
                 ),
                 const SizedBox(height: 10),
                 _SuggestionApplyOptionTile(
@@ -987,7 +998,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context)!;
     final ThemeData theme = Theme.of(context);
-    final settings = ref.watch(settingsStreamProvider).value ?? _fallbackSettings();
+    final settings =
+        ref.watch(settingsStreamProvider).value ?? _fallbackSettings();
     final String localeCode = settings.localeCode;
     final geminiService = ref.read(geminiActivityServiceProvider);
     final List<ActivityModel> existingActivities =
@@ -1051,58 +1063,70 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     );
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF8FAFC),
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Center(
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                ),
+                icon: const Icon(
+                  Icons.chevron_left_rounded,
+                  size: 18,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ),
+        ),
+        titleSpacing: 12,
         title: Text(
           _existingActivity != null ? t.editActivity : t.createActivity,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.1),
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
           ),
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: SizedBox(
+            height: 52,
             child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.88),
-                disabledForegroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                textStyle: theme.textTheme.titleMedium?.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
               onPressed: (_canSubmitForm && !_saving) ? _save : null,
-              child: Text(
-                _saving ? t.saving : (_existingActivity != null ? t.save : (localeCode == 'id' ? 'Simpan Aktivitas' : 'Save Activity')),
-              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      _existingActivity != null
+                          ? t.save
+                          : (localeCode == 'id'
+                                ? 'Simpan Aktivitas'
+                                : 'Save Activity'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
             ),
           ),
         ),
@@ -1112,7 +1136,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
           final bool isWide = constraints.maxWidth >= 700;
           final bool isLarge = constraints.maxWidth >= 1100;
           final ThemeData theme = Theme.of(context);
-          final double sidePadding = isWide ? AppSpacing.lg : AppSpacing.md;
+          final double sidePadding = isWide ? AppSpacing.lg : 20;
           final double contentMaxWidth = isLarge ? 980 : 760;
           final double contentWidth = constraints.maxWidth < contentMaxWidth
               ? constraints.maxWidth
@@ -1120,19 +1144,19 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
           const double elementGap = 7;
           const double fieldGap = 12;
           const double sectionGap = 18;
-          const double topContentGap = 0;
+          const double topContentGap = 16;
           final TextStyle? sectionLabelStyle = theme.textTheme.labelSmall
               ?.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: const Color(0xFF64748B),
               );
           final TextStyle? smallLabelStyle = theme.textTheme.labelSmall
               ?.copyWith(
                 fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF475569),
               );
 
           return Align(
@@ -1152,7 +1176,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      localeCode == 'id' ? 'Informasi dasar' : 'Basic info',
+                      localeCode == 'id' ? 'INFORMASI DASAR' : 'BASIC INFO',
                       style: sectionLabelStyle,
                     ),
                     const SizedBox(height: fieldGap),
@@ -1167,7 +1191,10 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         hintText: titleHint,
                         hintStyle: titleInputStyle?.copyWith(
                           fontWeight: FontWeight.w500,
@@ -1198,16 +1225,14 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                               )
                             : null,
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outlineVariant.withValues(
-                              alpha: 0.5,
-                            ),
-                            width: 1.0,
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                            width: 1.5,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
                             color: theme.colorScheme.primary,
                             width: 1.6,
@@ -1218,8 +1243,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                     if (showAiSection) ...<Widget>[
                       const SizedBox(height: fieldGap),
                       Text(
-                        localeCode == 'id' ? 'Saran AI' : 'AI suggestion',
-                        style: smallLabelStyle,
+                        localeCode == 'id' ? 'SARAN AI' : 'AI SUGGESTION',
+                        style: sectionLabelStyle,
                       ),
                     ],
                     if (_geminiError != null) ...<Widget>[
@@ -1232,7 +1257,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                         onRetry: _isGeminiLoading ? null : _analyzeWithGemini,
                       ),
                     ],
-                    if (smartSuggestion != null && !_aiSuggestionDismissed) ...<Widget>[
+                    if (smartSuggestion != null &&
+                        !_aiSuggestionDismissed) ...<Widget>[
                       const SizedBox(height: elementGap),
                       _SmartActivitySuggestionCard(
                         localeCode: localeCode,
@@ -1267,9 +1293,31 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                       ),
                     ],
                     const SizedBox(height: fieldGap),
+                    Text(
+                      localeCode == 'id' ? 'KATEGORI' : 'CATEGORY',
+                      style: sectionLabelStyle,
+                    ),
+                    const SizedBox(height: elementGap),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ActivityCategory.values.map((String id) {
+                        final bool selected = _selectedCategoryId == id;
+                        return ChoiceChip(
+                          label: Text(ActivityCategory.labelOf(id, localeCode)),
+                          selected: selected,
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedCategoryId = id;
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: fieldGap),
                     Text(t.subActivitiesLabel, style: smallLabelStyle),
                     const SizedBox(height: elementGap),
-                     Row(
+                    Row(
                       children: <Widget>[
                         Expanded(
                           child: TextField(
@@ -1279,20 +1327,22 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               hintText: localeCode == 'id'
                                   ? 'Tambah sub-aktivitas...'
                                   : 'Add sub-activity...',
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.outlineVariant.withValues(
-                                    alpha: 0.5,
-                                  ),
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                  width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
                                   color: theme.colorScheme.primary,
                                   width: 1.6,
@@ -1305,11 +1355,11 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                         FilledButton.tonalIcon(
                           onPressed: _addSubActivity,
                           style: FilledButton.styleFrom(
-                            minimumSize: const Size(0, 56),
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                            minimumSize: const Size(0, 48),
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            foregroundColor: const Color(0xFF0F172A),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           icon: const Icon(Icons.add_rounded, size: 20),
@@ -1339,7 +1389,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                     ],
                     const SizedBox(height: fieldGap),
                     Text(
-                      localeCode == 'id' ? 'Jadwal' : 'Schedule',
+                      localeCode == 'id' ? 'JADWAL' : 'SCHEDULE',
                       style: sectionLabelStyle,
                     ),
                     const SizedBox(height: fieldGap),
@@ -1370,17 +1420,19 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                     ),
                     const SizedBox(height: sectionGap),
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          color: const Color(0xFFE2E8F0),
                           width: 1,
                         ),
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.03),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.03,
+                            ),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -1394,30 +1446,40 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                             children: <Widget>[
                               Row(
                                 children: <Widget>[
-                                  Icon(
-                                    Icons.notifications_rounded,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    size: 24,
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.notifications_rounded,
+                                      color: Color(0xFF475569),
+                                      size: 18,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    localeCode == 'id' ? 'Notifikasi' : 'Notification',
+                                    localeCode == 'id'
+                                        ? 'Notifikasi'
+                                        : 'Notification',
                                     style: theme.textTheme.titleSmall?.copyWith(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
                                     ),
                                   ),
                                 ],
                               ),
                               Switch.adaptive(
                                 value: _isNotificationEnabled,
+                                activeTrackColor: const Color(0xFF1D4ED8),
                                 onChanged: (bool value) {
                                   setState(() {
                                     _isNotificationEnabled = value;
                                   });
                                 },
-                                activeThumbColor: theme.colorScheme.primary,
                               ),
                             ],
                           ),
@@ -1427,31 +1489,38 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                               onTap: _pickPreReminder,
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                height: 48,
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                height: 44,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerLow,
+                                  color: const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                    color: const Color(0xFFE2E8F0),
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     Text(
                                       _preReminderMinutes == 0
                                           ? t.preReminderOff
-                                          : t.preReminderMinutesValue(_preReminderMinutes),
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: theme.colorScheme.onSurface,
-                                      ),
+                                          : t.preReminderMinutesValue(
+                                              _preReminderMinutes,
+                                            ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF475569),
+                                          ),
                                     ),
-                                    Icon(
+                                    const Icon(
                                       Icons.expand_more_rounded,
-                                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                      size: 16,
+                                      color: Color(0xFF64748B),
                                     ),
                                   ],
                                 ),
@@ -1476,10 +1545,30 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     if (value.isEmpty) {
       return;
     }
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    if (_subActivities.length >= _maxSubActivities) {
+      _showSubActivityWarning(
+        isId
+            ? 'Maksimal 15 sub-aktivitas. Bagi ke beberapa aktivitas.'
+            : 'Maximum 15 sub-activities. Split into multiple activities.',
+      );
+      return;
+    }
+    if (value.length > _maxSubActivityLength) {
+      _showSubActivityWarning(
+        isId
+            ? 'Nama sub-aktivitas maksimal 60 karakter.'
+            : 'Sub-activity name must be 60 characters or fewer.',
+      );
+      return;
+    }
     final bool exists = _subActivities.any(
       (String item) => item.toLowerCase() == value.toLowerCase(),
     );
     if (exists) {
+      _showSubActivityWarning(
+        isId ? 'Sub-aktivitas sudah ada.' : 'Sub-activity already exists.',
+      );
       _subActivityController.clear();
       return;
     }
@@ -1487,6 +1576,12 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       _subActivities.add(value);
       _subActivityController.clear();
     });
+  }
+
+  void _showSubActivityWarning(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   List<String> _normalizedSubActivities(List<String> values) {
@@ -1562,10 +1657,14 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
     final bool needsTitleDetail = suggestion.needsTitleDetail;
 
     final String cardTitle = needsTitleDetail
-        ? (localeCode == 'id' ? 'Gunakan judul yang lebih spesifik?' : 'Use a more specific title?')
+        ? (localeCode == 'id'
+              ? 'Gunakan judul yang lebih spesifik?'
+              : 'Use a more specific title?')
         : (isAvoidance
-            ? (localeCode == 'id' ? 'Fokus pengingat' : 'Tracking focus')
-            : (localeCode == 'id' ? 'Saran waktu terbaik' : 'Best time recommendation'));
+              ? (localeCode == 'id' ? 'Fokus pengingat' : 'Tracking focus')
+              : (localeCode == 'id'
+                    ? 'Saran waktu terbaik'
+                    : 'Best time recommendation'));
 
     return Container(
       width: double.infinity,
@@ -1602,7 +1701,10 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
               ),
               if (sourceBadgeLabel != null || isGeminiResult) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(999),
@@ -1624,7 +1726,9 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
                 child: Icon(
                   Icons.close_rounded,
                   size: 18,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.7,
+                  ),
                 ),
               ),
             ],
@@ -1641,7 +1745,8 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
               body: suggestion.insight ?? '',
             ),
           ] else ...<Widget>[
-            if (needsTitleDetail && suggestion.detailPrompt != null) ...<Widget>[
+            if (needsTitleDetail &&
+                suggestion.detailPrompt != null) ...<Widget>[
               Text(
                 suggestion.detailPrompt!,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -1659,12 +1764,16 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
                         (String item) => GestureDetector(
                           onTap: () => onSuggestedTitleTap(item),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                color: theme.colorScheme.outlineVariant
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                             child: Text(
@@ -1687,9 +1796,7 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.8,
-                  color: theme.colorScheme.onSurface.withValues(
-                    alpha: 0.96,
-                  ),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.96),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1736,7 +1843,9 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonal(
-                    onPressed: _canApplyAnyRecommendation ? onApplySuggestion : null,
+                    onPressed: _canApplyAnyRecommendation
+                        ? onApplySuggestion
+                        : null,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -1880,8 +1989,9 @@ class _AiUnavailableHintCard extends StatelessWidget {
                 ? 'Belum ada saran otomatis'
                 : 'Automatic suggestion unavailable',
             style: theme.textTheme.titleSmall?.copyWith(
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+              color: const Color(0xFF0F172A),
             ),
           ),
           const SizedBox(height: 8),
@@ -1894,8 +2004,9 @@ class _AiUnavailableHintCard extends StatelessWidget {
                       ? 'Aktivitas ini belum dikenali oleh saran lokal. Coba gunakan judul yang lebih spesifik agar sistem bisa memberi saran yang relevan.'
                       : 'This activity is not recognized by the local suggestion engine yet. Try a more specific title so the system can provide a relevant suggestion.'),
             style: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: 12,
               height: 1.4,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+              color: const Color(0xFF64748B),
             ),
           ),
         ],
@@ -1936,7 +2047,9 @@ class _GeminiErrorCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            localeCode == 'id' ? 'Gemini belum tersedia' : 'Gemini is unavailable',
+            localeCode == 'id'
+                ? 'Gemini belum tersedia'
+                : 'Gemini is unavailable',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.88),
@@ -1977,7 +2090,6 @@ class _GeminiErrorCard extends StatelessWidget {
     );
   }
 }
-
 
 class _TitleFieldGeminiButton extends StatelessWidget {
   const _TitleFieldGeminiButton({
@@ -2090,10 +2202,7 @@ String _frequencyLabel(
       : '${plan.minSessionsPerWeek}-${plan.maxSessionsPerWeek}x a week';
 }
 
-String _weekdayCompactRanges(
-  List<int> weekdays, {
-  required String localeCode,
-}) {
+String _weekdayCompactRanges(List<int> weekdays, {required String localeCode}) {
   final List<int> uniqueSorted = weekdays.toSet().toList()..sort();
   if (uniqueSorted.isEmpty) {
     return '-';
@@ -2116,9 +2225,15 @@ String _weekdayCompactRanges(
   }
 
   if (selected.length == 6) {
-    final List<int> missing = <int>[1, 2, 3, 4, 5, 6, 7]
-        .where((int day) => !selected.contains(day))
-        .toList(growable: false);
+    final List<int> missing = <int>[
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+    ].where((int day) => !selected.contains(day)).toList(growable: false);
     if (missing.length == 1) {
       final String missingLabel = _weekdayFullLabel(missing.first, localeCode);
       return localeCode == 'id'
@@ -2189,7 +2304,11 @@ String _weekdayFullLabel(int weekday, String localeCode) {
     'Saturday',
     'Sunday',
   ];
-  final int safeIndex = weekday < 1 ? 0 : weekday > 7 ? 6 : weekday - 1;
+  final int safeIndex = weekday < 1
+      ? 0
+      : weekday > 7
+      ? 6
+      : weekday - 1;
   return localeCode == 'id' ? idLabels[safeIndex] : enLabels[safeIndex];
 }
 
@@ -2214,9 +2333,10 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
         val == 0 ? allSelected : selectedDays.contains(val);
 
     return SizedBox(
-      height: 48,
+      height: 42,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(right: 12),
         itemCount: items.length,
         itemBuilder: (BuildContext context, int index) {
           final int val = items[index];
@@ -2247,15 +2367,20 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: selected ? theme.colorScheme.primary : Colors.transparent,
+                  color: selected ? const Color(0xFF1D4ED8) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: selected
+                      ? null
+                      : Border.all(color: const Color(0xFFE2E8F0), width: 1),
                   boxShadow: selected
                       ? <BoxShadow>[
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                            color: const Color(
+                              0xFF1D4ED8,
+                            ).withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -2265,22 +2390,30 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
                 child: Center(
                   child: val == 0
                       ? Icon(
-                          selected ? Icons.check_rounded : Icons.done_all_rounded,
+                          selected
+                              ? Icons.check_rounded
+                              : Icons.done_all_rounded,
                           size: 20,
-                          color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: selected
+                              ? Colors.white
+                              : theme.colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.6,
+                                ),
                         )
                       : selected
-                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
-                          : Text(
-                              weekdayShortLabel(val, localeCode),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                                color: selected
-                                    ? Colors.white
-                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                                fontSize: 13,
-                              ),
-                            ),
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        )
+                      : Text(
+                          weekdayShortLabel(val, localeCode),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF475569),
+                            fontSize: 12,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -2311,30 +2444,23 @@ class _ScheduleInlineItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
-          height: 56,
+          height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              width: 1,
-            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
           ),
           child: Row(
             children: <Widget>[
-              Icon(
-                icon,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
+              Icon(icon, size: 18, color: const Color(0xFF64748B)),
               const SizedBox(width: 12),
               Text(
                 value,
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
             ],
@@ -2344,4 +2470,3 @@ class _ScheduleInlineItem extends StatelessWidget {
     );
   }
 }
-

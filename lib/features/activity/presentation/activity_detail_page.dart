@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
+import 'package:liburan_create/core/constants/ai_demo_config.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
+import 'package:liburan_create/core/theme/app_theme.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/time_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
@@ -55,7 +57,38 @@ class ActivityDetailPage extends ConsumerWidget {
 
     if (activity == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(t.activityDetail)),
+        appBar: AppBar(
+          leadingWidth: 64,
+          leading: (ModalRoute.of(context)?.canPop ?? false)
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: Center(
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        padding: EdgeInsets.zero,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          side: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.chevron_left_rounded,
+                          size: 18,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+          title: Text(t.activityDetail),
+        ),
         body: Center(child: Text(t.activityNotFound)),
       );
     }
@@ -100,10 +133,7 @@ class ActivityDetailPage extends ConsumerWidget {
         const <ProgressEntryModel>[];
     final ActivityBreakdown breakdown = ref
         .watch(statsServiceProvider)
-        .buildSingleActivityBreakdown(
-          activity: activity,
-          entries: entries,
-        );
+        .buildSingleActivityBreakdown(activity: activity, entries: entries);
     final String localeCode =
         ref.watch(settingsStreamProvider).value?.localeCode ?? 'id';
     final ThemeData theme = Theme.of(context);
@@ -132,12 +162,6 @@ class ActivityDetailPage extends ConsumerWidget {
       0,
       totalSubCount - visibleSubActivities.length,
     );
-    final String todayNote = (todayEntry?.notes ?? '').trim();
-    final bool hasTodayNote = todayNote.isNotEmpty;
-    final List<String> todayPhotoPaths = _normalizedPhotoPaths(todayEntry);
-    final int todayPhotoCount = todayPhotoPaths.length;
-    final bool hasTodayPhoto = todayPhotoCount > 0;
-    final bool hasTodayUpdate = hasTodayNote || hasTodayPhoto;
     final DateTime scheduleUpdatedAt =
         activity.scheduleUpdatedAt ?? activity.createdAt;
     final List<_ScheduledDaySnapshot> weeklyScheduledDays =
@@ -204,29 +228,51 @@ class ActivityDetailPage extends ConsumerWidget {
     final String hiddenSubActivitiesLabel = localeCode == 'id'
         ? '+$hiddenSubActivitiesCount lainnya'
         : '+$hiddenSubActivitiesCount more';
+    final bool isOnDeviceMlEnabled = AiDemoConfig.onDeviceMlEnabled;
     final _ActivityAiInsightData aiInsight = _buildActivityAiInsightData(
       activity: activity,
       entries: entries,
       breakdown: breakdown,
       localeCode: localeCode,
       today: today,
-      mlPrediction: ref
-          .watch(activityDetailMlPredictionProvider(activity.id))
-          .valueOrNull,
+      mlPrediction: isOnDeviceMlEnabled
+          ? ref
+                .watch(activityDetailMlPredictionProvider(activity.id))
+                .valueOrNull
+          : null,
+      predictionEnabled: isOnDeviceMlEnabled,
     );
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: theme.colorScheme.primary,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Center(
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                ),
+                icon: const Icon(
+                  Icons.chevron_left_rounded,
+                  size: 18,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           localeCode == 'id' ? 'Detail aktivitas' : 'Activity detail',
@@ -355,129 +401,139 @@ class ActivityDetailPage extends ConsumerWidget {
                   AppSpacing.screenPadding,
                 ),
                 children: <Widget>[
-                  _ActivityHeroCard(
-                    scheduleText: headerScheduleText,
-                    summaryText: aiInsight.heroLine,
-                    progressPercent: headerProgress.percent,
-                    progressRate: headerProgress.rate,
-                    currentStreak: currentStreak,
-                    streakText: 'Streak ${t.daysCount(currentStreak)}',
-                    progressState: headerProgress.state,
-                    visualStatus: headerVisualStatus,
-                    localeCode: localeCode,
-                  ),
-                  const SizedBox(height: 18),
-                  _ActivityAiInsightSection(
-                    data: aiInsight,
-                    localeCode: localeCode,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    activity.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.02,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  // Compact header: status pill + schedule + title + streak.
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(
-                        localeCode == 'id'
-                            ? 'Progres mingguan'
-                            : 'Weekly progress',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
+                          horizontal: 10,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.05,
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFFFDE68A),
+                            width: 1,
                           ),
-                          borderRadius: BorderRadius.circular(6),
                         ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: activityStatusColor(
+                                  theme: theme,
+                                  status: headerVisualStatus,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              activityStatusLabel(
+                                status: headerVisualStatus,
+                                localeCode: localeCode,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Text(
-                          localeCode == 'id' ? 'Minggu ini' : 'This week',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
+                          headerScheduleText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
                             fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF64748B),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.3,
-                        ),
-                        width: 1,
-                      ),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 24,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        _CustomWeeklyBarChart(
-                          days: weeklyScheduledDays,
-                          localeCode: localeCode,
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFB4262C),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              weeklyHelperText,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.8),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  Text(
+                    activity.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.02,
+                      color: const Color(0xFF0F172A),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        localeCode == 'id'
+                            ? 'Streak $currentStreak hari'
+                            : 'Streak $currentStreak days',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 1,
+                        height: 14,
+                        color: const Color(0xFFE2E8F0),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFCBD5E1),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          activityStatusLabel(
+                            status: todayVisualStatus,
+                            localeCode: localeCode,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.14),
+                  // Cycle progress ring card (dinamis dari data sesi).
+                  _CycleProgressCard(
+                    completedSubCount: completedSubCount,
+                    totalSubCount: totalSubCount,
+                    parentCompleted: todayProgress.parentCompleted,
+                    fallbackPercent: headerProgress.percent,
+                    localeCode: localeCode,
+                    status: todayVisualStatus,
                   ),
                   if (hasSubActivities) ...<Widget>[
                     const SizedBox(height: 18),
@@ -546,27 +602,80 @@ class ActivityDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  // AI insight: expander (konten widget yang sudah ada).
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: theme.colorScheme.outlineVariant.withValues(
                           alpha: 0.3,
                         ),
                         width: 1,
                       ),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                    ),
+                    child: Theme(
+                      data: theme.copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
                         ),
-                      ],
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          0,
+                          14,
+                          14,
+                        ),
+                        leading: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: Color(0xFF4F46E5),
+                            size: 16,
+                          ),
+                        ),
+                        title: Text(
+                          localeCode == 'id'
+                              ? 'NOUSEN AI: Mempelajari ritme'
+                              : 'NOUSEN AI: Learning rhythm',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        children: <Widget>[
+                          _ActivityAiInsightSection(
+                            data: aiInsight,
+                            localeCode: localeCode,
+                            activity: activity,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Timeline: navigasi ke halaman perbandingan yang sudah ada.
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      ),
                     ),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -579,418 +688,183 @@ class ActivityDetailPage extends ConsumerWidget {
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(14),
                         child: Row(
                           children: <Widget>[
                             Container(
-                              width: 40,
-                              height: 40,
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.timeline_rounded,
-                                color: theme.colorScheme.primary,
-                                size: 22,
+                              child: const Icon(
+                                Icons.bar_chart_rounded,
+                                color: Color(0xFF475569),
+                                size: 16,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                t.comparisonTimelineTitle,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    localeCode == 'id'
+                                        ? 'Timeline progres'
+                                        : 'Progress timeline',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  Text(
+                                    localeCode == 'id'
+                                        ? 'Lihat riwayat & catatan lalu'
+                                        : 'View history & past notes',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontSize: 11,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Icon(
+                            const Icon(
                               Icons.chevron_right_rounded,
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: Color(0xFF94A3B8),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Text(
-                        localeCode == 'id' ? 'Catatan harian' : 'Daily note',
+                        localeCode == 'id'
+                            ? 'Progres mingguan'
+                            : 'Weekly progress',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      if (!hasTodayUpdate) ...<Widget>[
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerLow
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.6),
-                              width: 2,
-                              style: BorderStyle.solid,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.05,
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: <BoxShadow>[
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.04,
-                                      ),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.edit_note_rounded,
-                                  size: 32,
-                                  color: theme.colorScheme.outline,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                localeCode == 'id'
-                                    ? 'Belum ada catatan hari ini'
-                                    : 'No notes yet today',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                localeCode == 'id'
-                                    ? 'Tambahkan catatan atau foto untuk dokumentasi progres aktivitasmu.'
-                                    : 'Add notes or photos to document your progress.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: theme.colorScheme.primary,
-                                    foregroundColor:
-                                        theme.colorScheme.onPrimary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    elevation: 2,
-                                    shadowColor: theme.colorScheme.primary
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                  onPressed: () async {
-                                    await _addDailyLogUpdate(
-                                      context: context,
-                                      ref: ref,
-                                      t: t,
-                                      localeCode: localeCode,
-                                      activity: activity,
-                                      existingEntry: todayEntry,
-                                    );
-                                  },
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: Text(
-                                    localeCode == 'id'
-                                        ? 'Tambah catatan'
-                                        : 'Add note',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          localeCode == 'id' ? 'Minggu ini' : 'This week',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
-                      ] else ...<Widget>[
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 24,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Row(
-                                      children: <Widget>[
-                                        Icon(
-                                          activityStatusIcon(todayVisualStatus),
-                                          size: 16,
-                                          color: activityStatusColor(
-                                            theme: theme,
-                                            status: todayVisualStatus,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            formatDateLong(
-                                              todayEntry == null
-                                                  ? today
-                                                  : dateFromKey(
-                                                      todayEntry.dateKey,
-                                                    ),
-                                              localeCode,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: theme
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withValues(alpha: 0.74),
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    tooltip: localeCode == 'id'
-                                        ? 'Opsi log'
-                                        : 'Log options',
-                                    icon: Icon(
-                                      Icons.more_horiz_rounded,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.74),
-                                    ),
-                                    onSelected: (String action) {
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) async {
-                                            if (!context.mounted) {
-                                              return;
-                                            }
-                                            if (action == 'edit') {
-                                              await _addDailyLogUpdate(
-                                                context: context,
-                                                ref: ref,
-                                                t: t,
-                                                localeCode: localeCode,
-                                                activity: activity,
-                                                existingEntry: todayEntry,
-                                              );
-                                            } else if (action == 'deleteLog' &&
-                                                todayEntry != null) {
-                                              await _deleteTodayLogText(
-                                                context: context,
-                                                ref: ref,
-                                                t: t,
-                                                localeCode: localeCode,
-                                                entry: todayEntry,
-                                              );
-                                            } else if (action ==
-                                                    'deletePhoto' &&
-                                                todayEntry != null) {
-                                              await _deleteTodayLogPhotos(
-                                                context: context,
-                                                ref: ref,
-                                                t: t,
-                                                localeCode: localeCode,
-                                                entry: todayEntry,
-                                                photoPaths: todayPhotoPaths,
-                                              );
-                                            }
-                                          });
-                                    },
-                                    itemBuilder: (BuildContext context) {
-                                      return <PopupMenuEntry<String>>[
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Text(
-                                            localeCode == 'id'
-                                                ? 'Edit'
-                                                : 'Edit',
-                                          ),
-                                        ),
-                                        if (todayEntry != null &&
-                                            (((todayEntry.notes ?? '')
-                                                    .trim()
-                                                    .isNotEmpty) ||
-                                                ((todayEntry.photoNote ?? '')
-                                                    .trim()
-                                                    .isNotEmpty)))
-                                          PopupMenuItem<String>(
-                                            value: 'deleteLog',
-                                            child: Text(
-                                              localeCode == 'id'
-                                                  ? 'Hapus log'
-                                                  : 'Delete log',
-                                            ),
-                                          ),
-                                        if (todayEntry != null &&
-                                            todayPhotoPaths.isNotEmpty)
-                                          PopupMenuItem<String>(
-                                            value: 'deletePhoto',
-                                            child: Text(
-                                              localeCode == 'id'
-                                                  ? 'Hapus foto'
-                                                  : 'Delete photo',
-                                            ),
-                                          ),
-                                      ];
-                                    },
-                                  ),
-                                ],
-                              ),
-                              if (hasTodayPhoto) ...<Widget>[
-                                const SizedBox(height: 12),
-                                GestureDetector(
-                                  onTap: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => _PhotoGalleryViewerPage(
-                                          paths: todayPhotoPaths,
-                                          localeCode: localeCode,
-                                          dateKey:
-                                              todayEntry?.dateKey ?? todayKey,
-                                          initialIndex: 0,
-                                          compareCandidates:
-                                              const <_GalleryPhotoCandidate>[],
-                                        ),
-                                        fullscreenDialog: true,
-                                      ),
-                                    );
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Stack(
-                                      children: <Widget>[
-                                        AspectRatio(
-                                          aspectRatio: 16 / 10,
-                                          child: OptimizedFileImage(
-                                            path: todayPhotoPaths.first,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                            logicalCacheWidth:
-                                                MediaQuery.sizeOf(
-                                                  context,
-                                                ).width,
-                                            logicalCacheHeight: 220,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                                  return Container(
-                                                    color: theme
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                    alignment: Alignment.center,
-                                                    child: const Icon(
-                                                      Icons
-                                                          .broken_image_rounded,
-                                                      size: 22,
-                                                    ),
-                                                  );
-                                                },
-                                          ),
-                                        ),
-                                        if (todayPhotoCount > 1)
-                                          Positioned(
-                                            right: 10,
-                                            bottom: 10,
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.52,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      AppRadius.pill,
-                                                    ),
-                                              ),
-                                              child: Text(
-                                                localeCode == 'id'
-                                                    ? '$todayPhotoCount foto'
-                                                    : '$todayPhotoCount photos',
-                                                style: theme
-                                                    .textTheme
-                                                    .labelSmall
-                                                    ?.copyWith(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (hasTodayNote) ...<Widget>[
-                                SizedBox(height: hasTodayPhoto ? 14 : 10),
-                                Text(
-                                  todayNote,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.86),
-                                    height: 1.4,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      ),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 4),
                         ),
                       ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        _CustomWeeklyBarChart(
+                          days: weeklyScheduledDays,
+                          localeCode: localeCode,
+                          timeMinutes: activity.timeMinutes,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFB4262C),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              weeklyHelperText,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.outline.withValues(alpha: 0.14),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _SessionNoteComposer(
+                        localeCode: localeCode,
+                        onPickPhotos: () => _pickDailyLogPhotoPaths(
+                          context: context,
+                          ref: ref,
+                          localeCode: localeCode,
+                        ),
+                        onSave:
+                            (
+                              String note,
+                              List<String> photoPaths,
+                              List<String> sessionPickedPaths,
+                            ) => _saveSessionComposerNote(
+                              context: context,
+                              ref: ref,
+                              t: t,
+                              localeCode: localeCode,
+                              activity: activity,
+                              existingEntry: todayEntry,
+                              note: note,
+                              photoPaths: photoPaths,
+                              sessionPickedPaths: sessionPickedPaths,
+                            ),
+                      ),
                     ],
                   ),
                 ],
@@ -1143,8 +1017,31 @@ class ActivityDetailPage extends ConsumerWidget {
     required String localeCode,
     required DateTime today,
     ActivityDetailMlPrediction? mlPrediction,
+    required bool predictionEnabled,
   }) {
     final bool isId = localeCode == 'id';
+    if (!predictionEnabled) {
+      final String unavailable = isId
+          ? 'Insight AI belum tersedia karena analisis ML sedang nonaktif.'
+          : 'AI insight is unavailable while ML analysis is disabled.';
+      return _ActivityAiInsightData(
+        heroLine: unavailable,
+        headline: isId ? 'Insight belum tersedia' : 'Insight unavailable',
+        body: unavailable,
+        dayMetricTitle: isId ? 'Pola hari' : 'Day pattern',
+        timeMetricTitle: isId ? 'Waktu' : 'Time',
+        bestDayLabel: isId ? 'Belum tersedia' : 'Unavailable',
+        bestTimeLabel: isId ? 'Belum tersedia' : 'Unavailable',
+        caution: unavailable,
+        recommendation: unavailable,
+        weakestDayLabel: null,
+        suggestedTimeMinutes: activity.timeMinutes,
+        patternDotsFilled: 0,
+        trackerSubtitle: unavailable,
+        chancePercent: null,
+        predictionAvailable: false,
+      );
+    }
     final DateTime normalizedToday = dateOnly(today);
     final DateTime scheduleStart = dateOnly(
       activity.scheduleUpdatedAt ?? activity.createdAt,
@@ -1404,6 +1301,19 @@ class ActivityDetailPage extends ConsumerWidget {
       bestTimeLabel: bestTimeMetricLabel,
       caution: caution,
       recommendation: recommendation,
+      weakestDayLabel: weakestDayLabel,
+      suggestedTimeMinutes:
+          mlPrediction?.predictedTimeMinutes ?? activity.timeMinutes,
+      patternDotsFilled: completed.clamp(0, 3),
+      trackerSubtitle: strongestDay == null
+          ? (isId ? '$scheduled sesi tercatat' : '$scheduled sessions logged')
+          : (isId
+                ? '$completed dari $scheduled selesai'
+                : '$completed of $scheduled done'),
+      chancePercent: strongestDay == null
+          ? null
+          : (strongestDay.completionRate * 100).round(),
+      predictionAvailable: true,
     );
   }
 
@@ -1930,6 +1840,71 @@ class ActivityDetailPage extends ConsumerWidget {
     );
   }
 
+  Future<bool> _saveSessionComposerNote({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations t,
+    required String localeCode,
+    required ActivityModel activity,
+    required ProgressEntryModel? existingEntry,
+    required String note,
+    required List<String> photoPaths,
+    required List<String> sessionPickedPaths,
+  }) async {
+    final String initialNote = (existingEntry?.notes ?? '').trim();
+    final List<String> initialPhotoPaths = _normalizedPhotoPaths(existingEntry);
+    final _DailyLogUpdateDraft draft = _DailyLogUpdateDraft(
+      note: note.trim(),
+      photoPaths: List<String>.from(photoPaths),
+    );
+    final bool hasDraftChanges =
+        draft.note.trim() != initialNote ||
+        !_haveSamePathSet(initialPhotoPaths, draft.photoPaths);
+    if (!hasDraftChanges) {
+      return false;
+    }
+    final bool confirm = await _showImmutableSaveWarningDialog(
+      context: context,
+      title: t.dataImmutableWarningTitle,
+      message: draft.photoPaths.isNotEmpty
+          ? t.photoSaveWarningMessage
+          : t.noteSaveWarningMessage,
+      cancelLabel: t.cancel,
+      confirmLabel: localeCode == 'id' ? 'Simpan' : 'Save',
+    );
+    if (!confirm) {
+      return false;
+    }
+    final _DailyLogSaveResult saveResult = await _saveDailyLogUpdateDraft(
+      ref: ref,
+      activity: activity,
+      existingEntry: existingEntry,
+      initialNote: initialNote,
+      initialPhotoPaths: initialPhotoPaths,
+      draft: draft,
+    );
+    final List<String> unusedSessionPhotos = sessionPickedPaths
+        .where((String path) => !saveResult.keptPhotoPaths.contains(path))
+        .toList();
+    await _cleanupDraftPhotos(ref, unusedSessionPhotos);
+    if (!context.mounted) {
+      return true;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _buildDailyLogSaveMessage(
+            localeCode: localeCode,
+            noteProvided: saveResult.noteProvided,
+            noteSaved: saveResult.noteSaved,
+            savedPhotoCount: saveResult.savedPhotoCount,
+          ),
+        ),
+      ),
+    );
+    return true;
+  }
+
   bool _haveSamePathSet(List<String> first, List<String> second) {
     if (first.length != second.length) {
       return false;
@@ -1940,115 +1915,6 @@ class ActivityDetailPage extends ConsumerWidget {
       return false;
     }
     return firstSet.containsAll(secondSet);
-  }
-
-  Future<void> _deleteTodayLogText({
-    required BuildContext context,
-    required WidgetRef ref,
-    required AppLocalizations t,
-    required String localeCode,
-    required ProgressEntryModel entry,
-  }) async {
-    final bool hasNotes = (entry.notes ?? '').trim().isNotEmpty;
-    final bool hasPhotoNote = (entry.photoNote ?? '').trim().isNotEmpty;
-    if (!hasNotes && !hasPhotoNote) {
-      return;
-    }
-
-    final bool confirm = await _showImmutableSaveWarningDialog(
-      context: context,
-      title: localeCode == 'id' ? 'Hapus log hari ini?' : 'Delete today log?',
-      message: localeCode == 'id'
-          ? 'Teks log hari ini akan dihapus.'
-          : 'Today log text will be removed.',
-      cancelLabel: t.cancel,
-      confirmLabel: t.delete,
-    );
-    if (!confirm) {
-      return;
-    }
-
-    ProgressEntryModel workingEntry = entry;
-    if (hasNotes) {
-      await ref
-          .read(activityActionsProvider)
-          .removeNoteFromEntry(entry: workingEntry);
-      workingEntry = workingEntry.copyWith(
-        clearNotes: true,
-        updatedAt: DateTime.now(),
-      );
-    }
-    if (hasPhotoNote) {
-      await ref
-          .read(activityActionsProvider)
-          .removePhotoNoteFromEntry(entry: workingEntry);
-    }
-
-    if (!context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          localeCode == 'id'
-              ? 'Catatan harian dihapus.'
-              : 'Daily note deleted.',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _deleteTodayLogPhotos({
-    required BuildContext context,
-    required WidgetRef ref,
-    required AppLocalizations t,
-    required String localeCode,
-    required ProgressEntryModel entry,
-    required List<String> photoPaths,
-  }) async {
-    if (photoPaths.isEmpty) {
-      return;
-    }
-
-    final bool deletePhotoAndComment = (entry.photoNote ?? '')
-        .trim()
-        .isNotEmpty;
-    final bool confirm = await _showImmutableSaveWarningDialog(
-      context: context,
-      title: localeCode == 'id'
-          ? 'Hapus foto hari ini?'
-          : 'Delete today photo?',
-      message: deletePhotoAndComment
-          ? (localeCode == 'id'
-                ? 'Foto dan komentar foto hari ini akan dihapus.'
-                : 'Today photo and photo comment will be removed.')
-          : (localeCode == 'id'
-                ? 'Foto hari ini akan dihapus.'
-                : 'Today photo will be removed.'),
-      cancelLabel: t.cancel,
-      confirmLabel: t.delete,
-    );
-    if (!confirm) {
-      return;
-    }
-
-    await ref.read(activityActionsProvider).removePhotoFromEntry(entry: entry);
-    await _cleanupDraftPhotos(ref, photoPaths);
-
-    if (!context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          deletePhotoAndComment
-              ? (localeCode == 'id'
-                    ? 'Foto dihapus - Komentar foto dihapus.'
-                    : 'Photo deleted - Photo comment deleted.')
-              : (localeCode == 'id' ? 'Foto dihapus.' : 'Photo deleted.'),
-        ),
-      ),
-    );
   }
 
   String _buildDailyLogSaveMessage({
@@ -2126,6 +1992,312 @@ class ActivityDetailPage extends ConsumerWidget {
   }
 }
 
+class _SessionNoteComposer extends ConsumerStatefulWidget {
+  const _SessionNoteComposer({
+    required this.localeCode,
+    required this.onPickPhotos,
+    required this.onSave,
+  });
+
+  final String localeCode;
+  final Future<List<String>> Function() onPickPhotos;
+  final Future<bool> Function(
+    String note,
+    List<String> photoPaths,
+    List<String> sessionPickedPaths,
+  )
+  onSave;
+
+  @override
+  ConsumerState<_SessionNoteComposer> createState() =>
+      _SessionNoteComposerState();
+}
+
+class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
+  final TextEditingController _controller = TextEditingController();
+  final List<String> _photoPaths = <String>[];
+  final Set<String> _sessionPickedPaths = <String>{};
+  bool _pickingPhoto = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _canSave =>
+      !_saving &&
+      (_controller.text.trim().isNotEmpty || _photoPaths.isNotEmpty);
+
+  Future<void> _pickPhoto() async {
+    if (_pickingPhoto) {
+      return;
+    }
+    setState(() {
+      _pickingPhoto = true;
+    });
+    try {
+      final List<String> picked = await widget.onPickPhotos();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        for (final String path in picked) {
+          final String cleanPath = path.trim();
+          if (cleanPath.isEmpty) {
+            continue;
+          }
+          _sessionPickedPaths.add(cleanPath);
+          if (!_photoPaths.contains(cleanPath)) {
+            _photoPaths.add(cleanPath);
+          }
+        }
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _pickingPhoto = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_canSave) {
+      return;
+    }
+    setState(() {
+      _saving = true;
+    });
+    try {
+      final bool saved = await widget.onSave(
+        _controller.text.trim(),
+        List<String>.from(_photoPaths),
+        _sessionPickedPaths.toList(),
+      );
+      if (!mounted || !saved) {
+        return;
+      }
+      setState(() {
+        _controller.clear();
+        _photoPaths.clear();
+        _sessionPickedPaths.clear();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isId = widget.localeCode == 'id';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text(
+              isId ? 'Catatan Sesi' : 'Session Notes',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              isId ? 'Opsional' : 'Optional',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              TextField(
+                controller: _controller,
+                minLines: 3,
+                maxLines: 5,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: isId
+                      ? 'Tulis refleksi ringkas atau kendala hari ini...'
+                      : 'Write a brief reflection or blocker today...',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                    height: 1.4,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.all(12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              if (_photoPaths.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 54,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _photoPaths.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (BuildContext context, int index) {
+                      final String path = _photoPaths[index];
+                      return Stack(
+                        children: <Widget>[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: OptimizedFileImage(
+                              path: path,
+                              width: 54,
+                              height: 54,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 54,
+                                  height: 54,
+                                  color: const Color(0xFFF1F5F9),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.broken_image_rounded,
+                                    size: 16,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(999),
+                              onTap: () {
+                                setState(() {
+                                  _photoPaths.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.62),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      onPressed: _pickingPhoto ? null : _pickPhoto,
+                      icon: const Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 20,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _canSave ? _submit : null,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isId ? 'Simpan' : 'Save',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DailyLogUpdateDraft {
   const _DailyLogUpdateDraft({required this.note, required this.photoPaths});
 
@@ -2169,8 +2341,6 @@ class _DailyLogTimelineEntry {
 
 enum _TimelineLogMenuAction { edit, delete }
 
-enum _ComparisonRange { last7, last30, all }
-
 class _ActivityComparisonPage extends StatelessWidget {
   const _ActivityComparisonPage({
     required this.activityId,
@@ -2186,7 +2356,40 @@ class _ActivityComparisonPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(t.comparisonTimelineTitle)),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF8FAFC),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Center(
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                ),
+                icon: const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          t.comparisonTimelineTitle,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.cardPadding,
@@ -2195,10 +2398,9 @@ class _ActivityComparisonPage extends StatelessWidget {
           AppSpacing.screenPadding,
         ),
         children: <Widget>[
-          Text(activityTitle, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.componentGap),
           _ComparisonTimelineSection(
             activityId: activityId,
+            activityTitle: activityTitle,
             localeCode: localeCode,
           ),
         ],
@@ -2207,13 +2409,297 @@ class _ActivityComparisonPage extends StatelessWidget {
   }
 }
 
+class _RangeTriggerButton extends StatelessWidget {
+  const _RangeTriggerButton({
+    required this.localeCode,
+    required this.onPickRange,
+  });
+
+  final String localeCode;
+  final VoidCallback onPickRange;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      onPressed: onPickRange,
+      icon: const Icon(
+        Icons.date_range_rounded,
+        size: 16,
+        color: Color(0xFF2563EB),
+      ),
+      label: Text(
+        localeCode == 'id' ? 'Rentang' : 'Range',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF2563EB),
+        ),
+      ),
+    );
+  }
+}
+
+class _RangeActiveChip extends StatelessWidget {
+  const _RangeActiveChip({
+    required this.localeCode,
+    required this.customStart,
+    required this.customEnd,
+    required this.onClearRange,
+  });
+
+  final String localeCode;
+  final DateTime customStart;
+  final DateTime customEnd;
+  final VoidCallback onClearRange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFDBEAFE), width: 1),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              '${formatDateShort(customStart, localeCode)} - ${formatDateShort(customEnd, localeCode)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1D4ED8),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onClearRange,
+            behavior: HitTestBehavior.opaque,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: Color(0xFF1D4ED8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineWeekStrip extends StatelessWidget {
+  const _TimelineWeekStrip({
+    required this.entries,
+    required this.localeCode,
+    required this.selectedDayKey,
+    required this.onDaySelected,
+    required this.displayDays,
+    required this.navigationEnabled,
+    required this.onWeekShift,
+  });
+
+  final List<ProgressEntryModel> entries;
+  final String localeCode;
+  final String? selectedDayKey;
+  final ValueChanged<String> onDaySelected;
+  final List<DateTime> displayDays;
+  final bool navigationEnabled;
+  final ValueChanged<int> onWeekShift;
+
+  @override
+  Widget build(BuildContext context) {
+    final DateTime today = dateOnly(DateTime.now());
+    final Map<String, ProgressEntryModel> byDate = <String, ProgressEntryModel>{
+      for (final ProgressEntryModel e in entries) e.dateKey: e,
+    };
+    int doneDays = 0;
+    final List<Widget> dayNodes = <Widget>[];
+    for (final DateTime rawDay in displayDays) {
+      final DateTime day = dateOnly(rawDay);
+      final String dayKey = dateKeyFromDate(day);
+      final bool isSelected = selectedDayKey == dayKey;
+      final bool isToday =
+          day.year == today.year &&
+          day.month == today.month &&
+          day.day == today.day;
+      final bool isFuture = day.isAfter(today);
+      final ProgressEntryModel? entry = byDate[dayKey];
+      final bool isDone =
+          entry != null && entry.status == ActivityDayStatus.done;
+      if (isDone) doneDays++;
+      final Color textColor = isToday
+          ? Colors.white
+          : isDone
+          ? const Color(0xFF1D4ED8)
+          : const Color(0xFF64748B);
+      dayNodes.add(
+        SizedBox(
+          width: 52,
+          child: GestureDetector(
+            onTap: () => onDaySelected(dayKey),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  weekdayShortLabel(day.weekday, localeCode),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? const Color(0xFF2563EB)
+                        : isDone
+                        ? const Color(0xFFDBEAFE)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(color: const Color(0xFF1D4ED8), width: 2)
+                        : (isToday
+                              ? Border.all(
+                                  color: const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.25),
+                                  width: 4,
+                                )
+                              : null),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    day.day.toString(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isDone && !isFuture
+                        ? const Color(0xFF059669)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    final int totalDays = displayDays.length;
+    final DateTime firstDay = dateOnly(displayDays.first);
+    final DateTime lastDay = dateOnly(displayDays.last);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            _WeekNavButton(
+              icon: Icons.chevron_left_rounded,
+              enabled: navigationEnabled,
+              onTap: () => onWeekShift(-1),
+            ),
+            Expanded(
+              child: Column(
+                children: <Widget>[
+                  Text(
+                    '${formatDateShort(firstDay, localeCode)} - ${formatDateShort(lastDay, localeCode)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1D4ED8),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    localeCode == 'id'
+                        ? '$doneDays dari $totalDays hari'
+                        : '$doneDays of $totalDays days',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _WeekNavButton(
+              icon: Icons.chevron_right_rounded,
+              enabled: navigationEnabled,
+              onTap: () => onWeekShift(1),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: dayNodes),
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekNavButton extends StatelessWidget {
+  const _WeekNavButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: IconButton(
+        onPressed: enabled ? onTap : null,
+        padding: EdgeInsets.zero,
+        icon: Icon(
+          icon,
+          size: 20,
+          color: enabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1),
+        ),
+      ),
+    );
+  }
+}
+
 class _ComparisonTimelineSection extends ConsumerStatefulWidget {
   const _ComparisonTimelineSection({
     required this.activityId,
+    required this.activityTitle,
     required this.localeCode,
   });
 
   final String activityId;
+  final String activityTitle;
   final String localeCode;
 
   @override
@@ -2225,7 +2711,75 @@ class _ComparisonTimelineSectionState
     extends ConsumerState<_ComparisonTimelineSection> {
   static const int _entriesPerPage = 5;
 
-  _ComparisonRange _range = _ComparisonRange.last30;
+  String? _selectedDayKey;
+  int _weekOffset = 0;
+  DateTime? _customStart;
+  DateTime? _customEnd;
+
+  List<DateTime> _stripDisplayDays(DateTime weekMonday) {
+    if (_customStart != null && _customEnd != null) {
+      DateTime a = dateOnly(_customStart!);
+      DateTime b = dateOnly(_customEnd!);
+      if (b.isBefore(a)) {
+        final DateTime t = a;
+        a = b;
+        b = t;
+      }
+      final int span = b.difference(a).inDays + 1;
+      const int maxNodes = 62;
+      final int count = span > maxNodes ? maxNodes : span;
+      return List<DateTime>.generate(
+        count,
+        (int i) => a.add(Duration(days: i)),
+        growable: false,
+      );
+    }
+    return List<DateTime>.generate(
+      7,
+      (int i) => weekMonday.add(Duration(days: i)),
+      growable: false,
+    );
+  }
+
+  Future<void> _pickCustomRange(BuildContext context) async {
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    final DateTime today = dateOnly(DateTime.now());
+    final DateTime weekBase = today;
+    final DateTime defaultMonday = weekBase
+        .subtract(Duration(days: weekBase.weekday - 1))
+        .add(Duration(days: _weekOffset * 7));
+    // Picker forbids initial dates after today; clamp the default week.
+    final DateTime defaultStart = defaultMonday.isAfter(today)
+        ? today
+        : defaultMonday;
+    final DateTime defaultEnd =
+        defaultMonday.add(const Duration(days: 6)).isAfter(today)
+        ? today
+        : defaultMonday.add(const Duration(days: 6));
+    final DateTimeRange initialRange =
+        (_customStart != null && _customEnd != null)
+        ? DateTimeRange(start: _customStart!, end: _customEnd!)
+        : DateTimeRange(start: defaultStart, end: defaultEnd);
+    // Satu dialog rentang: tap tanggal mulai, tap tanggal akhir, Terapkan.
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: today,
+      initialDateRange: initialRange,
+      helpText: isId ? 'Pilih rentang tanggal' : 'Select date range',
+      saveText: isId ? 'Terapkan' : 'Apply',
+    );
+    if (picked == null || !context.mounted) {
+      return;
+    }
+    setState(() {
+      _customStart = dateOnly(picked.start);
+      _customEnd = dateOnly(picked.end);
+      _selectedDayKey = null;
+      _pageIndex = 0;
+    });
+  }
+
   int _pageIndex = 0;
 
   @override
@@ -2247,9 +2801,45 @@ class _ComparisonTimelineSectionState
     final List<_DailyLogTimelineEntry> orderedLogs = _buildDailyLogEntries(
       orderedEntries,
     );
-    final List<_DailyLogTimelineEntry> filteredLogs = _filteredLogEntries(
-      orderedLogs,
-    );
+    final DateTime weekBase = dateOnly(DateTime.now());
+    final DateTime weekMonday = weekBase
+        .subtract(Duration(days: weekBase.weekday - 1))
+        .add(Duration(days: _weekOffset * 7));
+    final DateTime weekEnd = weekMonday.add(const Duration(days: 7));
+    // Lingkup aktif: rentang kustom bila dipilih, else minggu tampil.
+    DateTime scopeStart = weekMonday;
+    DateTime scopeEnd = weekEnd;
+    if (_customStart != null && _customEnd != null) {
+      DateTime a = dateOnly(_customStart!);
+      DateTime b = dateOnly(_customEnd!);
+      if (b.isBefore(a)) {
+        final DateTime t = a;
+        a = b;
+        b = t;
+      }
+      scopeStart = a;
+      scopeEnd = b.add(const Duration(days: 1));
+    }
+    bool isInScope(String dateKey) {
+      final DateTime day = dateOnly(dateFromKey(dateKey));
+      return !day.isBefore(scopeStart) && day.isBefore(scopeEnd);
+    }
+
+    final List<_DailyLogTimelineEntry> scopeLogs = orderedLogs
+        .where(
+          (_DailyLogTimelineEntry logEntry) =>
+              (logEntry.logText.isNotEmpty || logEntry.photoPaths.isNotEmpty) &&
+              isInScope(logEntry.dateKey),
+        )
+        .toList();
+    final List<_DailyLogTimelineEntry> filteredLogs = _selectedDayKey == null
+        ? scopeLogs
+        : scopeLogs
+              .where(
+                (_DailyLogTimelineEntry logEntry) =>
+                    logEntry.dateKey == _selectedDayKey,
+              )
+              .toList();
     final int totalPages = filteredLogs.isEmpty
         ? 1
         : (filteredLogs.length / _entriesPerPage).ceil();
@@ -2263,101 +2853,240 @@ class _ComparisonTimelineSectionState
         : filteredLogs.sublist(pageStart, pageEnd);
     final List<_GalleryPhotoCandidate> comparisonCandidates =
         _buildComparisonCandidates(orderedLogs);
+    // Metrik real lingkup tampil (tanpa angka karangan).
+    final int totalSessions = scopeLogs.length;
+    final int doneSessions = scopeLogs
+        .where(
+          (_DailyLogTimelineEntry log) =>
+              log.entry.status == ActivityDayStatus.done,
+        )
+        .length;
+    final int donePercent = totalSessions > 0
+        ? ((doneSessions / totalSessions) * 100).round().clamp(0, 100)
+        : 0;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Judul + kontrol rentang di pojok kanan.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Text(
-              t.comparisonTimelineTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            _ComparisonRangeSwitcher(
-              selected: _range,
-              sevenDaysLabel: t.comparisonFilter7d,
-              thirtyDaysLabel: t.comparisonFilter30d,
-              allLabel: t.comparisonFilterAll,
-              onChanged: (_ComparisonRange value) {
-                setState(() {
-                  _range = value;
-                  _pageIndex = 0;
-                });
-              },
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (filteredLogs.isEmpty)
-              Text(t.comparisonEmpty)
-            else
-              ...pagedLogs.asMap().entries.map((
-                MapEntry<int, _DailyLogTimelineEntry> item,
-              ) {
-                final int index = item.key;
-                final _DailyLogTimelineEntry logEntry = item.value;
-                return _buildLogTimelineCard(
-                  context: context,
-                  ref: ref,
-                  t: t,
-                  logEntry: logEntry,
-                  compareCandidates: comparisonCandidates,
-                  activity: activity,
-                  showConnector: index < pagedLogs.length - 1,
-                );
-              }),
-            if (filteredLogs.isNotEmpty && totalPages > 1) ...<Widget>[
-              const SizedBox(height: AppSpacing.xs / 2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: AppSpacing.xs / 2,
+            Expanded(
+              child: Text(
+                widget.activityTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
                 ),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Row(
-                  children: <Widget>[
-                    IconButton(
-                      onPressed: currentPage > 0
-                          ? () {
-                              setState(() {
-                                _pageIndex = currentPage - 1;
-                              });
-                            }
-                          : null,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      visualDensity: VisualDensity.compact,
+              ),
+            ),
+            const SizedBox(width: 12),
+            _RangeTriggerButton(
+              localeCode: widget.localeCode,
+              onPickRange: () => _pickCustomRange(context),
+            ),
+          ],
+        ),
+        if (_customStart != null && _customEnd != null) ...<Widget>[
+          const SizedBox(height: 8),
+          _RangeActiveChip(
+            localeCode: widget.localeCode,
+            customStart: _customStart!,
+            customEnd: _customEnd!,
+            onClearRange: () {
+              setState(() {
+                _customStart = null;
+                _customEnd = null;
+                _pageIndex = 0;
+              });
+            },
+          ),
+        ],
+        const SizedBox(height: 12),
+        // Metrik terbuka: hanya yang ada datanya.
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '$totalSessions',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      height: 1.0,
                     ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          '${pageStart + 1}-$pageEnd / ${filteredLogs.length} | ${currentPage + 1}/$totalPages',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.localeCode == 'id' ? 'Total Sesi' : 'Total Sessions',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(width: 1, height: 44, color: const Color(0xFFE2E8F0)),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '$donePercent%',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        height: 1.0,
                       ),
                     ),
-                    IconButton(
-                      onPressed: currentPage < totalPages - 1
-                          ? () {
-                              setState(() {
-                                _pageIndex = currentPage + 1;
-                              });
-                            }
-                          : null,
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      visualDensity: VisualDensity.compact,
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.localeCode == 'id' ? 'Selesai' : 'Completed',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+        // Strip kalender mingguan (data real per tanggal).
+        _TimelineWeekStrip(
+          entries: entries,
+          localeCode: widget.localeCode,
+          selectedDayKey: _selectedDayKey,
+          onDaySelected: (String dateKey) {
+            setState(() {
+              _selectedDayKey = _selectedDayKey == dateKey ? null : dateKey;
+              _pageIndex = 0;
+            });
+          },
+          displayDays: _stripDisplayDays(weekMonday),
+          navigationEnabled: _customStart == null,
+          onWeekShift: (int delta) {
+            setState(() {
+              _weekOffset += delta;
+              _selectedDayKey = null;
+              _pageIndex = 0;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text(
+              widget.localeCode == 'id' ? 'Catatan Sesi' : 'Session Notes',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              widget.localeCode == 'id'
+                  ? '$totalSessions sesi'
+                  : '$totalSessions sessions',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1D4ED8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (filteredLogs.isEmpty)
+          Text(
+            _selectedDayKey == null
+                ? t.comparisonEmpty
+                : (widget.localeCode == 'id'
+                      ? 'Belum ada catatan pada tanggal ini.'
+                      : 'No notes on this date yet.'),
+          )
+        else
+          ...pagedLogs.asMap().entries.map((
+            MapEntry<int, _DailyLogTimelineEntry> item,
+          ) {
+            final int index = item.key;
+            final _DailyLogTimelineEntry logEntry = item.value;
+            return _buildLogTimelineCard(
+              context: context,
+              ref: ref,
+              t: t,
+              logEntry: logEntry,
+              compareCandidates: comparisonCandidates,
+              activity: activity,
+              showConnector: index < pagedLogs.length - 1,
+            );
+          }),
+        if (filteredLogs.isNotEmpty && totalPages > 1) ...<Widget>[
+          const SizedBox(height: AppSpacing.xs / 2),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xs / 2,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  onPressed: currentPage > 0
+                      ? () {
+                          setState(() {
+                            _pageIndex = currentPage - 1;
+                          });
+                        }
+                      : null,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  visualDensity: VisualDensity.compact,
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${pageStart + 1}-$pageEnd / ${filteredLogs.length} | ${currentPage + 1}/$totalPages',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: currentPage < totalPages - 1
+                      ? () {
+                          setState(() {
+                            _pageIndex = currentPage + 1;
+                          });
+                        }
+                      : null,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -2436,8 +3165,18 @@ class _ComparisonTimelineSectionState
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 1),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: localTheme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.3,
+                  ),
+                  width: 1,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -2798,34 +3537,6 @@ class _ComparisonTimelineSectionState
     }).toList();
   }
 
-  List<_DailyLogTimelineEntry> _filteredLogEntries(
-    List<_DailyLogTimelineEntry> orderedLogs,
-  ) {
-    final DateTime today = dateOnly(DateTime.now());
-    final int? dayCount = switch (_range) {
-      _ComparisonRange.last7 => 7,
-      _ComparisonRange.last30 => 30,
-      _ComparisonRange.all => null,
-    };
-    final DateTime? threshold = dayCount == null
-        ? null
-        : today.subtract(Duration(days: dayCount - 1));
-
-    return orderedLogs.where((_DailyLogTimelineEntry logEntry) {
-      final bool hasSignal =
-          logEntry.logText.isNotEmpty || logEntry.photoPaths.isNotEmpty;
-      if (!hasSignal) {
-        return false;
-      }
-
-      if (threshold == null) {
-        return true;
-      }
-      final DateTime day = dateOnly(dateFromKey(logEntry.dateKey));
-      return !day.isBefore(threshold);
-    }).toList();
-  }
-
   List<_GalleryPhotoCandidate> _buildComparisonCandidates(
     List<_DailyLogTimelineEntry> orderedLogs,
   ) {
@@ -2867,156 +3578,6 @@ class _ComparisonTimelineSectionState
       },
     );
     return confirm == true;
-  }
-}
-
-class _ComparisonRangeSwitcher extends StatelessWidget {
-  const _ComparisonRangeSwitcher({
-    required this.selected,
-    required this.sevenDaysLabel,
-    required this.thirtyDaysLabel,
-    required this.allLabel,
-    required this.onChanged,
-  });
-
-  final _ComparisonRange selected;
-  final String sevenDaysLabel;
-  final String thirtyDaysLabel;
-  final String allLabel;
-  final ValueChanged<_ComparisonRange> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final BorderRadius radius = BorderRadius.circular(AppRadius.button);
-
-    return ClipRRect(
-      borderRadius: radius,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.62,
-          ),
-          borderRadius: radius,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xs),
-          child: SizedBox(
-            height: 42,
-            child: Stack(
-              children: <Widget>[
-                AnimatedAlign(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOut,
-                  alignment: switch (selected) {
-                    _ComparisonRange.last7 => Alignment.centerLeft,
-                    _ComparisonRange.last30 => Alignment.center,
-                    _ComparisonRange.all => Alignment.centerRight,
-                  },
-                  child: FractionallySizedBox(
-                    widthFactor: 1 / 3,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs / 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(
-                          alpha: 0.15,
-                        ),
-                        borderRadius: BorderRadius.circular(AppRadius.small),
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: _ComparisonRangeSwitchItem(
-                        selected: selected == _ComparisonRange.last7,
-                        label: sevenDaysLabel,
-                        onTap: () => onChanged(_ComparisonRange.last7),
-                      ),
-                    ),
-                    Expanded(
-                      child: _ComparisonRangeSwitchItem(
-                        selected: selected == _ComparisonRange.last30,
-                        label: thirtyDaysLabel,
-                        onTap: () => onChanged(_ComparisonRange.last30),
-                      ),
-                    ),
-                    Expanded(
-                      child: _ComparisonRangeSwitchItem(
-                        selected: selected == _ComparisonRange.all,
-                        label: allLabel,
-                        onTap: () => onChanged(_ComparisonRange.all),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ComparisonRangeSwitchItem extends StatelessWidget {
-  const _ComparisonRangeSwitchItem({
-    required this.selected,
-    required this.label,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final Color accent = theme.colorScheme.primary;
-    final Color inactiveColor = theme.colorScheme.onSurface.withValues(
-      alpha: 0.72,
-    );
-    final Color selectedTextColor = theme.colorScheme.primary.withValues(
-      alpha: 0.9,
-    );
-
-    return Material(
-      color: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      borderRadius: BorderRadius.circular(AppRadius.small),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        onTap: onTap,
-        splashFactory: NoSplash.splashFactory,
-        overlayColor: WidgetStateProperty.resolveWith<Color?>((
-          Set<WidgetState> states,
-        ) {
-          if (states.contains(WidgetState.pressed)) {
-            return accent.withValues(alpha: 0.06);
-          }
-          if (states.contains(WidgetState.hovered) ||
-              states.contains(WidgetState.focused)) {
-            return accent.withValues(alpha: 0.04);
-          }
-          return null;
-        }),
-        child: Center(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? selectedTextColor : inactiveColor,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -3191,6 +3752,35 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        leadingWidth: 64,
+        leading: (ModalRoute.of(context)?.canPop ?? false)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(
           formatDateLong(dateFromKey(widget.dateKey), widget.localeCode),
         ),
@@ -3421,6 +4011,35 @@ class _PhotoCompareViewerPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        leadingWidth: 64,
+        leading: (ModalRoute.of(context)?.canPop ?? false)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(t.comparisonPhotoDialogTitle),
       ),
       body: SafeArea(
@@ -3667,10 +4286,15 @@ class _ZoomableComparePaneState extends State<_ZoomableComparePane> {
 }
 
 class _CustomWeeklyBarChart extends StatelessWidget {
-  const _CustomWeeklyBarChart({required this.days, required this.localeCode});
+  const _CustomWeeklyBarChart({
+    required this.days,
+    required this.localeCode,
+    required this.timeMinutes,
+  });
 
   final List<_ScheduledDaySnapshot> days;
   final String localeCode;
+  final int timeMinutes;
 
   @override
   Widget build(BuildContext context) {
@@ -3694,16 +4318,38 @@ class _CustomWeeklyBarChart extends StatelessWidget {
           final double rate = day.progressRate.clamp(0.0, 1.0).toDouble();
           final bool isToday = dateOnly(day.date) == todayDate;
           final bool hasData = day.isScheduled;
+          final DateTime now = DateTime.now();
+          final bool dueToday =
+              isToday &&
+              hasData &&
+              rate < 1.0 &&
+              (now.hour * 60 + now.minute) >= timeMinutes;
 
+          // Warna mengikuti status tanggal, bukan mentah-anyar rate:
+          // masa depan → abu-abu; hari ini belum waktunya → abu-abu;
+          // sudah waktunya/parsial → amber; selesai → biru;
+          // merah hanya untuk hari lewat yang tak dikerjakan.
           final Color barColor;
           if (!hasData) {
             barColor = theme.colorScheme.outlineVariant.withValues(alpha: 0.2);
-          } else if (rate == 0) {
-            barColor = const Color(0xFFBA1A1A);
-          } else if (rate < 1.0) {
-            barColor = const Color(0xFFF59E0B);
           } else {
-            barColor = const Color(0xFF1A5BAD);
+            barColor = switch (day.visualState) {
+              WeeklyProgressDayVisualState.notScheduled => theme
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: 0.2),
+              WeeklyProgressDayVisualState.future =>
+                theme.habitColors.inactive,
+              WeeklyProgressDayVisualState.complete =>
+                theme.habitColors.completed,
+              WeeklyProgressDayVisualState.partial =>
+                theme.habitColors.pending,
+              WeeklyProgressDayVisualState.missed =>
+                theme.habitColors.missed,
+              WeeklyProgressDayVisualState.pending => dueToday
+                  ? theme.habitColors.pending
+                  : theme.habitColors.inactive,
+            };
           }
 
           final double fillH = rate > 0
@@ -3723,15 +4369,13 @@ class _CustomWeeklyBarChart extends StatelessWidget {
                         ? Text(
                             '$pct%',
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 9,
-                              fontWeight: isToday
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
-                              color: isToday
-                                  ? barColor
-                                  : barColor.withValues(alpha: 0.68),
-                            ),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 9,
+                                fontWeight: isToday
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: barColor,
+                              ),
                           )
                         : null,
                   ),
@@ -3763,29 +4407,8 @@ class _CustomWeeklyBarChart extends StatelessWidget {
                             width: double.infinity,
                             height: h,
                             decoration: BoxDecoration(
-                              gradient: rate > 0.05
-                                  ? LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: <Color>[
-                                        barColor,
-                                        barColor.withValues(alpha: 0.48),
-                                      ],
-                                    )
-                                  : null,
-                              color: rate <= 0.05
-                                  ? barColor.withValues(alpha: 0.55)
-                                  : null,
+                              color: barColor,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: isToday && rate > 0
-                                  ? <BoxShadow>[
-                                      BoxShadow(
-                                        color: barColor.withValues(alpha: 0.42),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ]
-                                  : null,
                             ),
                             child: h > 18
                                 ? Align(
@@ -3855,236 +4478,149 @@ class _CustomWeeklyBarChart extends StatelessWidget {
   }
 }
 
-class _ActivityHeroCard extends StatelessWidget {
-  const _ActivityHeroCard({
-    required this.scheduleText,
-    required this.summaryText,
-    required this.progressPercent,
-    required this.progressRate,
-    required this.currentStreak,
-    required this.streakText,
-    required this.progressState,
-    required this.visualStatus,
+class _CycleProgressCard extends StatelessWidget {
+  const _CycleProgressCard({
+    required this.completedSubCount,
+    required this.totalSubCount,
+    required this.parentCompleted,
+    required this.fallbackPercent,
     required this.localeCode,
+    required this.status,
   });
 
-  final String scheduleText;
-  final String summaryText;
-  final int progressPercent;
-  final double progressRate;
-  final int currentStreak;
-  final String streakText;
-  final ActivityProgressState progressState;
-  final ActivityDailyProgressStatus visualStatus;
+  final int completedSubCount;
+  final int totalSubCount;
+  final bool parentCompleted;
+  final int fallbackPercent;
   final String localeCode;
+  final ActivityDailyProgressStatus status;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool isMissed = visualStatus == ActivityDailyProgressStatus.missed;
-    final bool isNotStarted =
-        visualStatus == ActivityDailyProgressStatus.future;
-    final bool isCompleted = visualStatus == ActivityDailyProgressStatus.done;
-    final bool isPartial = visualStatus == ActivityDailyProgressStatus.partial;
-    final Color statusColor = activityStatusColor(
-      theme: theme,
-      status: visualStatus,
-    );
-    final String displayStatusText = isMissed
-        ? (localeCode == 'id' ? 'Tidak selesai' : 'Not completed')
-        : isNotStarted
-        ? (localeCode == 'id' ? 'Belum mulai' : 'Not started')
-        : isCompleted
-        ? (localeCode == 'id' ? 'Selesai' : 'Completed')
-        : isPartial
-        ? (progressPercent <= 0
-              ? (localeCode == 'id' ? 'Sedang berlangsung' : 'In progress')
-              : '$progressPercent%')
-        : activityStatusLabel(status: visualStatus, localeCode: localeCode);
-
+    final bool hasSubs = totalSubCount > 0;
+    // Model induk-sebagai-unit: induk 1 unit + tiap sub 1 unit.
+    final int percent = hasSubs
+        ? ((((parentCompleted ? 1 : 0) + completedSubCount) / (1 + totalSubCount)) * 100)
+              .round()
+              .clamp(0, 100)
+        : fallbackPercent.clamp(0, 100);
+    // Warna mengikuti status tanggal aktual, bukan angka mentah:
+    // belum mulai → abu-abu; berlangsung → amber; selesai → biru;
+    // merah hanya bila benar terlewat.
+    final Color statusColor = switch (status) {
+      ActivityDailyProgressStatus.done => theme.habitColors.completed,
+      ActivityDailyProgressStatus.partial => theme.habitColors.pending,
+      ActivityDailyProgressStatus.missed => theme.habitColors.missed,
+      ActivityDailyProgressStatus.skipped ||
+      ActivityDailyProgressStatus.future => theme.habitColors.inactive,
+    };
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Colors.white, Color(0xFFF1F3FF)],
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.05),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.calendar_today_rounded,
-                size: 18,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  scheduleText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurfaceVariant,
+          SizedBox(
+            width: 112,
+            height: 112,
+            child: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                SizedBox(
+                  width: 112,
+                  height: 112,
+                  child: CircularProgressIndicator(
+                    value: percent / 100,
+                    strokeWidth: 10,
+                    backgroundColor:
+                        statusColor.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                    strokeCap: StrokeCap.round,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            summaryText,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Stack(
-                  alignment: Alignment.center,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Container(
-                      width: 120,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: theme.colorScheme.outlineVariant.withValues(
-                              alpha: 0.25,
-                            ),
-                            blurRadius: 32,
-                            spreadRadius: 8,
-                          ),
-                        ],
+                    Text(
+                      '$percent%',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        height: 1.0,
                       ),
                     ),
-                    Text(
-                      displayStatusText,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontSize: displayStatusText.length > 12 ? 32 : 44,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.7,
-                        color: statusColor,
+                    const Text(
+                      'TARGET',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ],
                 ),
-                if (isPartial) ...<Widget>[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: 200,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: SizedBox(
-                        height: 8,
-                        child: LinearProgressIndicator(
-                          value: progressRate,
-                          backgroundColor: theme.colorScheme.outlineVariant
-                              .withValues(alpha: 0.2),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            statusColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                Text(
+                  localeCode == 'id'
+                      ? 'Progres Siklus Aktivitas'
+                      : 'Activity Cycle Progress',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.2,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasSubs
+                      ? (localeCode == 'id'
+                            ? '$completedSubCount dari $totalSubCount sub-aktivitas selesai'
+                            : '$completedSubCount of $totalSubCount sub-activities done')
+                      : (localeCode == 'id'
+                            ? 'Progres sesi berjalan'
+                            : 'Session progress'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                if (hasSubs) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: List<Widget>.generate(
+                      totalSubCount,
+                      (int i) => Expanded(
+                        child: Container(
+                          height: 4,
+                          margin: EdgeInsets.only(
+                            right: i == totalSubCount - 1 ? 0 : 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: i < completedSubCount
+                                ? statusColor
+                                : const Color(0xFFE2E8F0),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
                       ),
+                      growable: false,
                     ),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        Icons.bolt_rounded,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        streakText,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        displayStatusText,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           ),
@@ -4094,19 +4630,100 @@ class _ActivityHeroCard extends StatelessWidget {
   }
 }
 
-class _ActivityAiInsightSection extends StatelessWidget {
+class _ActivityAiInsightSection extends ConsumerStatefulWidget {
   const _ActivityAiInsightSection({
     required this.data,
     required this.localeCode,
+    required this.activity,
   });
 
   final _ActivityAiInsightData data;
   final String localeCode;
+  final ActivityModel activity;
+
+  @override
+  ConsumerState<_ActivityAiInsightSection> createState() =>
+      _ActivityAiInsightSectionState();
+}
+
+class _ActivityAiInsightSectionState
+    extends ConsumerState<_ActivityAiInsightSection> {
+  bool _applying = false;
+
+  String _bucketLabel(int minutes, String localeCode) {
+    final bool isId = localeCode == 'id';
+    final String key;
+    if (minutes >= 5 * 60 && minutes < 11 * 60) {
+      key = 'morning';
+    } else if (minutes >= 11 * 60 && minutes < 15 * 60) {
+      key = 'midday';
+    } else if (minutes >= 15 * 60 && minutes < 18 * 60) {
+      key = 'afternoon';
+    } else {
+      key = 'night';
+    }
+    return switch (key) {
+      'morning' => isId ? 'Pagi' : 'Morning',
+      'midday' => isId ? 'Siang' : 'Midday',
+      'afternoon' => isId ? 'Sore' : 'Afternoon',
+      _ => isId ? 'Malam' : 'Night',
+    };
+  }
+
+  Future<void> _applySuggestedSchedule() async {
+    if (_applying) {
+      return;
+    }
+    setState(() {
+      _applying = true;
+    });
+    try {
+      await ref
+          .read(activityActionsProvider)
+          .saveActivity(
+            widget.activity.copyWith(
+              timeMinutes: widget.data.suggestedTimeMinutes,
+              scheduleUpdatedAt: DateTime.now(),
+            ),
+          );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.localeCode == 'id'
+                ? 'Jadwal diperbarui ke ${formatMinutesAsTime(widget.data.suggestedTimeMinutes)}.'
+                : 'Schedule updated to ${formatMinutesAsTime(widget.data.suggestedTimeMinutes)}.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _applying = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool isId = localeCode == 'id';
+    final bool isId = widget.localeCode == 'id';
+    final _ActivityAiInsightData data = widget.data;
+    if (!data.predictionAvailable) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          data.body,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+      );
+    }
 
     String displayCautionText = data.caution;
     if (displayCautionText.startsWith('Hari yang paling sering berat:')) {
@@ -4121,201 +4738,501 @@ class _ActivityAiInsightSection extends StatelessWidget {
       );
     }
 
+    final String suggestedBucketLabel = _bucketLabel(
+      data.suggestedTimeMinutes,
+      widget.localeCode,
+    );
+    final String suggestedTimeText = formatMinutesAsTime(
+      data.suggestedTimeMinutes,
+    );
+
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.auto_awesome_rounded,
-                color: theme.colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isId ? 'INSIGHT AKTIVITAS' : 'ACTIVITY INSIGHT',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  letterSpacing: 0.05,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.trending_up_rounded,
+                  size: 14,
+                  color: Color(0xFF2563EB),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  isId ? 'INSIGHT AKTIVITAS' : 'ACTIVITY INSIGHT',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.05,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             data.headline,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF0F172A),
+              height: 1.2,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             data.body,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-              height: 1.4,
+              color: const Color(0xFF64748B),
+              height: 1.5,
               fontSize: 14,
             ),
           ),
-          const SizedBox(height: 20),
-          Column(
-            children: <Widget>[
-              _ActivityInsightMetricCard(
-                title: data.dayMetricTitle,
-                value: data.bestDayLabel,
-              ),
-              const SizedBox(height: 12),
-              _ActivityInsightMetricCard(
-                title: data.timeMetricTitle,
-                value: data.bestTimeLabel,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.colorScheme.outline.withValues(alpha: 0.14),
-          ),
-          const SizedBox(height: 20),
-          _ActivityInsightSuggestion(
-            icon: Icons.lightbulb_outline_rounded,
-            title: isId ? 'Rekomendasi' : 'Recommendation',
-            body: data.recommendation,
-            color: theme.colorScheme.primary,
-          ),
           const SizedBox(height: 16),
-          _ActivityInsightSuggestion(
-            icon: Icons.warning_amber_rounded,
-            title: isId ? 'Perhatian' : 'Caution',
-            body: displayCautionText,
-            color: const Color(0xFFF59E0B),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivityInsightMetricCard extends StatelessWidget {
-  const _ActivityInsightMetricCard({required this.title, required this.value});
-
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  title,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                if (data.weakestDayLabel != null) ...<Widget>[
+                  Row(
+                    children: <Widget>[
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.schedule_rounded,
+                          size: 16,
+                          color: Color(0xFFD97706),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isId ? 'Sering tertunda pada' : 'Often delayed on',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFFDE68A),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          data.weakestDayLabel!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Color(0xFFF1F5F9),
+                    ),
+                  ),
+                ],
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEFF6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.wb_sunny_rounded,
+                        size: 16,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Flexible(
+                                child: Text(
+                                  '$suggestedBucketLabel • $suggestedTimeText',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  isId ? 'Optimal' : 'Optimal',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isId
+                                ? 'Waktu paling produktif'
+                                : 'Most productive time',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (data.chancePercent != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFFA7F3D0),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(
+                              Icons.trending_up_rounded,
+                              size: 13,
+                              color: Color(0xFF059669),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isId
+                                  ? 'Peluang ${data.chancePercent}%'
+                                  : 'Chance ${data.chancePercent}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF047857),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.calendar_month_rounded,
+                    size: 16,
+                    color: Color(0xFF64748B),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        data.bestDayLabel,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        data.trackerSubtitle,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List<Widget>.generate(3, (int index) {
+                      return Container(
+                        width: 8,
+                        height: 8,
+                        margin: EdgeInsets.only(left: index == 0 ? 0 : 6),
+                        decoration: BoxDecoration(
+                          color: index < data.patternDotsFilled
+                              ? const Color(0xFF2563EB)
+                              : const Color(0xFFCBD5E1),
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    }),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          Text(
+            isId ? 'CATATAN & ARAHAN' : 'NOTES & GUIDANCE',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.05,
+              color: Color(0xFF94A3B8),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFEEF2F6), width: 1),
+            ),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDBEAFE),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.lightbulb_rounded,
+                        size: 14,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: isId ? 'Rekomendasi: ' : 'Recommendation: ',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                height: 1.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: data.recommendation,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFE2E8F0),
+                  ),
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFEF3C7),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 14,
+                        color: Color(0xFFD97706),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: isId ? 'Perhatian: ' : 'Caution: ',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                height: 1.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: displayCautionText,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: _applying ? null : _applySuggestedSchedule,
+              child: _applying
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            isId
+                                ? 'Terapkan Jadwal ke $suggestedBucketLabel ($suggestedTimeText)'
+                                : 'Apply schedule to $suggestedBucketLabel ($suggestedTimeText)',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 4),
         ],
       ),
-    );
-  }
-}
-
-class _ActivityInsightSuggestion extends StatelessWidget {
-  const _ActivityInsightSuggestion({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                body,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.8,
-                  ),
-                  height: 1.4,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -4387,6 +5304,12 @@ class _ActivityAiInsightData {
     required this.bestTimeLabel,
     required this.caution,
     required this.recommendation,
+    required this.weakestDayLabel,
+    required this.suggestedTimeMinutes,
+    required this.patternDotsFilled,
+    required this.trackerSubtitle,
+    required this.chancePercent,
+    required this.predictionAvailable,
   });
 
   final String heroLine;
@@ -4398,6 +5321,22 @@ class _ActivityAiInsightData {
   final String bestTimeLabel;
   final String caution;
   final String recommendation;
+
+  /// Hari dengan hambatan terkuat (null bila belum ada pola). Dinamis.
+  final String? weakestDayLabel;
+
+  /// Menit waktu yang disarankan untuk CTA. Dinamis (prediksi ML atau jadwal).
+  final int suggestedTimeMinutes;
+
+  /// Jumlah dot terisi pada tracker pola (0-3), dari data selesai aktual.
+  final int patternDotsFilled;
+
+  /// Subjudul tracker pola dari hitungan sesi aktual.
+  final String trackerSubtitle;
+
+  /// Persen konsistensi hari terbaik (null bila belum ada pola). Dinamis.
+  final int? chancePercent;
+  final bool predictionAvailable;
 }
 
 class _ScheduledDaySnapshot {

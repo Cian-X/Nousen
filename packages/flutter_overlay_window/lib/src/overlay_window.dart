@@ -124,6 +124,21 @@ class FlutterOverlayWindow {
     return res;
   }
 
+  /// Re-show the overlay view if it was dismissed (e.g. swiped to X).
+  /// No-op when already visible. Used to auto-reopen on new schedules.
+  static Future<bool?> ensureOverlayVisible() async {
+    try {
+      final bool? res =
+          await _overlayChannel.invokeMethod<bool?>('ensureOverlayVisible');
+      return res;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException catch (error) {
+      log('$error');
+      return false;
+    }
+  }
+
   /// Update the overlay size in the screen
   static Future<bool?> resizeOverlay(
     int width,

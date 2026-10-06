@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liburan_create/app/providers.dart';
+import 'package:liburan_create/core/constants/ai_demo_config.dart';
 import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
-import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
-import 'package:liburan_create/l10n/app_localizations.dart';
+import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
+
+enum _DayIntensity { high, medium, rest }
+
+class _MatrixDay {
+  const _MatrixDay({required this.date, required this.intensity});
+
+  final DateTime date;
+  final _DayIntensity intensity;
+}
 
 class StatsReportPage extends ConsumerWidget {
   const StatsReportPage({
@@ -26,505 +36,510 @@ class StatsReportPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AppLocalizations t = AppLocalizations.of(context)!;
-    final ThemeData theme = Theme.of(context);
+    final bool isId = localeCode == 'id';
+    final DateTime today = dateOnly(DateTime.now());
+    final DateTime windowStart = today.subtract(const Duration(days: 29));
+    final List<DailyStat> days = ref
+        .watch(globalScheduledStatsCalculatorProvider)
+        .getDailyStats(windowStart, today);
+    final Map<String, DailyStat> byKey = <String, DailyStat>{
+      for (final DailyStat d in days) dateKeyFromDate(dateOnly(d.date)): d,
+    };
 
-    // Filter dailyStats to only include dates within the report period (start to end)
-    final List<DailyStat> weeklyStats = dailyStats.where((stat) {
-      final statDate = dateOnly(stat.date);
-      return !statDate.isBefore(start) && !statDate.isAfter(end);
-    }).toList();
+    final List<_MatrixDay> cells = <_MatrixDay>[];
+    for (int i = 0; i < 30; i++) {
+      final DateTime date = windowStart.add(Duration(days: i));
+      final DailyStat? stat = byKey[dateKeyFromDate(date)];
+      final double rate = stat?.completionRate ?? 0;
+      final int completed = stat?.totalCompleted ?? 0;
+      final _DayIntensity intensity;
+      if (completed > 0 && rate >= 0.8) {
+        intensity = _DayIntensity.high;
+      } else if (completed > 0) {
+        intensity = _DayIntensity.medium;
+      } else {
+        intensity = _DayIntensity.rest;
+      }
+      cells.add(_MatrixDay(date: date, intensity: intensity));
+    }
 
-    // Sort by weekday (Senin = 1, Minggu = 7)
-    weeklyStats.sort((a, b) => a.date.weekday.compareTo(b.date.weekday));
+    final int activeDays = cells
+        .where((_MatrixDay c) => c.intensity != _DayIntensity.rest)
+        .length;
+    final int activePercent = ((activeDays / 30) * 100).round();
+
+    final Map<int, List<double>> ratesByWeekday = <int, List<double>>{};
+    for (final _MatrixDay cell in cells) {
+      final DailyStat? stat = byKey[dateKeyFromDate(cell.date)];
+      if (stat == null || stat.isNeutral || stat.totalScheduled == 0) {
+        continue;
+      }
+      ratesByWeekday
+          .putIfAbsent(cell.date.weekday, () => <double>[])
+          .add(stat.completionRate);
+    }
+    final List<MapEntry<int, double>> averaged = ratesByWeekday.entries
+        .map(
+          (e) => MapEntry<int, double>(
+            e.key,
+            e.value.reduce((a, b) => a + b) / e.value.length,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final String peakLabel = averaged
+        .take(2)
+        .map((e) => weekdayShortLabel(e.key, localeCode))
+        .join(' & ');
+
+    final List<DateTime> activeDates = cells
+        .where((_MatrixDay c) => c.intensity != _DayIntensity.rest)
+        .map((_MatrixDay c) => c.date)
+        .toList();
+    double? averageGap;
+    if (activeDates.length >= 2) {
+      int totalGap = 0;
+      for (int i = 1; i < activeDates.length; i++) {
+        totalGap += activeDates[i].difference(activeDates[i - 1]).inDays;
+      }
+      averageGap = totalGap / (activeDates.length - 1);
+    }
+
+    int weekendScheduled = 0;
+    int weekendCompleted = 0;
+    int weekdayScheduled = 0;
+    int weekdayCompleted = 0;
+    for (final _MatrixDay cell in cells) {
+      final DailyStat? stat = byKey[dateKeyFromDate(cell.date)];
+      if (stat == null || stat.totalScheduled == 0) {
+        continue;
+      }
+      final bool isWeekend =
+          cell.date.weekday == DateTime.saturday ||
+          cell.date.weekday == DateTime.sunday;
+      if (isWeekend) {
+        weekendScheduled += stat.totalScheduled;
+        weekendCompleted += stat.totalCompleted;
+      } else {
+        weekdayScheduled += stat.totalScheduled;
+        weekdayCompleted += stat.totalCompleted;
+      }
+    }
+    final double? weekendRate = weekendScheduled == 0
+        ? null
+        : weekendCompleted / weekendScheduled;
+    final double? weekdayRate = weekdayScheduled == 0
+        ? null
+        : weekdayCompleted / weekdayScheduled;
+
+    final int leadingBlanks = (windowStart.weekday - 1) % 7;
+    final bool mlEnabled = AiDemoConfig.onDeviceMlEnabled;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(t.statsReportTitle),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: theme.colorScheme.onSurfaceVariant,
+        title: Text(
+          isId ? 'Matriks Konsistensi' : 'Consistency Matrix',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Center(
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                ),
+                icon: const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
+              ),
+            ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          if (totalScheduled > 0) ...[
-            WeeklyStatusSection(
-              points: weeklyStats,
-              localeCode: localeCode,
-              totalScheduledForPeriod: totalScheduled,
-            ),
-            const SizedBox(height: 24),
-            ActivityBreakdownChart(
-              stats: periodActivityStats,
-              localeCode: localeCode,
-            ),
-          ] else
-            EmptyStatsReportPanel(localeCode: localeCode),
-        ],
-      ),
-    );
-  }
-}
-
-// =========================================================================
-// WIDGETS DARI STATS_PAGE.DART YANG DIPINDAH KE SINI
-// =========================================================================
-
-class ActivityBreakdownChart extends StatelessWidget {
-  const ActivityBreakdownChart({
-    super.key,
-    required this.stats,
-    required this.localeCode,
-  });
-  final List<PeriodActivityStat> stats;
-  final String localeCode;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final List<PeriodActivityStat> sortedStats = [...stats]
-      ..sort(
-        (PeriodActivityStat a, PeriodActivityStat b) =>
-            b.completionRate.compareTo(a.completionRate),
-      );
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              AppLocalizations.of(context)!.breakdownPerActivity,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-              ),
-            ),
+          Text(
+            isId ? 'Evaluasi performa 30 hari' : '30-day performance review',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
-          const SizedBox(height: 16),
-          ...sortedStats.map((stat) {
-            final double progress = stat.completionRate;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        stat.activity.title,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${(progress * 100).round()}%',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                    backgroundColor: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.2),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _statusColor(progress, theme),
-                    ),
-                  ),
-                ],
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+                width: 1,
               ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Color _statusColor(double progress, ThemeData theme) {
-    if (progress >= 0.8) return theme.colorScheme.primary;
-    if (progress >= 0.4) return const Color(0xFFF59E0B);
-    return theme.colorScheme.error;
-  }
-}
-
-class WeeklyStatusSection extends StatelessWidget {
-  const WeeklyStatusSection({
-    super.key,
-    required this.points,
-    required this.localeCode,
-    required this.totalScheduledForPeriod,
-  });
-
-  final List<DailyStat> points;
-  final String localeCode;
-  final int totalScheduledForPeriod;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final bool isId = Localizations.localeOf(context).languageCode == 'id';
-    final DateTime today = dateOnly(DateTime.now());
-
-    // Sort points Sen-Min
-    final List<DailyStat> orderedPoints = [...points]
-      ..sort(
-        (DailyStat a, DailyStat b) => a.date.weekday.compareTo(b.date.weekday),
-      );
-
-    // Calculate global completion rate for the period
-    final int totalScheduled = orderedPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.totalScheduled,
-    );
-    final int totalCompleted = orderedPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.totalCompleted,
-    );
-    final double completionRate = totalScheduled > 0
-        ? totalCompleted / totalScheduled
-        : 0;
-    final int completionPercent = (completionRate * 100).round();
-
-    final int activeDays = orderedPoints
-        .where((DailyStat p) => p.totalScheduled > 0)
-        .length;
-
-    // NEW: Max and Min completion rates for highlighting
-    final double maxCompletionRate = orderedPoints.isEmpty
-        ? 0
-        : orderedPoints
-              .where(
-                (p) => p.totalScheduled > 0,
-              ) // Only consider days with scheduled activities
-              .map((p) => p.completionRate)
-              .fold(0.0, (a, b) => a > b ? a : b);
-    final double minCompletionRate = orderedPoints.isEmpty
-        ? 1.0
-        : orderedPoints
-              .where(
-                (p) => p.totalScheduled > 0,
-              ) // Only consider days with scheduled activities
-              .map((p) => p.completionRate)
-              .fold(1.0, (a, b) => a < b ? a : b);
-
-    // Warna badge header sesuai completion rate
-    final Color weekColor;
-    if (completionRate == 0 && totalScheduled > 0) {
-      // Merah: ada jadwal tapi tidak ada yang selesai
-      weekColor = const Color(0xFFBA1A1A);
-    } else if (completionRate >= 1.0) {
-      // Biru: sempurna
-      weekColor = const Color(0xFF1A5BAD);
-    } else if (completionRate > 0) {
-      // Orange: progres parsial
-      weekColor = const Color(0xFFF59E0B);
-    } else {
-      // Abu-abu/default
-      weekColor = theme.colorScheme.outlineVariant;
-    }
-
-    // Chart geometry constants
-    const double maxBarH = 108.0;
-    const double iconSlotH = 14.0;
-    const double iconToPctGap = 4.0;
-    const double pctLabelH = 14.0;
-    const double pctToBarGap = 4.0;
-    const double barToDayGap = 10.0;
-    const double dayLabelH = 20.0; // enough room for pill
-    const double chartH =
-        iconSlotH +
-        iconToPctGap +
-        pctLabelH +
-        pctToBarGap +
-        maxBarH +
-        barToDayGap +
-        dayLabelH;
-    // 50% reference line sits at this offset from the bottom of the Stack
-    const double refLineBottom = barToDayGap + dayLabelH + (maxBarH * 0.5);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // ── Header ──────────────────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
                   children: <Widget>[
-                    Text(
-                      isId ? 'Progres Mingguan' : 'Weekly Progress',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: theme.colorScheme.onSurface,
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'AKTIVITAS HARIAN',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.05,
+                              color: Color(0xFF2563EB),
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Distribusi Ritme',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isId
-                          ? '$activeDays hari aktif minggu ini'
-                          : '$activeDays active days this week',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.42,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isId
+                            ? '$activeDays/30 hari aktif'
+                            : '$activeDays/30 active days',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF059669),
                         ),
-                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: weekColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$completionPercent%',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFF1F5F9),
+                      width: 1,
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          // ── Chart area ──────────────────────────────────────
-          SizedBox(
-            height: chartH,
-            child: Stack(
-              children: <Widget>[
-                // 50 % reference dashed line
-                Positioned(
-                  bottom: refLineBottom,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    children: List<Widget>.generate(14, (int i) {
-                      final bool show = i.isEven;
-                      return Flexible(
-                        // Tambahkan Flexible di sini
-                        child: Container(
-                          height: 1,
-                          color: show
-                              ? theme.colorScheme.outlineVariant.withValues(
-                                  alpha: 0.28,
-                                )
-                              : Colors.transparent,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-                // Bars
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List<Widget>.generate(orderedPoints.length, (
-                    int index,
-                  ) {
-                    final DailyStat point = orderedPoints[index];
-                    final double rate = point.completionRate;
-                    final bool hasData = point.totalScheduled > 0;
-                    final bool isToday = dateOnly(point.date) == today;
-
-                    final bool isMaxDay =
-                        hasData &&
-                        point.completionRate == maxCompletionRate &&
-                        maxCompletionRate > 0;
-                    final bool isMinDay =
-                        hasData &&
-                        point.completionRate == minCompletionRate &&
-                        minCompletionRate < 0.99 &&
-                        point.completionRate >
-                            0; // Avoid highlighting 0% completion as min if no data
-
-                    // Warna berdasarkan status proses
-                    final Color barColor;
-                    if (!hasData) {
-                      // Abu-abu: tidak ada jadwal
-                      barColor = theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.2,
-                      );
-                    } else if (rate == 0) {
-                      // Merah: dijadwalkan tapi tidak dikerjakan
-                      barColor = const Color(0xFFBA1A1A);
-                    } else if (rate < 1.0) {
-                      // Orange: sudah proses tapi belum selesai
-                      barColor = const Color(0xFFF59E0B);
-                    } else {
-                      // Biru: selesai sempurna (default success)
-                      barColor = const Color(0xFF1A5BAD);
-                    }
-
-                    // fill: minimum 5% height when data exists
-                    final double fillH = rate > 0
-                        ? maxBarH * rate.clamp(0.05, 1.0)
-                        : (hasData ? 4.0 : 0.0);
-                    final int pct = (rate * 100).round();
-
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isToday ? 1.0 : 2.5,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: <Widget>[
-                            // Icon for highlight
-                            if (isMaxDay && hasData)
-                              Icon(
-                                Icons.star_rounded,
-                                size: 14,
-                                color: barColor,
-                              )
-                            else if (isMinDay && hasData)
-                              Icon(
-                                Icons.warning_rounded,
-                                size: 14,
-                                color: barColor,
-                              )
-                            else
-                              const SizedBox(
-                                height: 14,
-                              ), // placeholder to keep alignment
-                            const SizedBox(
-                              height: 4,
-                            ), // Small gap between icon and bar
-                            // % label
-                            SizedBox(
-                              height: pctLabelH,
-                              child: hasData && rate > 0
-                                  ? Text(
-                                      '$pct%',
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            fontSize: 9,
-                                            fontWeight: isToday
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
-                                            color: isToday
-                                                ? barColor
-                                                : barColor.withValues(
-                                                    alpha: 0.68,
-                                                  ),
-                                          ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(height: pctToBarGap),
-
-                            // Bar: flat track and solid fill.
-                            Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: <Widget>[
-                                // Track
-                                Container(
-                                  width: double.infinity,
-                                  height: maxBarH,
-                                  decoration: BoxDecoration(
-                                    color: isToday
-                                        ? barColor.withValues(alpha: 0.12)
-                                        : theme.colorScheme.outlineVariant
-                                              .withValues(alpha: 0.16),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                // Animated fill
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 280),
-                                  curve: Curves.easeOutCubic,
-                                  width: double.infinity,
-                                  height: fillH,
-                                  decoration: BoxDecoration(
-                                    color: barColor,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: isMaxDay && hasData
-                                        ? Border.all(
-                                            color: Colors.white,
-                                            width: 2,
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: barToDayGap),
-                            SizedBox(
-                              height: dayLabelH,
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          for (int w = 1; w <= 7; w++)
+                            Expanded(
                               child: Center(
                                 child: Text(
-                                  weekdayShortLabel(
-                                    point.date.weekday,
-                                    localeCode,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.clip,
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontWeight:
-                                        (isToday || isMaxDay || isMinDay)
-                                        ? FontWeight.w800
-                                        : FontWeight.w500,
-                                    color: isToday
-                                        ? barColor
-                                        : (isMaxDay || isMinDay)
-                                        ? barColor
-                                        : theme.colorScheme.onSurfaceVariant,
-                                    fontSize: (isToday || isMaxDay || isMinDay)
-                                        ? 10
-                                        : 8,
+                                  weekdayShortLabel(w, localeCode),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
                                   ),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                    );
-                  }),
+                      const SizedBox(height: 10),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 7,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
+                            ),
+                        itemCount: leadingBlanks + cells.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          if (index < leadingBlanks) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 1,
+                                ),
+                              ),
+                            );
+                          }
+                          final _MatrixDay cell =
+                              cells[index - leadingBlanks];
+                          final Color bg;
+                          final Color fg;
+                          switch (cell.intensity) {
+                            case _DayIntensity.high:
+                              bg = const Color(0xFF2563EB);
+                              fg = Colors.white;
+                            case _DayIntensity.medium:
+                              bg = const Color(0xFF93C5FD);
+                              fg = const Color(0xFF1E3A8A);
+                            case _DayIntensity.rest:
+                              bg = const Color(0xFFE2E8F0);
+                              fg = const Color(0xFF94A3B8);
+                          }
+                          return Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: bg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${cell.date.day}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: fg,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            isId ? 'Intensitas' : 'Intensity',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                          const Spacer(),
+                          _LegendDot(
+                            color: const Color(0xFFE2E8F0),
+                            label: isId ? 'Rehat' : 'Rest',
+                          ),
+                          const SizedBox(width: 12),
+                          _LegendDot(
+                            color: const Color(0xFF93C5FD),
+                            label: isId ? 'Sedang' : 'Medium',
+                          ),
+                          const SizedBox(width: 12),
+                          _LegendDot(
+                            color: const Color(0xFF2563EB),
+                            label: isId ? 'Tinggi' : 'High',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _MatrixMetricPill(
+                        icon: Icons.check_circle_rounded,
+                        iconColor: const Color(0xFF2563EB),
+                        title: '$activeDays ${isId ? 'Hari' : 'days'}'
+                            ' ($activePercent%)',
+                        subtitle: isId ? 'Konsisten Aktif' : 'Actively consistent',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _MatrixMetricPill(
+                        icon: Icons.star_rounded,
+                        iconColor: const Color(0xFFD97706),
+                        title: peakLabel.isEmpty
+                            ? (isId ? 'Belum ada pola' : 'No pattern yet')
+                            : peakLabel,
+                        subtitle: isId ? 'Ritme Puncak' : 'Peak rhythm',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.insights_rounded,
+                size: 18,
+                color: Color(0xFF2563EB),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isId
+                      ? 'Evaluasi & Catatan${mlEnabled ? ' AI' : ''}'
+                      : 'Evaluation & Notes${mlEnabled ? ' AI' : ''}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+              const Text(
+                'DATA AKTUAL',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _MatrixEvalCard(
+            icon: Icons.trending_up_rounded,
+            iconBg: const Color(0xFFECFDF5),
+            iconColor: const Color(0xFF059669),
+            title: isId ? 'Ketahanan Ritme' : 'Rhythm resilience',
+            badge: '$activeDays/30',
+            badgeBg: const Color(0xFFECFDF5),
+            badgeColor: const Color(0xFF059669),
+            body: averageGap == null
+                ? (isId
+                      ? 'Belum cukup sesi aktif untuk mengukur jeda ritme.'
+                      : 'Not enough active sessions to measure rhythm gaps.')
+                : (isId
+                      ? 'Rata-rata jeda ${averageGap.toStringAsFixed(1)} hari antar sesi aktif dalam 30 hari terakhir.'
+                      : 'Average gap of ${averageGap.toStringAsFixed(1)} days between active sessions in the last 30 days.'),
+          ),
+          const SizedBox(height: 12),
+          _MatrixEvalCard(
+            icon: Icons.schedule_rounded,
+            iconBg: const Color(0xFFFFFBEB),
+            iconColor: const Color(0xFFD97706),
+            title: isId ? 'Pola Akhir Pekan' : 'Weekend pattern',
+            badge: (weekendRate == null || weekdayRate == null)
+                ? null
+                : '${((weekendRate - weekdayRate) * 100).round()}%',
+            badgeBg: (weekendRate ?? 0) >= (weekdayRate ?? 0)
+                ? const Color(0xFFECFDF5)
+                : const Color(0xFFFFFBEB),
+            badgeColor: (weekendRate ?? 0) >= (weekdayRate ?? 0)
+                ? const Color(0xFF059669)
+                : const Color(0xFFD97706),
+            body: (weekendRate == null || weekdayRate == null)
+                ? (isId
+                      ? 'Belum ada data akhir pekan atau hari kerja untuk dibandingkan.'
+                      : 'No weekend or weekday data to compare yet.')
+                : (isId
+                      ? 'Akhir pekan ${(weekendRate * 100).round()}% vs hari kerja ${(weekdayRate * 100).round()}% dari sesi terjadwal yang selesai.'
+                      : 'Weekends ${(weekendRate * 100).round()}% vs weekdays ${(weekdayRate * 100).round()} of scheduled sessions done.'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+        ),
+      ],
+    );
+  }
+}
+
+class _MatrixMetricPill extends StatelessWidget {
+  const _MatrixMetricPill({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
@@ -535,41 +550,101 @@ class WeeklyStatusSection extends StatelessWidget {
   }
 }
 
-class EmptyStatsReportPanel extends StatelessWidget {
-  const EmptyStatsReportPanel({super.key, required this.localeCode});
-  final String localeCode;
+class _MatrixEvalCard extends StatelessWidget {
+  const _MatrixEvalCard({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.badge,
+    required this.badgeBg,
+    required this.badgeColor,
+    required this.body,
+  });
+
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String? badge;
+  final Color badgeBg;
+  final Color badgeColor;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final String? badgeText = badge;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(
-            Icons.bar_chart_rounded,
-            size: 64,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            localeCode == 'id'
-                ? 'Tidak ada data aktivitas yang terjadwal dalam periode ini.'
-                : 'No scheduled activities found in this period.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: iconBg,
+              shape: BoxShape.circle,
             ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 16, color: iconColor),
           ),
-          const SizedBox(height: 8),
-          Text(
-            localeCode == 'id'
-                ? 'Silakan pilih periode lain atau tambahkan aktivitas.'
-                : 'Please select another period or add activities.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                    if (badgeText != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: badgeBg,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: badgeColor,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.5,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

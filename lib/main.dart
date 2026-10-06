@@ -9,6 +9,7 @@ import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
 import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
 import 'package:liburan_create/features/activity/data/activity_entity.dart';
+import 'package:liburan_create/features/one_time_reminder/data/agenda_note_entity.dart';
 import 'package:liburan_create/features/one_time_reminder/data/one_time_reminder_entity.dart';
 import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
 import 'package:liburan_create/features/settings/data/app_settings_entity.dart';
@@ -56,6 +57,7 @@ Future<void> main() async {
     <CollectionSchema<dynamic>>[
       ActivityEntitySchema,
       OneTimeReminderEntitySchema,
+      AgendaNoteEntitySchema,
       ProgressEntryEntitySchema,
       AppSettingsEntitySchema,
     ],

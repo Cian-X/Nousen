@@ -6,6 +6,8 @@ import 'package:liburan_create/features/activity/presentation/activity_detail_pa
 import 'package:liburan_create/features/activity/presentation/activity_form_page.dart';
 import 'package:liburan_create/features/home/presentation/home_shell_page.dart';
 import 'package:liburan_create/features/one_time_reminder/presentation/one_time_reminder_detail_page.dart';
+import 'package:liburan_create/features/one_time_reminder/presentation/schedule_agenda_page.dart';
+import 'package:liburan_create/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/presentation/initial_setup_onboarding_page.dart';
 import 'package:liburan_create/features/stats/presentation/stats_page.dart';
@@ -18,6 +20,9 @@ class AppRoutes {
   static const String activitySummary = '/activity-summary';
   static const String statsReport = '/stats-report';
   static const String oneTimeReminderDetail = '/one-time-reminder-detail';
+  static const String scheduleAgenda = '/schedule-agenda';
+  static const String scheduleForm = '/schedule-form';
+  static const String scheduleDay = '/schedule-day';
 }
 
 class CreateActivityArgs {
@@ -75,6 +80,22 @@ Route<dynamic> onGenerateAppRoute(RouteSettings settings) {
       return MaterialPageRoute<void>(
         builder: (_) => OneTimeReminderDetailPage(
           args: settings.arguments! as OneTimeReminderDetailArgs,
+        ),
+      );
+    case AppRoutes.scheduleAgenda:
+      return MaterialPageRoute<void>(
+        builder: (_) => const ScheduleAgendaPage(),
+      );
+    case AppRoutes.scheduleForm:
+      return MaterialPageRoute<void>(
+        builder: (_) => ScheduleFormPage(
+          args: settings.arguments as ScheduleFormArgs?,
+        ),
+      );
+    case AppRoutes.scheduleDay:
+      return MaterialPageRoute<void>(
+        builder: (_) => ScheduleDayPage(
+          args: settings.arguments! as ScheduleDayArgs,
         ),
       );
     default:

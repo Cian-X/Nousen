@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
+import 'package:liburan_create/features/one_time_reminder/data/agenda_note_entity.dart';
 import 'package:liburan_create/features/one_time_reminder/data/one_time_reminder_entity.dart';
+import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 
@@ -69,6 +71,42 @@ class IsarOneTimeReminderRepository implements OneTimeReminderRepository {
     }
     await _isar.writeTxn(() async {
       await _isar.oneTimeReminderEntitys.delete(entity.isarId);
+    });
+  }
+
+  @override
+  Stream<List<AgendaNoteModel>> watchNotes(String reminderId) {
+    return _isar.agendaNoteEntitys
+        .filter()
+        .reminderIdEqualTo(reminderId)
+        .sortByCreatedAt()
+        .watch(fireImmediately: true)
+        .map(
+          (List<AgendaNoteEntity> entities) => entities
+              .map((AgendaNoteEntity item) => item.toDomain())
+              .toList(),
+        );
+  }
+
+  @override
+  Future<void> upsertNote(AgendaNoteModel note) async {
+    final AgendaNoteEntity entity = agendaNoteEntityFromDomain(note);
+    await _isar.writeTxn(() async {
+      await _isar.agendaNoteEntitys.put(entity);
+    });
+  }
+
+  @override
+  Future<void> deleteNote(String id) async {
+    final AgendaNoteEntity? entity = await _isar.agendaNoteEntitys
+        .filter()
+        .idEqualTo(id)
+        .findFirst();
+    if (entity == null) {
+      return;
+    }
+    await _isar.writeTxn(() async {
+      await _isar.agendaNoteEntitys.delete(entity.isarId);
     });
   }
 }

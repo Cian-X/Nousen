@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:liburan_create/features/activity/domain/activity_category.dart';
 import 'package:liburan_create/features/activity/domain/activity_model.dart';
 
 part 'activity_entity.g.dart';
@@ -11,6 +12,7 @@ class ActivityEntity {
   late String id;
 
   late String title;
+  String? category;
   late List<int> selectedDays;
   late List<String> subActivities;
   late int timeMinutes;
@@ -31,6 +33,7 @@ extension ActivityEntityMapper on ActivityEntity {
     return ActivityModel(
       id: id,
       title: title,
+      category: ActivityCategory.safeId(category),
       selectedDays: selectedDays.toList()..sort(),
       subActivities: subActivities
           .map((String item) => item.trim())
@@ -55,6 +58,7 @@ ActivityEntity activityEntityFromDomain(ActivityModel model) {
   final ActivityEntity entity = ActivityEntity()
     ..id = model.id
     ..title = model.title
+    ..category = model.category
     ..selectedDays = (model.selectedDays.toSet().toList()..sort())
     ..subActivities = model.subActivities
         .map((String item) => item.trim())

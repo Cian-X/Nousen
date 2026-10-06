@@ -22,53 +22,58 @@ const AppSettingsEntitySchema = CollectionSchema(
       name: r'endOfDayReminderMinutes',
       type: IsarType.long,
     ),
-    r'localeCode': PropertySchema(
+    r'hasSeededData': PropertySchema(
       id: 1,
+      name: r'hasSeededData',
+      type: IsarType.bool,
+    ),
+    r'localeCode': PropertySchema(
+      id: 2,
       name: r'localeCode',
       type: IsarType.string,
     ),
     r'morningReminderMinutes': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'morningReminderMinutes',
       type: IsarType.long,
     ),
     r'notificationsEnabled': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'notificationsEnabled',
       type: IsarType.bool,
     ),
     r'profileAvatarPath': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'profileAvatarPath',
       type: IsarType.string,
     ),
     r'profileName': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'profileName',
       type: IsarType.string,
     ),
     r'sleepMinutes': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'sleepMinutes',
       type: IsarType.long,
     ),
     r'usualBreakEndMinutes': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'usualBreakEndMinutes',
       type: IsarType.long,
     ),
     r'usualBreakStartMinutes': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'usualBreakStartMinutes',
       type: IsarType.long,
     ),
     r'wakeUpMinutes': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'wakeUpMinutes',
       type: IsarType.long,
     ),
     r'weeklyRoutineJson': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'weeklyRoutineJson',
       type: IsarType.string,
     )
@@ -122,16 +127,17 @@ void _appSettingsEntitySerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeLong(offsets[0], object.endOfDayReminderMinutes);
-  writer.writeString(offsets[1], object.localeCode);
-  writer.writeLong(offsets[2], object.morningReminderMinutes);
-  writer.writeBool(offsets[3], object.notificationsEnabled);
-  writer.writeString(offsets[4], object.profileAvatarPath);
-  writer.writeString(offsets[5], object.profileName);
-  writer.writeLong(offsets[6], object.sleepMinutes);
-  writer.writeLong(offsets[7], object.usualBreakEndMinutes);
-  writer.writeLong(offsets[8], object.usualBreakStartMinutes);
-  writer.writeLong(offsets[9], object.wakeUpMinutes);
-  writer.writeString(offsets[10], object.weeklyRoutineJson);
+  writer.writeBool(offsets[1], object.hasSeededData);
+  writer.writeString(offsets[2], object.localeCode);
+  writer.writeLong(offsets[3], object.morningReminderMinutes);
+  writer.writeBool(offsets[4], object.notificationsEnabled);
+  writer.writeString(offsets[5], object.profileAvatarPath);
+  writer.writeString(offsets[6], object.profileName);
+  writer.writeLong(offsets[7], object.sleepMinutes);
+  writer.writeLong(offsets[8], object.usualBreakEndMinutes);
+  writer.writeLong(offsets[9], object.usualBreakStartMinutes);
+  writer.writeLong(offsets[10], object.wakeUpMinutes);
+  writer.writeString(offsets[11], object.weeklyRoutineJson);
 }
 
 AppSettingsEntity _appSettingsEntityDeserialize(
@@ -142,17 +148,18 @@ AppSettingsEntity _appSettingsEntityDeserialize(
 ) {
   final object = AppSettingsEntity();
   object.endOfDayReminderMinutes = reader.readLong(offsets[0]);
+  object.hasSeededData = reader.readBoolOrNull(offsets[1]);
   object.id = id;
-  object.localeCode = reader.readString(offsets[1]);
-  object.morningReminderMinutes = reader.readLong(offsets[2]);
-  object.notificationsEnabled = reader.readBool(offsets[3]);
-  object.profileAvatarPath = reader.readStringOrNull(offsets[4]);
-  object.profileName = reader.readStringOrNull(offsets[5]);
-  object.sleepMinutes = reader.readLongOrNull(offsets[6]);
-  object.usualBreakEndMinutes = reader.readLongOrNull(offsets[7]);
-  object.usualBreakStartMinutes = reader.readLongOrNull(offsets[8]);
-  object.wakeUpMinutes = reader.readLongOrNull(offsets[9]);
-  object.weeklyRoutineJson = reader.readStringOrNull(offsets[10]);
+  object.localeCode = reader.readString(offsets[2]);
+  object.morningReminderMinutes = reader.readLong(offsets[3]);
+  object.notificationsEnabled = reader.readBool(offsets[4]);
+  object.profileAvatarPath = reader.readStringOrNull(offsets[5]);
+  object.profileName = reader.readStringOrNull(offsets[6]);
+  object.sleepMinutes = reader.readLongOrNull(offsets[7]);
+  object.usualBreakEndMinutes = reader.readLongOrNull(offsets[8]);
+  object.usualBreakStartMinutes = reader.readLongOrNull(offsets[9]);
+  object.wakeUpMinutes = reader.readLongOrNull(offsets[10]);
+  object.weeklyRoutineJson = reader.readStringOrNull(offsets[11]);
   return object;
 }
 
@@ -166,17 +173,17 @@ P _appSettingsEntityDeserializeProp<P>(
     case 0:
       return (reader.readLong(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 2:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 5:
       return (reader.readStringOrNull(offset)) as P;
     case 6:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
       return (reader.readLongOrNull(offset)) as P;
     case 8:
@@ -184,6 +191,8 @@ P _appSettingsEntityDeserializeProp<P>(
     case 9:
       return (reader.readLongOrNull(offset)) as P;
     case 10:
+      return (reader.readLongOrNull(offset)) as P;
+    case 11:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -338,6 +347,34 @@ extension AppSettingsEntityQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      hasSeededDataIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'hasSeededData',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      hasSeededDataIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'hasSeededData',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      hasSeededDataEqualTo(bool? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasSeededData',
+        value: value,
       ));
     });
   }
@@ -1382,6 +1419,20 @@ extension AppSettingsEntityQuerySortBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByHasSeededData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasSeededData', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByHasSeededDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasSeededData', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       sortByLocaleCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'localeCode', Sort.asc);
@@ -1535,6 +1586,20 @@ extension AppSettingsEntityQuerySortThenBy
       thenByEndOfDayReminderMinutesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'endOfDayReminderMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByHasSeededData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasSeededData', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByHasSeededDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasSeededData', Sort.desc);
     });
   }
 
@@ -1702,6 +1767,13 @@ extension AppSettingsEntityQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByHasSeededData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasSeededData');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
       distinctByLocaleCode({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'localeCode', caseSensitive: caseSensitive);
@@ -1786,6 +1858,13 @@ extension AppSettingsEntityQueryProperty
       endOfDayReminderMinutesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'endOfDayReminderMinutes');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, bool?, QQueryOperations>
+      hasSeededDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasSeededData');
     });
   }
 

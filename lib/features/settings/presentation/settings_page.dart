@@ -52,8 +52,39 @@ class SettingsPage extends ConsumerWidget {
     );
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         automaticallyImplyLeading: !forceUserSetup,
+        leadingWidth: 64,
+        leading: (!forceUserSetup &&
+                (ModalRoute.of(context)?.canPop ?? false))
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(isId ? 'Pengaturan' : 'Settings'),
       ),
       body: LayoutBuilder(
@@ -144,60 +175,6 @@ class SettingsPage extends ConsumerWidget {
                             ref
                                 .read(notificationSchedulerProvider)
                                 .updateVibration(nextValue);
-                            await ref
-                                .read(activityActionsProvider)
-                                .bootstrapRescheduleAndEvaluate();
-                            await ref
-                                .read(oneTimeReminderActionsProvider)
-                                .bootstrapReschedule();
-                          },
-                        ),
-                        _SettingsActionItem(
-                          icon: Icons.wb_sunny_rounded,
-                          title: t.morningReminderTime,
-                          value: formatMinutesAsTime(
-                            settings.morningReminderMinutes,
-                          ),
-                          enabled: settings.notificationsEnabled,
-                          onTap: () async {
-                            final int? next = await _pickMinutes(
-                              context,
-                              settings.morningReminderMinutes,
-                            );
-                            if (next == null) {
-                              return;
-                            }
-                            await ref.read(settingsRepositoryProvider).save(
-                              settings.copyWith(morningReminderMinutes: next),
-                            );
-                            await ref
-                                .read(activityActionsProvider)
-                                .bootstrapRescheduleAndEvaluate();
-                            await ref
-                                .read(oneTimeReminderActionsProvider)
-                                .bootstrapReschedule();
-                          },
-                        ),
-                        _SettingsActionItem(
-                          icon: Icons.nightlight_round,
-                          title: t.endOfDayReminderTime,
-                          value: formatMinutesAsTime(
-                            settings.endOfDayReminderMinutes,
-                          ),
-                          enabled: settings.notificationsEnabled,
-                          onTap: () async {
-                            final int? next = await _pickMinutes(
-                              context,
-                              settings.endOfDayReminderMinutes,
-                            );
-                            if (next == null) {
-                              return;
-                            }
-                            await ref.read(settingsRepositoryProvider).save(
-                              settings.copyWith(
-                                endOfDayReminderMinutes: next,
-                              ),
-                            );
                             await ref
                                 .read(activityActionsProvider)
                                 .bootstrapRescheduleAndEvaluate();
@@ -437,13 +414,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  Future<int?> _pickMinutes(BuildContext context, int currentMinutes) async {
-    return _pickMinutesInputDialog(
-      context: context,
-      currentMinutes: currentMinutes,
-      localeCode: Localizations.localeOf(context).languageCode,
-    );
-  }
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -494,14 +464,12 @@ class _SettingsActionItem extends StatelessWidget {
     this.icon,
     required this.title,
     this.value,
-    this.enabled = true,
     required this.onTap,
   });
 
   final IconData? icon;
   final String title;
   final String? value;
-  final bool enabled;
   final VoidCallback onTap;
 
   @override
@@ -509,7 +477,7 @@ class _SettingsActionItem extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool hasValue = value != null && value!.trim().isNotEmpty;
     final Color leadingColor = theme.colorScheme.onSurface.withValues(
-      alpha: enabled ? 0.68 : 0.32,
+      alpha: 0.68,
     );
     const Widget trailingWidget = _Chevron();
 
@@ -517,7 +485,7 @@ class _SettingsActionItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: enabled ? onTap : null,
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
@@ -533,7 +501,7 @@ class _SettingsActionItem extends StatelessWidget {
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface.withValues(
-                          alpha: enabled ? 0.92 : 0.42,
+                          alpha: 0.92,
                         ),
                       ),
                     ),
@@ -543,7 +511,7 @@ class _SettingsActionItem extends StatelessWidget {
                         value!,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
-                            alpha: enabled ? 0.66 : 0.38,
+                            alpha: 0.66,
                           ),
                         ),
                       ),
@@ -775,7 +743,37 @@ class UserInfoPage extends ConsumerWidget {
     final bool isId = localeCode == AppConstants.localeId;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leadingWidth: 64,
+        leading: (ModalRoute.of(context)?.canPop ?? false)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(isId ? 'Info pengguna' : 'User info'),
       ),
       body: LayoutBuilder(
@@ -936,7 +934,37 @@ class _WeeklyRoutinePage extends ConsumerWidget {
     final List<WeeklyRoutineDayProfile> routine = settings.normalizedWeeklyRoutine;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leadingWidth: 64,
+        leading: (ModalRoute.of(context)?.canPop ?? false)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        side: const BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         title: Text(isId ? 'Rutinitas mingguan' : 'Weekly routine'),
       ),
       body: ListView(

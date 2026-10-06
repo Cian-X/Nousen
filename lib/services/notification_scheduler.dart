@@ -85,6 +85,7 @@ class NotificationScheduler {
       for (final String ch in <String>[
         'activity_reminders',
         'activity_reminders_no_vib',
+        'activity_reminders_v2',
         'one_time_reminders',
         'one_time_reminders_no_vib',
       ]) {
@@ -412,14 +413,14 @@ class NotificationScheduler {
   NotificationDetails _notificationDetails() {
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        _vibrationEnabled ? 'activity_reminders' : 'activity_reminders_no_vib',
+        _vibrationEnabled ? 'activity_reminders_v2' : 'activity_reminders_no_vib',
         'Activity reminders',
         channelDescription: 'Weekly schedule reminders',
         importance: Importance.high,
         priority: Priority.high,
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
-            ? Int64List.fromList(<int>[0, 500, 150, 500, 150, 500])
+            ? Int64List.fromList(<int>[0, 300, 120, 300, 120, 450])
             : null,
         actions: const <AndroidNotificationAction>[
           AndroidNotificationAction(

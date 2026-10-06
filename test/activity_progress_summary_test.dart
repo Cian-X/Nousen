@@ -5,15 +5,17 @@ import 'package:liburan_create/features/progress/domain/progress_entry_model.dar
 
 void main() {
   group('resolveActivityProgressSummary', () {
-    test('calculates percentage from completed sub-activities', () {
+    test('menghitung persen induk-sebagai-unit tanpa induk selesai', () {
+      // Induk dihitung 1 unit + tiap sub 1 unit; induk belum ditandai.
       final List<({int completed, int total, int expectedPercent})> cases =
           <({int completed, int total, int expectedPercent})>[
-            (completed: 1, total: 2, expectedPercent: 50),
-            (completed: 1, total: 3, expectedPercent: 33),
-            (completed: 2, total: 3, expectedPercent: 67),
-            (completed: 2, total: 4, expectedPercent: 50),
-            (completed: 3, total: 5, expectedPercent: 60),
-            (completed: 5, total: 5, expectedPercent: 100),
+            (completed: 1, total: 1, expectedPercent: 50),
+            (completed: 1, total: 2, expectedPercent: 33),
+            (completed: 1, total: 3, expectedPercent: 25),
+            (completed: 2, total: 3, expectedPercent: 50),
+            (completed: 2, total: 4, expectedPercent: 40),
+            (completed: 3, total: 5, expectedPercent: 50),
+            (completed: 5, total: 5, expectedPercent: 83),
           ];
 
       for (final ({int completed, int total, int expectedPercent}) item
@@ -33,15 +35,64 @@ void main() {
 
         expect(summary.completedSubCount, item.completed);
         expect(summary.totalSubCount, item.total);
+        expect(summary.parentCompleted, isFalse);
         expect(summary.percent, item.expectedPercent);
         expect(summary.rate, closeTo(item.expectedPercent / 100, 0.0001));
-        expect(
-          summary.state,
-          item.expectedPercent == 100
-              ? ActivityProgressState.complete
-              : ActivityProgressState.partial,
-        );
+        expect(summary.state, ActivityProgressState.partial);
+        expect(summary.isComplete, isFalse);
       }
+    });
+
+    test('semua sub selesai tanpa induk tetap partial, bukan 100%', () {
+      final List<String> subActivities = const <String>['hanya-satu'];
+      final ActivityProgressSummary summary = resolveActivityProgressSummary(
+        subActivities: subActivities,
+        entry: _entry(
+          completedSubActivities: subActivities,
+          subCompleted: 1,
+          subTotal: 1,
+        ),
+      );
+
+      expect(summary.percent, 50);
+      expect(summary.state, ActivityProgressState.partial);
+      expect(summary.isComplete, isFalse);
+    });
+
+    test('induk + semua sub selesai baru 100% complete', () {
+      final List<String> subActivities = const <String>['a', 'b'];
+      final ActivityProgressSummary summary = resolveActivityProgressSummary(
+        subActivities: subActivities,
+        entry: _entry(
+          status: ActivityDayStatus.done,
+          completedSubActivities: subActivities,
+          subCompleted: 2,
+          subTotal: 2,
+        ),
+      );
+
+      expect(summary.parentCompleted, isTrue);
+      expect(summary.percent, 100);
+      expect(summary.state, ActivityProgressState.complete);
+      expect(summary.isComplete, isTrue);
+    });
+
+    test('induk selesai tapi sub kurang tetap partial', () {
+      final List<String> subActivities = const <String>['a', 'b'];
+      final ActivityProgressSummary summary = resolveActivityProgressSummary(
+        subActivities: subActivities,
+        entry: _entry(
+          status: ActivityDayStatus.done,
+          completedSubActivities: const <String>['a'],
+          subCompleted: 1,
+          subTotal: 2,
+        ),
+      );
+
+      expect(summary.parentCompleted, isTrue);
+      expect(summary.percent, 67);
+      expect(summary.state, ActivityProgressState.partial);
+      expect(summary.isComplete, isFalse);
     });
 
     test('uses main activity status when there are no sub-activities', () {
@@ -90,6 +141,86 @@ void main() {
           );
 
       expect(status, ActivityDailyProgressStatus.partial);
+    });
+
+    test('marks future scheduled days as future, never missed', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 10),
+            today: DateTime(2026, 3, 9, 20),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            entry: _entry(),
+          );
+
+      expect(status, ActivityDailyProgressStatus.future);
+    });
+
+    test('marks today before schedule time as future, not missed', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 9),
+            today: DateTime(2026, 3, 9, 7),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            scheduledTimeMinutes: 17 * 60 + 15,
+            entry: _entry(),
+          );
+
+      expect(status, ActivityDailyProgressStatus.future);
+    });
+
+    test('marks today after schedule time as partial (ongoing)', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 9),
+            today: DateTime(2026, 3, 9, 18),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            scheduledTimeMinutes: 17 * 60 + 15,
+            entry: _entry(),
+          );
+
+      expect(status, ActivityDailyProgressStatus.partial);
+    });
+
+    test('marks past undone days as missed', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 8),
+            today: DateTime(2026, 3, 9, 10),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            entry: _entry(),
+          );
+
+      expect(status, ActivityDailyProgressStatus.missed);
+    });
+
+    test('marks completed entries as done regardless of date', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 8),
+            today: DateTime(2026, 3, 9, 10),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            subActivities: const <String>['makan'],
+            entry: _entry(
+              status: ActivityDayStatus.done,
+              completedSubActivities: const <String>['makan'],
+              subCompleted: 1,
+              subTotal: 1,
+            ),
+          );
+
+      expect(status, ActivityDailyProgressStatus.done);
+    });
+
+    test('marks skipped entries as skipped', () {
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: DateTime(2026, 3, 9),
+            today: DateTime(2026, 3, 9, 20),
+            scheduleUpdatedAt: DateTime(2026, 3, 1),
+            entry: _entry(status: ActivityDayStatus.skipped),
+          );
+
+      expect(status, ActivityDailyProgressStatus.skipped);
     });
   });
 }

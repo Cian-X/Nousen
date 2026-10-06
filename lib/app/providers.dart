@@ -17,6 +17,7 @@ import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/activity/domain/activity_repository.dart';
 import 'package:liburan_create/features/one_time_reminder/application/one_time_reminder_actions.dart';
 import 'package:liburan_create/features/one_time_reminder/data/isar_one_time_reminder_repository.dart';
+import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 import 'package:liburan_create/features/progress/data/isar_progress_repository.dart';
@@ -236,6 +237,16 @@ final oneTimeRemindersStreamProvider =
       return ref.watch(oneTimeReminderRepositoryProvider).watchAll();
     });
 
+final agendaNotesStreamProvider =
+    StreamProvider.family<List<AgendaNoteModel>, String>((
+      Ref ref,
+      String reminderId,
+    ) {
+      return ref.watch(oneTimeReminderRepositoryProvider).watchNotes(
+            reminderId,
+          );
+    });
+
 final allProgressStreamProvider = StreamProvider<List<ProgressEntryModel>>((
   Ref ref,
 ) {
@@ -287,14 +298,10 @@ final globalScheduledStatsCalculatorProvider =
       final List<ProgressEntryModel> progress =
           ref.watch(allProgressStreamProvider).value ??
           const <ProgressEntryModel>[];
-      final List<OneTimeReminderModel> oneTimeReminders =
-          ref.watch(oneTimeRemindersStreamProvider).value ??
-          const <OneTimeReminderModel>[];
 
       return GlobalScheduledStatsCalculator(
         activities: activities,
         progressEntries: progress,
-        oneTimeReminders: oneTimeReminders,
       );
     });
 

@@ -17,78 +17,83 @@ const ActivityEntitySchema = CollectionSchema(
   name: r'ActivityEntity',
   id: 2979934318015624436,
   properties: {
-    r'createdAt': PropertySchema(
+    r'category': PropertySchema(
       id: 0,
+      name: r'category',
+      type: IsarType.string,
+    ),
+    r'createdAt': PropertySchema(
+      id: 1,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'enableEndOfDayReminder': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'enableEndOfDayReminder',
       type: IsarType.bool,
     ),
     r'enableMorningReminder': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'enableMorningReminder',
       type: IsarType.bool,
     ),
     r'enablePhotoProgress': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'enablePhotoProgress',
       type: IsarType.bool,
     ),
     r'id': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'id',
       type: IsarType.string,
     ),
     r'isNotificationEnabled': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isNotificationEnabled',
       type: IsarType.bool,
     ),
     r'lastThreeDayRuleNotifiedDate': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'lastThreeDayRuleNotifiedDate',
       type: IsarType.string,
     ),
     r'preReminderMinutes': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'preReminderMinutes',
       type: IsarType.long,
     ),
     r'scheduleUpdatedAt': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'scheduleUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'selectedDays': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'selectedDays',
       type: IsarType.longList,
     ),
     r'subActivities': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'subActivities',
       type: IsarType.stringList,
     ),
     r'timeMinutes': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'timeMinutes',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'title',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'weeklyGoal': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'weeklyGoal',
       type: IsarType.long,
     )
@@ -127,6 +132,12 @@ int _activityEntityEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.category;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.id.length * 3;
   {
     final value = object.lastThreeDayRuleNotifiedDate;
@@ -152,21 +163,22 @@ void _activityEntitySerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeBool(offsets[1], object.enableEndOfDayReminder);
-  writer.writeBool(offsets[2], object.enableMorningReminder);
-  writer.writeBool(offsets[3], object.enablePhotoProgress);
-  writer.writeString(offsets[4], object.id);
-  writer.writeBool(offsets[5], object.isNotificationEnabled);
-  writer.writeString(offsets[6], object.lastThreeDayRuleNotifiedDate);
-  writer.writeLong(offsets[7], object.preReminderMinutes);
-  writer.writeDateTime(offsets[8], object.scheduleUpdatedAt);
-  writer.writeLongList(offsets[9], object.selectedDays);
-  writer.writeStringList(offsets[10], object.subActivities);
-  writer.writeLong(offsets[11], object.timeMinutes);
-  writer.writeString(offsets[12], object.title);
-  writer.writeDateTime(offsets[13], object.updatedAt);
-  writer.writeLong(offsets[14], object.weeklyGoal);
+  writer.writeString(offsets[0], object.category);
+  writer.writeDateTime(offsets[1], object.createdAt);
+  writer.writeBool(offsets[2], object.enableEndOfDayReminder);
+  writer.writeBool(offsets[3], object.enableMorningReminder);
+  writer.writeBool(offsets[4], object.enablePhotoProgress);
+  writer.writeString(offsets[5], object.id);
+  writer.writeBool(offsets[6], object.isNotificationEnabled);
+  writer.writeString(offsets[7], object.lastThreeDayRuleNotifiedDate);
+  writer.writeLong(offsets[8], object.preReminderMinutes);
+  writer.writeDateTime(offsets[9], object.scheduleUpdatedAt);
+  writer.writeLongList(offsets[10], object.selectedDays);
+  writer.writeStringList(offsets[11], object.subActivities);
+  writer.writeLong(offsets[12], object.timeMinutes);
+  writer.writeString(offsets[13], object.title);
+  writer.writeDateTime(offsets[14], object.updatedAt);
+  writer.writeLong(offsets[15], object.weeklyGoal);
 }
 
 ActivityEntity _activityEntityDeserialize(
@@ -176,22 +188,23 @@ ActivityEntity _activityEntityDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = ActivityEntity();
-  object.createdAt = reader.readDateTime(offsets[0]);
-  object.enableEndOfDayReminder = reader.readBool(offsets[1]);
-  object.enableMorningReminder = reader.readBool(offsets[2]);
-  object.enablePhotoProgress = reader.readBool(offsets[3]);
-  object.id = reader.readString(offsets[4]);
-  object.isNotificationEnabled = reader.readBool(offsets[5]);
+  object.category = reader.readStringOrNull(offsets[0]);
+  object.createdAt = reader.readDateTime(offsets[1]);
+  object.enableEndOfDayReminder = reader.readBool(offsets[2]);
+  object.enableMorningReminder = reader.readBool(offsets[3]);
+  object.enablePhotoProgress = reader.readBool(offsets[4]);
+  object.id = reader.readString(offsets[5]);
+  object.isNotificationEnabled = reader.readBool(offsets[6]);
   object.isarId = id;
-  object.lastThreeDayRuleNotifiedDate = reader.readStringOrNull(offsets[6]);
-  object.preReminderMinutes = reader.readLong(offsets[7]);
-  object.scheduleUpdatedAt = reader.readDateTimeOrNull(offsets[8]);
-  object.selectedDays = reader.readLongList(offsets[9]) ?? [];
-  object.subActivities = reader.readStringList(offsets[10]) ?? [];
-  object.timeMinutes = reader.readLong(offsets[11]);
-  object.title = reader.readString(offsets[12]);
-  object.updatedAt = reader.readDateTime(offsets[13]);
-  object.weeklyGoal = reader.readLong(offsets[14]);
+  object.lastThreeDayRuleNotifiedDate = reader.readStringOrNull(offsets[7]);
+  object.preReminderMinutes = reader.readLong(offsets[8]);
+  object.scheduleUpdatedAt = reader.readDateTimeOrNull(offsets[9]);
+  object.selectedDays = reader.readLongList(offsets[10]) ?? [];
+  object.subActivities = reader.readStringList(offsets[11]) ?? [];
+  object.timeMinutes = reader.readLong(offsets[12]);
+  object.title = reader.readString(offsets[13]);
+  object.updatedAt = reader.readDateTime(offsets[14]);
+  object.weeklyGoal = reader.readLong(offsets[15]);
   return object;
 }
 
@@ -203,34 +216,36 @@ P _activityEntityDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 2:
       return (reader.readBool(offset)) as P;
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
-    case 5:
       return (reader.readBool(offset)) as P;
-    case 6:
-      return (reader.readStringOrNull(offset)) as P;
-    case 7:
-      return (reader.readLong(offset)) as P;
-    case 8:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 9:
-      return (reader.readLongList(offset) ?? []) as P;
-    case 10:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 11:
-      return (reader.readLong(offset)) as P;
-    case 12:
+    case 5:
       return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
+      return (reader.readStringOrNull(offset)) as P;
+    case 8:
+      return (reader.readLong(offset)) as P;
+    case 9:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 10:
+      return (reader.readLongList(offset) ?? []) as P;
+    case 11:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 12:
+      return (reader.readLong(offset)) as P;
     case 13:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 14:
+      return (reader.readDateTime(offset)) as P;
+    case 15:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -431,6 +446,160 @@ extension ActivityEntityQueryWhere
 
 extension ActivityEntityQueryFilter
     on QueryBuilder<ActivityEntity, ActivityEntity, QFilterCondition> {
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'category',
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'category',
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'category',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'category',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'category',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'category',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
+      categoryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'category',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<ActivityEntity, ActivityEntity, QAfterFilterCondition>
       createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -1687,6 +1856,19 @@ extension ActivityEntityQueryLinks
 
 extension ActivityEntityQuerySortBy
     on QueryBuilder<ActivityEntity, ActivityEntity, QSortBy> {
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy> sortByCategory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'category', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy>
+      sortByCategoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'category', Sort.desc);
+    });
+  }
+
   QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1866,6 +2048,19 @@ extension ActivityEntityQuerySortBy
 
 extension ActivityEntityQuerySortThenBy
     on QueryBuilder<ActivityEntity, ActivityEntity, QSortThenBy> {
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy> thenByCategory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'category', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy>
+      thenByCategoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'category', Sort.desc);
+    });
+  }
+
   QueryBuilder<ActivityEntity, ActivityEntity, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -2058,6 +2253,13 @@ extension ActivityEntityQuerySortThenBy
 
 extension ActivityEntityQueryWhereDistinct
     on QueryBuilder<ActivityEntity, ActivityEntity, QDistinct> {
+  QueryBuilder<ActivityEntity, ActivityEntity, QDistinct> distinctByCategory(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'category', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<ActivityEntity, ActivityEntity, QDistinct>
       distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
@@ -2170,6 +2372,12 @@ extension ActivityEntityQueryProperty
   QueryBuilder<ActivityEntity, int, QQueryOperations> isarIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isarId');
+    });
+  }
+
+  QueryBuilder<ActivityEntity, String?, QQueryOperations> categoryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'category');
     });
   }
 

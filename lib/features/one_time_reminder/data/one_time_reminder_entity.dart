@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:liburan_create/core/utils/activity_icon_utils.dart';
+import 'package:liburan_create/features/activity/domain/activity_category.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 
 part 'one_time_reminder_entity.g.dart';
@@ -14,9 +15,15 @@ class OneTimeReminderEntity {
   late String title;
   String? iconKey;
   late DateTime scheduledAt;
+  DateTime? scheduledEndAt;
+  String? categoryId;
+  String? description;
+  List<String>? subActivities;
+  List<String>? completedSubActivities;
   late int preReminderMinutes;
   late bool isNotificationEnabled;
   late bool isCompleted;
+  bool? isSkipped;
   late DateTime createdAt;
   late DateTime updatedAt;
 }
@@ -28,9 +35,21 @@ extension OneTimeReminderEntityMapper on OneTimeReminderEntity {
       title: title,
       iconKey: normalizeActivityIconKey(iconKey),
       scheduledAt: scheduledAt,
+      scheduledEndAt: scheduledEndAt,
+      categoryId: ActivityCategory.safeId(categoryId),
+      description: (description ?? '').trim(),
+      subActivities: (subActivities ?? const <String>[])
+          .map((String item) => item.trim())
+          .where((String item) => item.isNotEmpty)
+          .toList(),
+      completedSubActivities: (completedSubActivities ?? const <String>[])
+          .map((String item) => item.trim())
+          .where((String item) => item.isNotEmpty)
+          .toList(),
       preReminderMinutes: preReminderMinutes,
       isNotificationEnabled: isNotificationEnabled,
       isCompleted: isCompleted,
+      isSkipped: isSkipped ?? false,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -45,9 +64,21 @@ OneTimeReminderEntity oneTimeReminderEntityFromDomain(
     ..title = model.title
     ..iconKey = normalizeActivityIconKey(model.iconKey)
     ..scheduledAt = model.scheduledAt
+    ..scheduledEndAt = model.scheduledEndAt
+    ..categoryId = model.categoryId
+    ..description = model.description
+    ..subActivities = model.subActivities
+        .map((String item) => item.trim())
+        .where((String item) => item.isNotEmpty)
+        .toList()
+    ..completedSubActivities = model.completedSubActivities
+        .map((String item) => item.trim())
+        .where((String item) => item.isNotEmpty)
+        .toList()
     ..preReminderMinutes = model.preReminderMinutes
     ..isNotificationEnabled = model.isNotificationEnabled
     ..isCompleted = model.isCompleted
+    ..isSkipped = model.isSkipped
     ..createdAt = model.createdAt
     ..updatedAt = model.updatedAt;
   return entity;
