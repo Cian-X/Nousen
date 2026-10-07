@@ -79,7 +79,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
         if (type == 'request_sync') {
           _lastSyncedSignature = ''; // Force fresh sync
-          _syncCurrentFocusToOverlay();
+          _syncCurrentFocusToOverlay(triggerGreeting: true);
           return;
         }
 
@@ -143,11 +143,11 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     });
   }
 
-  void _syncCurrentFocusToOverlay() {
+  void _syncCurrentFocusToOverlay({bool triggerGreeting = false}) {
     final _ActivityTileData? item = _lastFocusItem;
     if (item == null) {
       final String sig = 'empty_${_lastTodaySchedules.length}';
-      if (_lastSyncedSignature == sig) return;
+      if (_lastSyncedSignature == sig && !triggerGreeting) return;
       _lastSyncedSignature = sig;
       ref
           .read(popUpAssistServiceProvider)
@@ -155,6 +155,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
             activityId: '',
             title: 'Belum ada jadwal',
             timeLabel: 'Hari ini santai',
+            speechText: triggerGreeting ? 'NOUSEN Assist siap mendampingi harimu!' : null,
+            isGreeting: triggerGreeting,
             streak: _lastStreak,
             todaySchedules: _lastTodaySchedules,
             subActivities: const <String>[],
@@ -176,8 +178,14 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         .join('|');
     final String sig =
         '${activity.id}_${_lastStreak}_${item.isCompleted}_${item.isSkipped}_${completedSub.join(',')}_$schedulesSig';
-    if (sig == _lastSyncedSignature) return;
+    if (sig == _lastSyncedSignature && !triggerGreeting) return;
     _lastSyncedSignature = sig;
+
+    final String speech = triggerGreeting
+        ? (item.isCompleted
+            ? 'Aktivitas ${activity.title} sudah selesai, mantap!'
+            : 'Fokus saat ini: ${activity.title}')
+        : '';
 
     ref
         .read(popUpAssistServiceProvider)
@@ -185,6 +193,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           activityId: activity.id,
           title: activity.title,
           timeLabel: formatMinutesAsTime(activity.timeMinutes),
+          speechText: speech.isNotEmpty ? speech : null,
+          isGreeting: triggerGreeting,
           todaySchedules: _lastTodaySchedules,
           streak: _lastStreak,
           subActivities: activity.subActivities,

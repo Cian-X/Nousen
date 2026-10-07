@@ -420,6 +420,7 @@ class NotificationScheduler {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@drawable/ic_notification',
+        color: const Color(0xFF3B7BD6),
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
             ? Int64List.fromList(<int>[0, 300, 120, 300, 120, 450])
@@ -455,6 +456,7 @@ class NotificationScheduler {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@drawable/ic_notification',
+        color: const Color(0xFF3B7BD6),
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
             ? Int64List.fromList(<int>[0, 500, 150, 500, 150, 500])

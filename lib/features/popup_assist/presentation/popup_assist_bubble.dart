@@ -36,7 +36,6 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   bool _isSpeechFadingOut = false; // retract: speech menyusut masuk ke sisi icon
   int _speechEpoch = 0; // memicu replay entrance animation tiap trigger speech
   int _speechGen = 0; // generation guard: chain lama mati saat trigger baru masuk
-  bool _greetingShown = false; // debounce: greeting 1x per sesi overlay
   Timer? _speechTimer;
   Timer? _scheduleTicker;
   Timer? _idleTimer;
@@ -77,11 +76,16 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         if (data['type'] == 'reset_state' ||
             data['type'] == 'overlay_dismissed_by_user') {
           setState(() {
+            _isExpanded = false;
             _isNearDismiss = false;
             _isIdle = false;
             _isCardClosing = false;
-            _greetingShown = false; // sesi baru -> greeting boleh tampil 1x lagi
           });
+          if (data['type'] == 'reset_state') {
+            FlutterOverlayWindow.shareData(
+              jsonEncode(<String, dynamic>{'type': 'request_sync'}),
+            );
+          }
           return;
         }
 
@@ -116,20 +120,17 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         }
 
         // Debounce: event yang sama bisa membawa sync_activity + schedules,
-        // jadi hanya trigger greeting yang di-skip (tanpa return agar sync tetap jalan).
-        if (data['isGreeting'] == true &&
-            data['speechText'] != null &&
-            !_greetingShown) {
+        // trigger greeting saat diterima jika belum expanded / near dismiss.
+        if (data['isGreeting'] == true && data['speechText'] != null) {
           final String greeting = data['speechText'].toString();
           if (greeting.isNotEmpty && !_isExpanded && !_isNearDismiss) {
-            _greetingShown = true;
-            _plog('speech=greeting delayed 1500ms');
+            _plog('speech=greeting delayed 1000ms');
             setState(() {
               _speechText = greeting;
             });
             // Cold start: main thread masih berat (Choreographer skip frames).
             // Tunda trigger agar resize+render tidak desync (glitch expand).
-            Future<void>.delayed(const Duration(milliseconds: 1500), () {
+            Future<void>.delayed(const Duration(milliseconds: 1000), () {
               if (!mounted || _isExpanded || _isNearDismiss) return;
               _triggerSpeechLabel();
             });
@@ -699,6 +700,10 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           _resetIdleTimer();
           _expandOverlay();
         },
+        onDoubleTap: () {
+          _resetIdleTimer();
+          _triggerSpeechLabel();
+        },
         child: SizedBox(
           width: 58,
           height: 58,
@@ -790,36 +795,34 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   }
 
   Widget _buildExpandedCard() {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey<String>('expanded_card_${_isCardClosing ? "close" : "open"}'),
-      tween: _isCardClosing
-          ? Tween<double>(begin: 1.0, end: 0.82)
-          : Tween<double>(begin: 0.85, end: 1.0),
-      duration: Duration(milliseconds: _isCardClosing ? 130 : 200),
-      curve: _isCardClosing ? Curves.easeInCubic : Curves.easeOutCubic,
-      builder: (BuildContext context, double scale, Widget? child) {
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
-      },
-      child: SizedBox.expand(
-        child: Stack(
-          children: <Widget>[
-            // Backdrop gelap: tap di luar kartu = tutup (collapse).
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _collapseOverlay,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.4),
-                ),
-              ),
+    return SizedBox.expand(
+      child: Stack(
+        children: <Widget>[
+          // Backdrop transparan: tap di luar kartu = tutup (collapse),
+          // tanpa bayangan/tint gelap seukuran layar.
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _collapseOverlay,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
             ),
-            // Modal tengah layar (jangkauan jari): margin 16 tiap sisi,
-            // tinggi maks layar-32. Bubble idle tetap di tepi layar.
-            Align(
-              alignment: Alignment.center,
+          ),
+          // Modal tengah layar (jangkauan jari): hanya kartu yang di-animasikan.
+          Align(
+            alignment: Alignment.center,
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey<String>('expanded_card_${_isCardClosing ? "close" : "open"}'),
+              tween: _isCardClosing
+                  ? Tween<double>(begin: 1.0, end: 0.82)
+                  : Tween<double>(begin: 0.85, end: 1.0),
+              duration: Duration(milliseconds: _isCardClosing ? 130 : 200),
+              curve: _isCardClosing ? Curves.easeInCubic : Curves.easeOutCubic,
+              builder: (BuildContext context, double scale, Widget? child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: LayoutBuilder(
@@ -839,6 +842,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                             color: const Color(0xFFBFDBFE),
                             width: 1.2,
                           ),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x1F0F172A),
+                              blurRadius: 24,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -1467,8 +1477,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -12,6 +12,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
+import android.graphics.BitmapFactory;
 import android.app.PendingIntent;
 import android.graphics.Point;
 import android.os.Build;
@@ -250,23 +252,20 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private void hideOverlay() {
         cancelSnapAnimation();
         hideDismissTarget();
+        // Reset saved position so that re-spawning after dismiss to 'X' starts fresh at right edge (0,0)
+        hasLastBubblePosition = false;
+        lastBubbleX = 0;
+        lastBubbleY = 0;
+        if (mOverlayParams != null) {
+            mOverlayParams.x = 0;
+            mOverlayParams.y = 0;
+        }
         if (overlayMessageChannel != null) {
             overlayMessageChannel.send("{\"type\":\"drag_near_dismiss\",\"isNear\":false}");
             overlayMessageChannel.send("{\"type\":\"reset_state\"}");
         }
         if (windowManager != null && flutterView != null && isViewAttached) {
             try {
-                WindowManager.LayoutParams lp = (WindowManager.LayoutParams) flutterView.getLayoutParams();
-                if (lp != null) {
-                    lastBubbleX = lp.x;
-                    lastBubbleY = lp.y;
-                    hasLastBubblePosition = true;
-                    Log.d("OverlayNative", "[hide] saved x=" + lp.x + " y=" + lp.y);
-                    if (mOverlayParams != null) {
-                        mOverlayParams.x = lp.x;
-                        mOverlayParams.y = lp.y;
-                    }
-                }
                 windowManager.removeView(flutterView);
             } catch (Exception ignored) {}
             isViewAttached = false;
@@ -336,11 +335,13 @@ public class OverlayService extends Service implements View.OnTouchListener {
         deleteIntent.setAction(ACTION_RESTORE_NOTIFICATION);
         PendingIntent pendingDeleteIntent = PendingIntent.getService(this, 102, deleteIntent, pendingFlags);
 
-        final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
-        Notification notification = new NotificationCompat.Builder(this, SILENT_CHANNEL_ID)
+        final int smallIconRes = getDrawableResourceId("drawable", "notification");
+        final int fallbackIconRes = getDrawableResourceId("mipmap", "launcher");
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, SILENT_CHANNEL_ID)
                 .setContentTitle(WindowSetup.overlayTitle != null && !WindowSetup.overlayTitle.isEmpty() ? WindowSetup.overlayTitle : "NOUSEN Assist")
                 .setContentText(contentText)
-                .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
+                .setSmallIcon(smallIconRes != 0 ? smallIconRes : (fallbackIconRes != 0 ? fallbackIconRes : R.drawable.notification_icon));
+        Notification notification = builder
                 .setContentIntent(pendingIntent)
                 .setDeleteIntent(pendingDeleteIntent)
                 .setOngoing(true)
@@ -444,72 +445,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         flutterView.setFocusable(true);
         flutterView.setFocusableInTouchMode(true);
         flutterView.setBackgroundColor(Color.TRANSPARENT);
-        flutterChannel.setMethodCallHandler((call, result) -> {
-            if (call.method.equals("updateFlag")) {
-                String flag = call.argument("flag").toString();
-                updateOverlayFlag(result, flag);
-            } else if (call.method.equals("updateOverlayPosition")) {
-                int x = call.<Integer>argument("x");
-                int y = call.<Integer>argument("y");
-                moveOverlay(x, y, result);
-            } else if (call.method.equals("resizeOverlay")) {
-                int width = call.argument("width");
-                int height = call.argument("height");
-                boolean enableDrag = call.argument("enableDrag");
-                resizeOverlay(width, height, enableDrag, result);
-            } else if (call.method.equals("ensureOverlayVisible")) {
-                showOverlayView();
-                result.success(isViewAttached);
-            } else if (call.method.equals("openApp")) {
-                try {
-                    Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-                    if (launchIntent != null) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        String activityId = call.argument("activityId");
-                        if (activityId != null && !activityId.isEmpty()) {
-                            launchIntent.putExtra("activityId", activityId);
-                        }
-                        startActivity(launchIntent);
-                        result.success(true);
-                        return;
-                    }
-                } catch (Exception e) {
-                    Log.e("OverlayService", "Failed to launch main app: " + e.getMessage());
-                }
-                result.success(false);
-            }
-        });
-        overlayMessageChannel.setMessageHandler((message, reply) -> {
-            String actionType = "unknown";
-            try {
-                if (message instanceof String) {
-                    actionType = new org.json.JSONObject((String) message)
-                            .optString("type", "unknown");
-                } else if (message instanceof java.util.Map) {
-                    Object t = ((java.util.Map<?, ?>) message).get("type");
-                    if (t != null) {
-                        actionType = t.toString();
-                    }
-                }
-            } catch (Exception ignored) {
-            }
-            Log.d("OverlayNative", "received " + actionType + " from overlay");
-            if (WindowSetup.messenger == null) {
-                Log.e("OverlayNative", "DROP " + actionType + ": main messenger is null");
-                reply.reply(Boolean.FALSE);
-                return;
-            }
-            Log.d("OverlayNative", "forwarding " + actionType
-                    + " via messenger=" + System.identityHashCode(WindowSetup.messenger));
-            try {
-                WindowSetup.messenger.send(message);
-                Log.d("OverlayNative", actionType + " forwarded to main engine");
-                reply.reply(Boolean.TRUE);
-            } catch (Exception e) {
-                Log.e("OverlayNative", "FORWARD FAILED " + actionType + ": " + e.getMessage());
-                reply.reply(Boolean.FALSE);
-            }
-        });
+        setupChannels();
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -777,11 +713,93 @@ public class OverlayService extends Service implements View.OnTouchListener {
         if (flutterEngine != null) {
             flutterChannel = new MethodChannel(flutterEngine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
             overlayMessageChannel = new BasicMessageChannel(flutterEngine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
+            setupChannels();
         }
 
         createNotificationChannel();
         startForeground(OverlayConstants.NOTIFICATION_ID, buildServiceNotification(WindowSetup.overlayContent != null && !WindowSetup.overlayContent.isEmpty() ? WindowSetup.overlayContent : "Ketuk untuk membuka asisten aktivitas"));
         instance = this;
+    }
+
+    private void setupChannels() {
+        if (flutterChannel == null || overlayMessageChannel == null) {
+            FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
+            if (engine != null) {
+                if (flutterChannel == null) {
+                    flutterChannel = new MethodChannel(engine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
+                }
+                if (overlayMessageChannel == null) {
+                    overlayMessageChannel = new BasicMessageChannel(engine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
+                }
+            }
+        }
+        if (flutterChannel == null || overlayMessageChannel == null) return;
+        flutterChannel.setMethodCallHandler((call, result) -> {
+            if (call.method.equals("updateFlag")) {
+                String flag = call.argument("flag").toString();
+                updateOverlayFlag(result, flag);
+            } else if (call.method.equals("updateOverlayPosition")) {
+                int x = call.<Integer>argument("x");
+                int y = call.<Integer>argument("y");
+                moveOverlay(x, y, result);
+            } else if (call.method.equals("resizeOverlay")) {
+                int width = call.argument("width");
+                int height = call.argument("height");
+                boolean enableDrag = call.argument("enableDrag");
+                resizeOverlay(width, height, enableDrag, result);
+            } else if (call.method.equals("ensureOverlayVisible")) {
+                showOverlayView();
+                result.success(isViewAttached);
+            } else if (call.method.equals("openApp")) {
+                try {
+                    Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        String activityId = call.argument("activityId");
+                        if (activityId != null && !activityId.isEmpty()) {
+                            launchIntent.putExtra("activityId", activityId);
+                        }
+                        startActivity(launchIntent);
+                        result.success(true);
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.e("OverlayService", "Failed to launch main app: " + e.getMessage());
+                }
+                result.success(false);
+            }
+        });
+        overlayMessageChannel.setMessageHandler((message, reply) -> {
+            String actionType = "unknown";
+            try {
+                if (message instanceof String) {
+                    actionType = new org.json.JSONObject((String) message)
+                            .optString("type", "unknown");
+                } else if (message instanceof java.util.Map) {
+                    Object t = ((java.util.Map<?, ?>) message).get("type");
+                    if (t != null) {
+                        actionType = t.toString();
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            Log.d("OverlayNative", "received " + actionType + " from overlay");
+            if (WindowSetup.messenger == null) {
+                Log.e("OverlayNative", "DROP " + actionType + ": main messenger is null");
+                reply.reply(Boolean.FALSE);
+                return;
+            }
+            Log.d("OverlayNative", "forwarding " + actionType
+                    + " via messenger=" + System.identityHashCode(WindowSetup.messenger));
+            try {
+                WindowSetup.messenger.send(message);
+                Log.d("OverlayNative", actionType + " forwarded to main engine");
+                reply.reply(Boolean.TRUE);
+            } catch (Exception e) {
+                Log.e("OverlayNative", "FORWARD FAILED " + actionType + ": " + e.getMessage());
+                reply.reply(Boolean.FALSE);
+            }
+        });
     }
 
     private void createNotificationChannel() {
@@ -894,7 +912,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private void armSnapGuard() {
         isSpeechResizing = true;
         snapGuardHandler.removeCallbacksAndMessages(null);
-        snapGuardHandler.postDelayed(() -> isSpeechResizing = false, 2000);
+        snapGuardHandler.postDelayed(() -> isSpeechResizing = false, 400);
     }
 
     private int clampX(int x, int viewW) {        if (windowManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -1012,10 +1030,15 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 windowManager.updateViewLayout(flutterView, lp);
             } catch (Exception ignored) {}
 
-            if (frac >= 1.0f && overlayMessageChannel != null) {
-                // Determine which side bubble snapped to
-                boolean isRight = fIsRightAligned ? (fTargetX <= fMidX) : (fTargetX >= fMidX);
-                overlayMessageChannel.send("{\"type\":\"bubble_side\",\"side\":\"" + (isRight ? "right" : "left") + "\"}");
+            if (frac >= 1.0f) {
+                lastBubbleX = fTargetX;
+                lastBubbleY = fTargetY;
+                hasLastBubblePosition = true;
+                if (overlayMessageChannel != null) {
+                    // Determine which side bubble snapped to
+                    boolean isRight = fIsRightAligned ? (fTargetX <= fMidX) : (fTargetX >= fMidX);
+                    overlayMessageChannel.send("{\"type\":\"bubble_side\",\"side\":\"" + (isRight ? "right" : "left") + "\"}");
+                }
             }
         });
         mSnapAnimator.start();
