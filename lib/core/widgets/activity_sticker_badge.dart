@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/activity_icon_utils.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class ActivityStickerBadge extends StatelessWidget {
   const ActivityStickerBadge({
@@ -50,14 +51,14 @@ class ActivityStickerBadge extends StatelessWidget {
               Positioned(
                 right: size * 0.1,
                 top: size * 0.08,
-                child: Icon(
+                child: NousenNavIcon(
                   Icons.star_rounded,
                   size: size * 0.18,
                   color: tone.withValues(alpha: selected ? 0.95 : 0.75),
                 ),
               ),
               Center(
-                child: Icon(icon, size: size * 0.54, color: tone),
+                child: NousenNavIcon(icon, size: size * 0.54, color: tone),
               ),
             ],
           ),

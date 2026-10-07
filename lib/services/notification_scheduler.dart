@@ -349,6 +349,7 @@ class NotificationScheduler {
           channelDescription: 'Pengingat lembut saat 3 jadwal terlewat',
           importance: Importance.high,
           priority: Priority.high,
+          icon: '@drawable/ic_notification',
           color: Color(0xFFFFB300),
         ),
         iOS: DarwinNotificationDetails(),
@@ -418,6 +419,7 @@ class NotificationScheduler {
         channelDescription: 'Weekly schedule reminders',
         importance: Importance.high,
         priority: Priority.high,
+        icon: '@drawable/ic_notification',
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
             ? Int64List.fromList(<int>[0, 300, 120, 300, 120, 450])
@@ -452,6 +454,7 @@ class NotificationScheduler {
         channelDescription: 'Date and time specific reminders',
         importance: Importance.high,
         priority: Priority.high,
+        icon: '@drawable/ic_notification',
         enableVibration: _vibrationEnabled,
         vibrationPattern: _vibrationEnabled
             ? Int64List.fromList(<int>[0, 500, 150, 500, 150, 500])

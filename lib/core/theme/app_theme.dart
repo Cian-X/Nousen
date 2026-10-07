@@ -107,11 +107,13 @@ class AppTheme {
       outlineVariant: const Color(0xFFC2C6D3),
     );
 
+    const String _fontFamily = 'PatrickHand';
     const Color primaryText = Color(0xFF111827);
     const Color secondaryText = Color(0xFF6B7280);
     final TextTheme baseText = Typography.blackMountainView;
     final TextTheme textTheme = baseText.copyWith(
       headlineMedium: baseText.headlineMedium?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 28,
         fontWeight: FontWeight.w700,
         height: 1.05,
@@ -119,6 +121,7 @@ class AppTheme {
         color: primaryText,
       ),
       headlineSmall: baseText.headlineSmall?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 24,
         fontWeight: FontWeight.w700,
         height: 1.08,
@@ -126,6 +129,7 @@ class AppTheme {
         color: primaryText,
       ),
       titleLarge: baseText.titleLarge?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 21,
         fontWeight: FontWeight.w700,
         height: 1.2,
@@ -133,46 +137,54 @@ class AppTheme {
         color: primaryText,
       ),
       titleMedium: baseText.titleMedium?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 17,
         fontWeight: FontWeight.w600,
         height: 1.25,
         color: primaryText,
       ),
       titleSmall: baseText.titleSmall?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w600,
         height: 1.25,
         color: primaryText,
       ),
       bodyLarge: baseText.bodyLarge?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.4,
         color: primaryText,
       ),
       bodyMedium: baseText.bodyMedium?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.4,
         color: primaryText,
       ),
       bodySmall: baseText.bodySmall?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 13,
         fontWeight: FontWeight.w400,
         height: 1.35,
         color: secondaryText,
       ),
       labelLarge: baseText.labelLarge?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 15,
         fontWeight: FontWeight.w500,
         height: 1.2,
       ),
       labelMedium: baseText.labelMedium?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.2,
       ),
       labelSmall: baseText.labelSmall?.copyWith(
+        fontFamily: _fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.2,
@@ -182,6 +194,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'PatrickHand',
       colorScheme: colorScheme,
       extensions: const <ThemeExtension<dynamic>>[brand],
       textTheme: textTheme,

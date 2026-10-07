@@ -26,6 +26,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:liburan_create/services/notification_action.dart';
 import 'package:liburan_create/services/photo_access_service.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 void _disposeTextControllerSafely(TextEditingController controller) {
   // Delay disposal until the sheet close + keyboard detach sequence settles.
@@ -77,7 +78,7 @@ class ActivityDetailPage extends ConsumerWidget {
                             width: 1,
                           ),
                         ),
-                        icon: const Icon(
+                        icon: NousenNavIcon(
                           Icons.chevron_left_rounded,
                           size: 18,
                           color: Color(0xFF0F172A),
@@ -265,7 +266,7 @@ class ActivityDetailPage extends ConsumerWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(
+                icon: NousenNavIcon(
                   Icons.chevron_left_rounded,
                   size: 18,
                   color: Color(0xFF0F172A),
@@ -293,7 +294,7 @@ class ActivityDetailPage extends ConsumerWidget {
         actions: <Widget>[
           PopupMenuButton<String>(
             tooltip: localeCode == 'id' ? 'Opsi aktivitas' : 'Activity options',
-            icon: Icon(
+            icon: NousenNavIcon(
               Icons.more_horiz_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -476,7 +477,7 @@ class ActivityDetailPage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: <Widget>[
-                      Icon(
+                      NousenNavIcon(
                         Icons.bolt_rounded,
                         size: 16,
                         color: theme.colorScheme.primary,
@@ -635,7 +636,7 @@ class ActivityDetailPage extends ConsumerWidget {
                             color: const Color(0xFFEEF2FF),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: NousenNavIcon(
                             Icons.auto_awesome_rounded,
                             color: Color(0xFF4F46E5),
                             size: 16,
@@ -698,7 +699,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
+                              child: NousenNavIcon(
                                 Icons.bar_chart_rounded,
                                 color: Color(0xFF475569),
                                 size: 16,
@@ -731,7 +732,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            NousenNavIcon(
                               Icons.chevron_right_rounded,
                               color: Color(0xFF94A3B8),
                             ),
@@ -1475,7 +1476,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                   }
                                 });
                               },
-                        icon: const Icon(Icons.camera_alt_rounded),
+                        icon: NousenNavIcon(Icons.camera_alt_rounded),
                         label: Text(t.addPhoto),
                       ),
                       if (draftPhotoPaths.isNotEmpty) ...<Widget>[
@@ -1507,7 +1508,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                                   .colorScheme
                                                   .surfaceContainerHighest,
                                               alignment: Alignment.center,
-                                              child: const Icon(
+                                              child: NousenNavIcon(
                                                 Icons.broken_image_rounded,
                                                 size: 16,
                                               ),
@@ -1535,7 +1536,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                           shape: BoxShape.circle,
                                         ),
                                         alignment: Alignment.center,
-                                        child: const Icon(
+                                        child: NousenNavIcon(
                                           Icons.close_rounded,
                                           size: 12,
                                           color: Colors.white,
@@ -1723,7 +1724,7 @@ class ActivityDetailPage extends ConsumerWidget {
               children: <Widget>[
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.photo_camera_outlined),
+                  leading: NousenNavIcon(Icons.photo_camera_outlined),
                   title: Text(isId ? 'Ambil foto dari kamera' : 'Take photo'),
                   onTap: () => Navigator.of(
                     sheetContext,
@@ -1731,7 +1732,7 @@ class ActivityDetailPage extends ConsumerWidget {
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.photo_library_outlined),
+                  leading: NousenNavIcon(Icons.photo_library_outlined),
                   title: Text(
                     isId ? 'Pilih foto dari galeri' : 'Choose from gallery',
                   ),
@@ -2196,7 +2197,7 @@ class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
                                   height: 54,
                                   color: const Color(0xFFF1F5F9),
                                   alignment: Alignment.center,
-                                  child: const Icon(
+                                  child: NousenNavIcon(
                                     Icons.broken_image_rounded,
                                     size: 16,
                                   ),
@@ -2222,7 +2223,7 @@ class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
-                                child: const Icon(
+                                child: NousenNavIcon(
                                   Icons.close_rounded,
                                   size: 12,
                                   color: Colors.white,
@@ -2252,7 +2253,7 @@ class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
                     ),
                     child: IconButton(
                       onPressed: _pickingPhoto ? null : _pickPhoto,
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.add_photo_alternate_outlined,
                         size: 20,
                         color: Color(0xFF64748B),
@@ -2376,7 +2377,7 @@ class _ActivityComparisonPage extends StatelessWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
+                icon: NousenNavIcon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
               ),
             ),
           ),
@@ -2428,7 +2429,7 @@ class _RangeTriggerButton extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       onPressed: onPickRange,
-      icon: const Icon(
+      icon: NousenNavIcon(
         Icons.date_range_rounded,
         size: 16,
         color: Color(0xFF2563EB),
@@ -2484,7 +2485,7 @@ class _RangeActiveChip extends StatelessWidget {
           GestureDetector(
             onTap: onClearRange,
             behavior: HitTestBehavior.opaque,
-            child: const Icon(
+            child: NousenNavIcon(
               Icons.close_rounded,
               size: 16,
               color: Color(0xFF1D4ED8),
@@ -2681,7 +2682,7 @@ class _WeekNavButton extends StatelessWidget {
       child: IconButton(
         onPressed: enabled ? onTap : null,
         padding: EdgeInsets.zero,
-        icon: Icon(
+        icon: NousenNavIcon(
           icon,
           size: 20,
           color: enabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1),
@@ -3060,7 +3061,7 @@ class _ComparisonTimelineSectionState
                           });
                         }
                       : null,
-                  icon: const Icon(Icons.chevron_left_rounded),
+                  icon: NousenNavIcon(Icons.chevron_left_rounded),
                   visualDensity: VisualDensity.compact,
                 ),
                 Expanded(
@@ -3079,7 +3080,7 @@ class _ComparisonTimelineSectionState
                           });
                         }
                       : null,
-                  icon: const Icon(Icons.chevron_right_rounded),
+                  icon: NousenNavIcon(Icons.chevron_right_rounded),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -3146,7 +3147,7 @@ class _ComparisonTimelineSectionState
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const SizedBox(height: 4),
-                Icon(
+                NousenNavIcon(
                   activityStatusIcon(status),
                   size: 14,
                   color: statusDotColor,
@@ -3209,7 +3210,7 @@ class _ComparisonTimelineSectionState
                         tooltip: widget.localeCode == 'id'
                             ? 'Opsi log'
                             : 'Log options',
-                        icon: Icon(
+                        icon: NousenNavIcon(
                           Icons.more_horiz_rounded,
                           color: localTheme.colorScheme.onSurface.withValues(
                             alpha: 0.72,
@@ -3646,7 +3647,7 @@ class _TimelineEntryPhotoPreviewState
                       return Container(
                         color: Colors.grey.shade200,
                         child: const Center(
-                          child: Icon(Icons.broken_image_rounded),
+                          child: NousenNavIcon(Icons.broken_image_rounded),
                         ),
                       );
                     },
@@ -3771,7 +3772,7 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -3789,7 +3790,7 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
             IconButton(
               tooltip: t.comparisonPhotoDialogTitle,
               onPressed: _openCompareFromCurrent,
-              icon: const Icon(Icons.compare_arrows_rounded),
+              icon: NousenNavIcon(Icons.compare_arrows_rounded),
             ),
         ],
       ),
@@ -3876,7 +3877,7 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
                   if (canCompareAcrossDate)
                     FilledButton.tonalIcon(
                       onPressed: _openCompareFromCurrent,
-                      icon: const Icon(Icons.compare_arrows_rounded),
+                      icon: NousenNavIcon(Icons.compare_arrows_rounded),
                       label: Text(t.comparisonPhotoDialogTitle),
                     ),
                 ],
@@ -3944,7 +3945,7 @@ class _PhotoGalleryViewerPageState extends State<_PhotoGalleryViewerPage> {
                             path: firstFile,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.broken_image_rounded),
+                                NousenNavIcon(Icons.broken_image_rounded),
                           ),
                         ),
                       ),
@@ -4030,7 +4031,7 @@ class _PhotoCompareViewerPage extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -4760,7 +4761,7 @@ class _ActivityAiInsightSectionState
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Icon(
+                NousenNavIcon(
                   Icons.trending_up_rounded,
                   size: 14,
                   color: Color(0xFF2563EB),
@@ -4825,7 +4826,7 @@ class _ActivityAiInsightSectionState
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
-                        child: const Icon(
+                        child: NousenNavIcon(
                           Icons.schedule_rounded,
                           size: 16,
                           color: Color(0xFFD97706),
@@ -4885,7 +4886,7 @@ class _ActivityAiInsightSectionState
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: NousenNavIcon(
                         Icons.wb_sunny_rounded,
                         size: 16,
                         color: Color(0xFF2563EB),
@@ -4961,7 +4962,7 @@ class _ActivityAiInsightSectionState
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            const Icon(
+                            NousenNavIcon(
                               Icons.trending_up_rounded,
                               size: 13,
                               color: Color(0xFF059669),
@@ -5003,7 +5004,7 @@ class _ActivityAiInsightSectionState
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(
+                  child: NousenNavIcon(
                     Icons.calendar_month_rounded,
                     size: 16,
                     color: Color(0xFF64748B),
@@ -5093,7 +5094,7 @@ class _ActivityAiInsightSectionState
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: NousenNavIcon(
                         Icons.lightbulb_rounded,
                         size: 14,
                         color: Color(0xFF2563EB),
@@ -5146,7 +5147,7 @@ class _ActivityAiInsightSectionState
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: NousenNavIcon(
                         Icons.warning_amber_rounded,
                         size: 14,
                         color: Color(0xFFD97706),
@@ -5221,7 +5222,7 @@ class _ActivityAiInsightSectionState
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(
+                        NousenNavIcon(
                           Icons.arrow_forward_rounded,
                           size: 18,
                           color: Colors.white,

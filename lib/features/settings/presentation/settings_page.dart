@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
 import 'package:liburan_create/core/utils/time_utils.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
@@ -75,7 +76,7 @@ class SettingsPage extends ConsumerWidget {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -490,7 +491,7 @@ class _SettingsActionItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
             children: <Widget>[
-              Icon(icon, size: 18, color: leadingColor),
+              NousenNavIcon(icon!, size: 18, color: leadingColor),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -554,7 +555,7 @@ class _SettingsSwitchItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: <Widget>[
-            Icon(
+            NousenNavIcon(
               icon,
               size: 18,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
@@ -597,7 +598,7 @@ class _SettingsInfoItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         children: <Widget>[
-          Icon(
+          NousenNavIcon(
             icon,
             size: 18,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
@@ -640,8 +641,9 @@ class _LanguageOptionTile extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
+      leading: NousenNavIcon(
         selected ? Icons.check_rounded : Icons.language_rounded,
+        size: 24,
         color: selected
             ? theme.colorScheme.primary
             : theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -657,7 +659,7 @@ class _Chevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
+    return NousenNavIcon(
       Icons.chevron_right_rounded,
       size: 18,
       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.42),
@@ -764,7 +766,7 @@ class UserInfoPage extends ConsumerWidget {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -955,7 +957,7 @@ class _WeeklyRoutinePage extends ConsumerWidget {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -1067,7 +1069,7 @@ class _RoutineDayTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
             children: <Widget>[
-              Icon(
+              NousenNavIcon(
                 _routineKindIcon(profile.kind),
                 size: 18,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
@@ -1293,7 +1295,7 @@ class _RoutineTimeRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: <Widget>[
-              Icon(
+              NousenNavIcon(
                 Icons.schedule_rounded,
                 size: 18,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
@@ -1322,7 +1324,7 @@ class _RoutineTimeRow extends StatelessWidget {
               if (onClear != null)
                 IconButton(
                   onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded, size: 18),
+                  icon: NousenNavIcon(Icons.close_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface),
                   visualDensity: VisualDensity.compact,
                 ),
               const _Chevron(),

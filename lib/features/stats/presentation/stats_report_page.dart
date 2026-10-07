@@ -6,6 +6,7 @@ import 'package:liburan_create/core/utils/date_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 enum _DayIntensity { high, medium, rest }
 
@@ -157,7 +158,7 @@ class StatsReportPage extends ConsumerWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
+                icon: NousenNavIcon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
               ),
             ),
           ),
@@ -380,7 +381,7 @@ class StatsReportPage extends ConsumerWidget {
           const SizedBox(height: 20),
           Row(
             children: <Widget>[
-              const Icon(
+              NousenNavIcon(
                 Icons.insights_rounded,
                 size: 18,
                 color: Color(0xFF2563EB),
@@ -515,7 +516,7 @@ class _MatrixMetricPill extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 16, color: iconColor),
+            child: NousenNavIcon(icon, size: 16, color: iconColor),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -595,7 +596,7 @@ class _MatrixEvalCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 16, color: iconColor),
+            child: NousenNavIcon(icon, size: 16, color: iconColor),
           ),
           const SizedBox(width: 12),
           Expanded(

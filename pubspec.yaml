@@ -55,7 +55,6 @@ dependencies:
   flutter_onnxruntime: ^1.7.0
   flutter_overlay_window:
     path: packages/flutter_overlay_window
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -83,6 +82,7 @@ flutter:
 
   assets:
     - assets/ai/activity_profiles.json
+    - assets/branding/nousen_logo.png
     # Kept out of release bundle to optimize app size and startup performance:
     # - assets/ai/catalog_activities.json
     # - assets/ai/progress_entries.json (40MB synthetic data)
@@ -111,5 +111,10 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+  fonts:
+    - family: PatrickHand
+      fonts:
+        - asset: assets/fonts/PatrickHand-Regular.ttf
+          weight: 400
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

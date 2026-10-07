@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class PopUpAssistBubbleApp extends StatefulWidget {
   const PopUpAssistBubbleApp({super.key});
@@ -626,10 +627,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         child: Stack(
           alignment: Alignment.center,
           children: <Widget>[
-            Icon(
-              Icons.smart_toy_rounded,
-              color: Colors.white,
-              size: 26,
+            Image.asset(
+              'assets/branding/nousen_logo.png',
+              width: 32,
+              height: 32,
+              fit: BoxFit.contain,
             ),
             if (_streak > 0)
               Positioned(
@@ -651,7 +653,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Icon(
+                      NousenNavIcon(
                         Icons.local_fire_department,
                         color: Colors.white,
                         size: 8,
@@ -678,7 +680,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                     color: const Color(0xFF1A5BAD),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: NousenNavIcon(
                     Icons.check,
                     color: Colors.white,
                     size: 9,
@@ -695,7 +697,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                     color: const Color(0xFF64748B),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: NousenNavIcon(
                     Icons.fast_forward,
                     color: Colors.white,
                     size: 9,
@@ -785,10 +787,11 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(12)),
                                       ),
-                                      child: const Icon(
-                                        Icons.smart_toy_rounded,
-                                        color: Colors.white,
-                                        size: 20,
+                                      child: Image.asset(
+                                        'assets/branding/nousen_logo.png',
+                                        width: 28,
+                                        height: 28,
+                                        fit: BoxFit.contain,
                                       ),
                                     ),
                                     Positioned(
@@ -875,7 +878,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: <Widget>[
-                                        const Icon(
+                                        NousenNavIcon(
                                           Icons.local_fire_department,
                                           color: Color(0xFFEA580C),
                                           size: 12,
@@ -901,7 +904,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                       color: Color(0xFFF1F5F9),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: NousenNavIcon(
                                       Icons.close_rounded,
                                       size: 18,
                                       color: Color(0xFF64748B),
@@ -937,7 +940,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            const Icon(
+                                            NousenNavIcon(
                                               Icons.auto_awesome_rounded,
                                               color: Color(0xFF2563EB),
                                               size: 20,
@@ -1059,7 +1062,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                                 .w600,
                                                       ),
                                                     ),
-                                                    Icon(
+                                                    NousenNavIcon(
                                                       Icons
                                                           .chevron_right_rounded,
                                                       size: 15,
@@ -1205,7 +1208,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                             ),
                                                           ),
                                                           child: isChecked
-                                                              ? const Icon(
+                                                              ? NousenNavIcon(
                                                                   Icons.check_rounded,
                                                                   size: 14,
                                                                   color: Colors
@@ -1300,7 +1303,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                           color: Color(0xFFCBD5E1)),
                                     ),
                                     onPressed: _handleReopen,
-                                    icon: const Icon(
+                                    icon: NousenNavIcon(
                                       Icons.undo_rounded,
                                       size: 16,
                                       color: Color(0xFF64748B),
@@ -1386,7 +1389,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                     ),
                                   ),
                                   onPressed: _handleOpenActivity,
-                                  icon: const Icon(
+                                  icon: NousenNavIcon(
                                       Icons.open_in_new_rounded,
                                       size: 16),
                                   label: const Text(

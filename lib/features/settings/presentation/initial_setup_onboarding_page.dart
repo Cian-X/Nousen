@@ -8,6 +8,7 @@ import 'package:liburan_create/core/utils/time_utils.dart';
 import 'package:liburan_create/features/home/presentation/home_shell_page.dart';
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class InitialSetupOnboardingPage extends ConsumerStatefulWidget {
   const InitialSetupOnboardingPage({
@@ -1147,7 +1148,7 @@ class _OnboardingTimeRow extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: NousenNavIcon(
                   Icons.access_time_rounded,
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
@@ -1174,7 +1175,7 @@ class _OnboardingTimeRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              NousenNavIcon(
                 Icons.chevron_right_rounded,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1262,7 +1263,7 @@ class _OnboardingActions extends StatelessWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(
+                icon: NousenNavIcon(
                   Icons.chevron_left_rounded,
                   color: Color(0xFF0F172A),
                   size: 18,
@@ -1290,7 +1291,7 @@ class _OnboardingActions extends StatelessWidget {
                   Text(isLast ? finishLabel : nextLabel),
                   if (!isLast) ...<Widget>[
                     const SizedBox(width: 6),
-                    const Icon(Icons.arrow_forward_rounded, size: 18),
+                    NousenNavIcon(Icons.arrow_forward_rounded, size: 18),
                   ],
                 ],
               ),

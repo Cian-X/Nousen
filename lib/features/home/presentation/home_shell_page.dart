@@ -16,6 +16,7 @@ import 'package:liburan_create/core/utils/time_utils.dart';
 import 'package:liburan_create/core/utils/weekday_utils.dart';
 import 'package:liburan_create/core/widgets/checklist_confirm_dialog.dart';
 import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
 import 'package:liburan_create/features/activity/presentation/activity_status_visuals.dart';
 import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
@@ -495,7 +496,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 8,
-          child: const Icon(Icons.add, size: 28),
+          child: NousenNavIcon(Icons.add, size: 28),
         ),
         bottomNavigationBar: NousenBottomNavBar(
           tabs: <NousenNavTab>[
@@ -820,10 +821,10 @@ class _HeroReactionMascot extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: <Widget>[
-            Icon(Icons.face_rounded, size: 35, color: color),
+            NousenNavIcon(Icons.face_rounded, size: 35, color: color),
             Positioned(
               bottom: 6,
-              child: Icon(
+              child: NousenNavIcon(
                 isHappy
                     ? Icons.sentiment_very_satisfied_rounded
                     : isEncouraging
@@ -1286,7 +1287,7 @@ class _HomeTopContent extends StatelessWidget {
                         ),
                         if (currentStreak > 0) ...<Widget>[
                           const SizedBox(width: 8),
-                          Icon(
+                          NousenNavIcon(
                             Icons.local_fire_department_rounded,
                             size: 16,
                             color: theme
@@ -1347,38 +1348,6 @@ class _HomeTopContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: sidePadding + 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  localeCode == 'id'
-                      ? 'AKTIVITAS TERJADWAL'
-                      : 'SCHEDULED ACTIVITIES',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Center(
-                    child: Icon(
-                      Icons.filter_list_rounded,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.6,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 12),
         ],
       ],
@@ -1694,7 +1663,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(4),
-                            child: Icon(
+                            child: NousenNavIcon(
                               isExpanded
                                   ? Icons.expand_less_rounded
                                   : Icons.expand_more_rounded,
@@ -1721,7 +1690,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                             : null,
                         child: Padding(
                           padding: const EdgeInsets.all(4),
-                          child: Icon(
+                          child: NousenNavIcon(
                             entry?.isCompleted == true
                                 ? Icons.check_circle_rounded
                                 : Icons.radio_button_unchecked_rounded,
@@ -1898,7 +1867,7 @@ class _EmptyActivitiesPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              icon: const Icon(Icons.add, size: 20),
+              icon: NousenNavIcon(Icons.add, size: 20),
               label: Text(
                 localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
                 style: const TextStyle(fontWeight: FontWeight.w700),

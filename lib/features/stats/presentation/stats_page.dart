@@ -11,6 +11,7 @@ import 'package:liburan_create/features/activity/domain/activity_model.dart';
 import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -112,7 +113,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -579,7 +580,7 @@ class StatsReactionMascot extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: color, size: 28),
+      child: NousenNavIcon(icon, color: color, size: 28),
     );
   }
 }
@@ -676,7 +677,7 @@ class StatsHeroSection extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Icon(
+                      NousenNavIcon(
                         trendUp
                             ? Icons.trending_up_rounded
                             : Icons.trending_down_rounded,
@@ -889,7 +890,7 @@ class _HeroMiniStat extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, size: 14, color: iconColor),
+              NousenNavIcon(icon, size: 14, color: iconColor),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -1088,7 +1089,7 @@ class _CategoryDistributionSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Icon(
+                  NousenNavIcon(
                     Icons.lightbulb_rounded,
                     size: 16,
                     color: Color(0xFF2563EB),
@@ -1161,7 +1162,7 @@ class _MatrixEntrySection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: NousenNavIcon(
                   Icons.grid_view_rounded,
                   size: 16,
                   color: Color(0xFF2563EB),
@@ -1204,7 +1205,7 @@ class _MatrixEntrySection extends StatelessWidget {
             ),
             child: Row(
               children: <Widget>[
-                const Icon(
+                NousenNavIcon(
                   Icons.insights_rounded,
                   size: 16,
                   color: Color(0xFF10B981),

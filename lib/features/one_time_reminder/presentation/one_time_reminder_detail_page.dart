@@ -13,6 +13,7 @@ import 'package:liburan_create/features/one_time_reminder/domain/one_time_remind
 import 'package:liburan_create/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 import 'package:liburan_create/services/photo_access_service.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class OneTimeReminderDetailPage extends ConsumerWidget {
   const OneTimeReminderDetailPage({super.key, required this.args});
@@ -57,7 +58,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                             width: 1,
                           ),
                         ),
-                        icon: const Icon(
+                        icon: NousenNavIcon(
                           Icons.chevron_left_rounded,
                           size: 18,
                           color: Color(0xFF0F172A),
@@ -120,7 +121,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(
+                icon: NousenNavIcon(
                   Icons.chevron_left_rounded,
                   size: 18,
                   color: Color(0xFF0F172A),
@@ -148,7 +149,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
         actions: <Widget>[
           PopupMenuButton<String>(
             tooltip: isId ? 'Opsi jadwal' : 'Schedule options',
-            icon: Icon(
+            icon: NousenNavIcon(
               Icons.more_horiz_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -316,7 +317,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: <Widget>[
-                      Icon(
+                      NousenNavIcon(
                         Icons.bolt_rounded,
                         size: 16,
                         color: theme.colorScheme.primary,
@@ -601,7 +602,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
+                              child: NousenNavIcon(
                                 Icons.bar_chart_rounded,
                                 color: Color(0xFF475569),
                                 size: 16,
@@ -638,7 +639,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            NousenNavIcon(
                               Icons.chevron_right_rounded,
                               color: Color(0xFF94A3B8),
                             ),
@@ -703,13 +704,13 @@ Future<List<String>> _pickAgendaPhotoPaths({
             children: <Widget>[
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.photo_camera_outlined),
+                leading: NousenNavIcon(Icons.photo_camera_outlined),
                 title: const Text('Ambil foto dari kamera'),
                 onTap: () => Navigator.of(sheetContext).pop(true),
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.photo_library_outlined),
+                leading: NousenNavIcon(Icons.photo_library_outlined),
                 title: const Text('Pilih foto dari galeri'),
                 onTap: () => Navigator.of(sheetContext).pop(false),
               ),
@@ -934,7 +935,7 @@ class _AgendaNoteComposerState extends ConsumerState<_AgendaNoteComposer> {
                                   height: 54,
                                   color: const Color(0xFFF1F5F9),
                                   alignment: Alignment.center,
-                                  child: const Icon(
+                                  child: NousenNavIcon(
                                     Icons.broken_image_rounded,
                                     size: 16,
                                   ),
@@ -960,7 +961,7 @@ class _AgendaNoteComposerState extends ConsumerState<_AgendaNoteComposer> {
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
-                                child: const Icon(
+                                child: NousenNavIcon(
                                   Icons.close_rounded,
                                   size: 12,
                                   color: Colors.white,
@@ -990,7 +991,7 @@ class _AgendaNoteComposerState extends ConsumerState<_AgendaNoteComposer> {
                     ),
                     child: IconButton(
                       onPressed: _pickingPhoto ? null : _pickPhoto,
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.add_photo_alternate_outlined,
                         size: 20,
                         color: Color(0xFF64748B),
@@ -1071,7 +1072,7 @@ class _AgendaTimelinePage extends StatelessWidget {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
+                icon: NousenNavIcon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF0F172A)),
               ),
             ),
           ),
@@ -1203,7 +1204,7 @@ class _AgendaTimelineMilestoneRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const SizedBox(height: 4),
-                Icon(
+                NousenNavIcon(
                   done
                       ? Icons.check_circle_rounded
                       : Icons.radio_button_unchecked_rounded,
@@ -1280,7 +1281,7 @@ class _AgendaNoteCard extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const SizedBox(height: 4),
-                const Icon(
+                NousenNavIcon(
                   Icons.sticky_note_2_rounded,
                   size: 14,
                   color: Color(0xFF1A5BAD),
@@ -1321,7 +1322,7 @@ class _AgendaNoteCard extends ConsumerWidget {
                     ),
                     PopupMenuButton<String>(
                       tooltip: isId ? 'Opsi log' : 'Log options',
-                      icon: const Icon(Icons.more_horiz_rounded),
+                      icon: NousenNavIcon(Icons.more_horiz_rounded),
                       onSelected: (String action) async {
                         if (action == 'edit') {
                           await _showEditAgendaNoteDialog(
@@ -1406,7 +1407,7 @@ class _AgendaNoteCard extends ConsumerWidget {
                                 height: 120,
                                 color: const Color(0xFFF1F5F9),
                                 alignment: Alignment.center,
-                                child: const Icon(
+                                child: NousenNavIcon(
                                   Icons.broken_image_rounded,
                                   size: 24,
                                 ),
@@ -1524,7 +1525,7 @@ Future<void> _showEditAgendaNoteDialog({
                                           height: 64,
                                           color: const Color(0xFFF1F5F9),
                                           alignment: Alignment.center,
-                                          child: const Icon(
+                                          child: NousenNavIcon(
                                             Icons.broken_image_rounded,
                                             size: 16,
                                           ),
@@ -1549,7 +1550,7 @@ Future<void> _showEditAgendaNoteDialog({
                                       shape: BoxShape.circle,
                                     ),
                                     alignment: Alignment.center,
-                                    child: const Icon(
+                                    child: NousenNavIcon(
                                       Icons.close_rounded,
                                       size: 12,
                                       color: Colors.white,
@@ -1564,7 +1565,7 @@ Future<void> _showEditAgendaNoteDialog({
                     ),
                   TextButton.icon(
                     onPressed: () => pickPhotos(setSheetState),
-                    icon: const Icon(
+                    icon: NousenNavIcon(
                       Icons.add_photo_alternate_outlined,
                       size: 18,
                     ),

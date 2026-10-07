@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class CartoonAppBarActionButton extends StatelessWidget {
   const CartoonAppBarActionButton({
@@ -72,7 +73,7 @@ class CartoonAppBarActionButton extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Center(child: Icon(icon, size: 19, color: accent)),
+                  Center(child: NousenNavIcon(icon, size: 19, color: accent)),
                 ],
               ),
             ),
@@ -154,7 +155,7 @@ class CartoonMiniActionButton extends StatelessWidget {
                   ),
                 ),
                 Center(
-                  child: Icon(icon, size: iconSize, color: accent),
+                  child: NousenNavIcon(icon, size: iconSize, color: accent),
                 ),
               ],
             ),

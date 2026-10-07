@@ -10,6 +10,7 @@ import 'package:liburan_create/features/one_time_reminder/domain/agenda_visual_s
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:liburan_create/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 import 'package:liburan_create/features/settings/presentation/settings_page.dart';
 
 class ScheduleAgendaPage extends ConsumerStatefulWidget {
@@ -161,7 +162,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
         elevation: 8,
         tooltip: isId ? 'Buat Jadwal' : 'Create schedule',
         onPressed: () => _openForm(initialDate: _selectedDate),
-        child: const Icon(Icons.add, size: 28),
+        child: NousenNavIcon(Icons.add, size: 28),
       ),
       bottomNavigationBar: NousenBottomNavBar(
         tabs: <NousenNavTab>[
@@ -232,7 +233,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const Icon(
+                    NousenNavIcon(
                       Icons.calendar_month_rounded,
                       size: 18,
                       color: Color(0xFF1D4ED8),
@@ -282,7 +283,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       splashRadius: 18,
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 20,
                         color: Color(0xFF64748B),
@@ -292,7 +293,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       splashRadius: 18,
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_right_rounded,
                         size: 20,
                         color: Color(0xFF64748B),
@@ -472,7 +473,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                   shownFlat,
                   _dateOverride ?? today,
                 ),
-                icon: const Icon(Icons.description_outlined, size: 19),
+                icon: NousenNavIcon(Icons.description_outlined, size: 19),
                 label: Text(
                   isId ? 'Detail Jadwal' : 'Schedule details',
                   style: const TextStyle(
@@ -590,7 +591,7 @@ class _EmptySchedulePanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                icon: const Icon(Icons.add, size: 20),
+                icon: NousenNavIcon(Icons.add, size: 20),
                 label: Text(
                   isId ? 'Tambah jadwal' : 'Add schedule',
                   style: const TextStyle(fontWeight: FontWeight.w700),
@@ -1061,7 +1062,7 @@ class _AgendaCardState extends ConsumerState<_AgendaCard> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(4),
-                      child: Icon(
+                      child: NousenNavIcon(
                         _expanded
                             ? Icons.expand_less_rounded
                             : Icons.expand_more_rounded,
@@ -1083,7 +1084,7 @@ class _AgendaCardState extends ConsumerState<_AgendaCard> {
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(4),
-                    child: Icon(
+                    child: NousenNavIcon(
                       item.isCompleted
                           ? Icons.check_circle_rounded
                           : Icons.radio_button_unchecked_rounded,
@@ -1334,7 +1335,7 @@ class ScheduleDayPage extends ConsumerWidget {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),

@@ -9,6 +9,7 @@ import 'package:liburan_create/services/gemini_activity_service.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class ScheduleFormArgs {
   const ScheduleFormArgs({this.reminder, this.initialDate});
@@ -313,7 +314,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
                           width: 1,
                         ),
                       ),
-                      icon: const Icon(
+                      icon: NousenNavIcon(
                         Icons.chevron_left_rounded,
                         size: 18,
                         color: Color(0xFF0F172A),
@@ -526,7 +527,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 20),
+                icon: NousenNavIcon(Icons.add_rounded, size: 20),
                 label: Text(
                   isId ? 'Tambah' : 'Add',
                   style: const TextStyle(fontWeight: FontWeight.w600),
@@ -718,7 +719,7 @@ class _AgendaAiSuggestionCard extends StatelessWidget {
               ],
               GestureDetector(
                 onTap: onDismiss,
-                child: Icon(
+                child: NousenNavIcon(
                   Icons.close_rounded,
                   size: 18,
                   color: theme.colorScheme.onSurfaceVariant.withValues(
@@ -864,7 +865,7 @@ class _AgendaInlineItem extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              Icon(
+              NousenNavIcon(
                 icon,
                 size: 18,
                 color: const Color(0xFF64748B),
@@ -925,7 +926,7 @@ class _TitleFieldGeminiButton extends StatelessWidget {
                 ),
               )
             else
-              Icon(
+              NousenNavIcon(
                 Icons.auto_awesome_rounded,
                 size: 14,
                 color: theme.colorScheme.primary,

@@ -18,6 +18,7 @@ import 'package:liburan_create/features/settings/domain/app_settings_model.dart'
 import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 
 class CreateActivityPage extends ConsumerStatefulWidget {
   const CreateActivityPage({super.key, this.args});
@@ -626,7 +627,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                                                   );
                                                 },
                                             child: selected
-                                                ? Icon(
+                                                ? NousenNavIcon(
                                                     Icons.check_rounded,
                                                     key: const ValueKey<String>(
                                                       'selected',
@@ -1084,7 +1085,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                   shape: const CircleBorder(),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                icon: const Icon(
+                icon: NousenNavIcon(
                   Icons.chevron_left_rounded,
                   size: 18,
                   color: Color(0xFF0F172A),
@@ -1362,7 +1363,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          icon: const Icon(Icons.add_rounded, size: 20),
+                          icon: NousenNavIcon(Icons.add_rounded, size: 20),
                           label: Text(
                             localeCode == 'id' ? 'Tambah' : 'Add',
                             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -1453,7 +1454,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                                       color: const Color(0xFFF8FAFC),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Icon(
+                                    child: NousenNavIcon(
                                       Icons.notifications_rounded,
                                       color: Color(0xFF475569),
                                       size: 18,
@@ -1517,7 +1518,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                                             color: const Color(0xFF475569),
                                           ),
                                     ),
-                                    const Icon(
+                                    NousenNavIcon(
                                       Icons.expand_more_rounded,
                                       size: 16,
                                       color: Color(0xFF64748B),
@@ -1723,7 +1724,7 @@ class _SmartActivitySuggestionCard extends StatelessWidget {
               ],
               GestureDetector(
                 onTap: onDismiss,
-                child: Icon(
+                child: NousenNavIcon(
                   Icons.close_rounded,
                   size: 18,
                   color: theme.colorScheme.onSurfaceVariant.withValues(
@@ -1904,7 +1905,7 @@ class _SuggestionApplyOptionTile extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              Icon(
+              NousenNavIcon(
                 icon,
                 color: theme.colorScheme.primary.withValues(alpha: 0.8),
                 size: 22,
@@ -1919,7 +1920,7 @@ class _SuggestionApplyOptionTile extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
+              NousenNavIcon(
                 Icons.chevron_right_rounded,
                 size: 20,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
@@ -2129,7 +2130,7 @@ class _TitleFieldGeminiButton extends StatelessWidget {
                 ),
               )
             else
-              Icon(
+              NousenNavIcon(
                 Icons.auto_awesome_rounded,
                 size: 14,
                 color: theme.colorScheme.primary,
@@ -2389,7 +2390,7 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
                 ),
                 child: Center(
                   child: val == 0
-                      ? Icon(
+                      ? NousenNavIcon(
                           selected
                               ? Icons.check_rounded
                               : Icons.done_all_rounded,
@@ -2401,7 +2402,7 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
                                 ),
                         )
                       : selected
-                      ? const Icon(
+                      ? NousenNavIcon(
                           Icons.check_rounded,
                           color: Colors.white,
                           size: 20,
@@ -2453,7 +2454,7 @@ class _ScheduleInlineItem extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              Icon(icon, size: 18, color: const Color(0xFF64748B)),
+              NousenNavIcon(icon, size: 18, color: const Color(0xFF64748B)),
               const SizedBox(width: 12),
               Text(
                 value,
