@@ -19,7 +19,7 @@ class HabitBrandPalette extends ThemeExtension<HabitBrandPalette> {
 
   static const HabitBrandPalette fallback = HabitBrandPalette(
     primaryAction: Color(0xFF3B7BD6),
-    completed: Color(0xFF1A5BAD),
+    completed: Color(0xFF3B7BD6),
     pending: Color(0xFFF59E0B),
     missed: Color(0xFFD97706),
     inactive: Color(0xFF6B7280),
@@ -70,8 +70,8 @@ extension HabitSemanticContext on BuildContext {
 class AppTheme {
   static ThemeData light() {
     const HabitBrandPalette brand = HabitBrandPalette(
-      primaryAction: Color(0xFF1A5BAD),
-      completed: Color(0xFF1A5BAD),
+      primaryAction: Color(0xFF3B7BD6),
+      completed: Color(0xFF3B7BD6),
       pending: Color(0xFFF59E0B),
       missed: Color(0xFFBA1A1A),
       inactive: Color(0xFF585F6A),

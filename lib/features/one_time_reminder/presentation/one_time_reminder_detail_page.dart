@@ -904,7 +904,7 @@ class _AgendaNoteComposerState extends ConsumerState<_AgendaNoteComposer> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF2563EB),
+                      color: Color(0xFF3B7BD6),
                       width: 1.5,
                     ),
                   ),
@@ -1000,7 +1000,7 @@ class _AgendaNoteComposerState extends ConsumerState<_AgendaNoteComposer> {
                   ),
                   FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: const Color(0xFF3B7BD6),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -1146,7 +1146,7 @@ class _AgendaTimelineSection extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
               ),
             ),
           ],
@@ -1210,7 +1210,7 @@ class _AgendaTimelineMilestoneRow extends StatelessWidget {
                       : Icons.radio_button_unchecked_rounded,
                   size: 14,
                   color: done
-                      ? const Color(0xFF1A5BAD)
+                      ? const Color(0xFF3B7BD6)
                       : const Color(0xFF94A3B8),
                 ),
                 if (showConnector)
@@ -1284,7 +1284,7 @@ class _AgendaNoteCard extends ConsumerWidget {
                 NousenNavIcon(
                   Icons.sticky_note_2_rounded,
                   size: 14,
-                  color: Color(0xFF1A5BAD),
+                  color: Color(0xFF3B7BD6),
                 ),
                 if (showConnector)
                   Container(

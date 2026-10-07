@@ -197,7 +197,7 @@ class StatsReportPage extends ConsumerWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.05,
-                              color: Color(0xFF2563EB),
+                              color: Color(0xFF3B7BD6),
                             ),
                           ),
                           SizedBox(height: 2),
@@ -293,11 +293,11 @@ class StatsReportPage extends ConsumerWidget {
                           final Color fg;
                           switch (cell.intensity) {
                             case _DayIntensity.high:
-                              bg = const Color(0xFF2563EB);
+                              bg = const Color(0xFF3B7BD6);
                               fg = Colors.white;
                             case _DayIntensity.medium:
                               bg = const Color(0xFF93C5FD);
-                              fg = const Color(0xFF1E3A8A);
+                              fg = const Color(0xFF3B7BD6);
                             case _DayIntensity.rest:
                               bg = const Color(0xFFE2E8F0);
                               fg = const Color(0xFF94A3B8);
@@ -342,7 +342,7 @@ class StatsReportPage extends ConsumerWidget {
                           ),
                           const SizedBox(width: 12),
                           _LegendDot(
-                            color: const Color(0xFF2563EB),
+                            color: const Color(0xFF3B7BD6),
                             label: isId ? 'Tinggi' : 'High',
                           ),
                         ],
@@ -356,7 +356,7 @@ class StatsReportPage extends ConsumerWidget {
                     Expanded(
                       child: _MatrixMetricPill(
                         icon: Icons.check_circle_rounded,
-                        iconColor: const Color(0xFF2563EB),
+                        iconColor: const Color(0xFF3B7BD6),
                         title: '$activeDays ${isId ? 'Hari' : 'days'}'
                             ' ($activePercent%)',
                         subtitle: isId ? 'Konsisten Aktif' : 'Actively consistent',
@@ -384,7 +384,7 @@ class StatsReportPage extends ConsumerWidget {
               NousenNavIcon(
                 Icons.insights_rounded,
                 size: 18,
-                color: Color(0xFF2563EB),
+                color: Color(0xFF3B7BD6),
               ),
               const SizedBox(width: 8),
               Expanded(

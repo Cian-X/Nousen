@@ -788,7 +788,7 @@ class StatsHeroSection extends StatelessWidget {
               Expanded(
                 child: _HeroMiniStat(
                   icon: Icons.assignment_rounded,
-                  iconColor: const Color(0xFF2563EB),
+                  iconColor: const Color(0xFF3B7BD6),
                   label: isId ? 'Aktivitas' : 'Activities',
                   value: '$activeCount',
                   sub: isId ? 'Terdaftar aktif' : 'Active',
@@ -798,7 +798,7 @@ class StatsHeroSection extends StatelessWidget {
               Expanded(
                 child: _HeroMiniStat(
                   icon: Icons.check_circle_rounded,
-                  iconColor: const Color(0xFF1A5BAD),
+                  iconColor: const Color(0xFF3B7BD6),
                   label: isId ? 'Selesai' : 'Done',
                   value: '$totalCompleted',
                   sub: isId ? 'Sesi tuntas' : 'Sessions',
@@ -808,7 +808,7 @@ class StatsHeroSection extends StatelessWidget {
               Expanded(
                 child: _HeroMiniStat(
                   icon: Icons.calendar_month_rounded,
-                  iconColor: const Color(0xFF6366F1),
+                  iconColor: const Color(0xFF3B7BD6),
                   label: isId ? 'Terjadwal' : 'Scheduled',
                   value: '$totalScheduled',
                   sub: isId ? 'Slot sesi' : 'Slots',
@@ -1092,7 +1092,7 @@ class _CategoryDistributionSection extends StatelessWidget {
                   NousenNavIcon(
                     Icons.lightbulb_rounded,
                     size: 16,
-                    color: Color(0xFF2563EB),
+                    color: Color(0xFF3B7BD6),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1103,7 +1103,7 @@ class _CategoryDistributionSection extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.5,
-                        color: Color(0xFF1E3A8A),
+                        color: Color(0xFF3B7BD6),
                       ),
                     ),
                   ),
@@ -1165,7 +1165,7 @@ class _MatrixEntrySection extends StatelessWidget {
                 child: NousenNavIcon(
                   Icons.grid_view_rounded,
                   size: 16,
-                  color: Color(0xFF2563EB),
+                  color: Color(0xFF3B7BD6),
                 ),
               ),
               const SizedBox(width: 10),

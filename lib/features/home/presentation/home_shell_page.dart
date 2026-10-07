@@ -75,6 +75,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
             : Map<String, dynamic>.from(event as Map);
         final String? type = data['type']?.toString();
         final String? activityId = data['activityId']?.toString();
+        debugPrint('[popup-sync] received ${type ?? 'unknown'}');
 
         if (type == 'request_sync') {
           _lastSyncedSignature = ''; // Force fresh sync
@@ -84,29 +85,32 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
         if (activityId == null || activityId.isEmpty) return;
 
-        final List<ActivityModel> activities =
-            ref.read(activitiesStreamProvider).value ?? const <ActivityModel>[];
-        ActivityModel? activity;
-        for (final ActivityModel a in activities) {
-          if (a.id == activityId) {
-            activity = a;
-            break;
-          }
+        // Baca langsung dari repository: cache stream bisa kosong saat app
+        // di background, sehingga lookup lama membuang event popup.
+        debugPrint('[popup-sync] event=$type activity=$activityId');
+        final ActivityModel? activity = await ref
+            .read(activityRepositoryProvider)
+            .getById(activityId);
+        if (activity == null) {
+          debugPrint('[popup-sync] activity tidak ditemukan: $activityId');
+          return;
         }
-        if (activity == null) return;
 
         if (type == 'action_complete') {
           await ref
               .read(activityActionsProvider)
               .toggleTodayCompletion(activity: activity, completed: true);
+          await _pushFreshOverlaySyncFor(activity.id);
         } else if (type == 'action_reopen') {
           await ref
               .read(activityActionsProvider)
               .toggleTodayCompletion(activity: activity, completed: false);
+          await _pushFreshOverlaySyncFor(activity.id);
         } else if (type == 'action_skip') {
           await ref
               .read(activityActionsProvider)
               .skipToday(activity: activity, note: 'Lewati dari Pop Up Assist');
+          await _pushFreshOverlaySyncFor(activity.id);
         } else if (type == 'action_postpone') {
           final int minutes =
               int.tryParse(data['minutes']?.toString() ?? '') ?? 10;
@@ -124,6 +128,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                   subActivity: sub,
                   completed: completed,
                 );
+            await _pushFreshOverlaySyncFor(activity.id);
           }
         } else if (type == 'open_app_detail') {
           appNavigatorKey.currentState?.pushNamed(
@@ -131,7 +136,10 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
             arguments: ActivityDetailArgs(activityId: activity.id),
           );
         }
-      } catch (_) {}
+        debugPrint('[popup-sync] action $type OK untuk ${activity.id}');
+      } catch (e) {
+        debugPrint('[popup-sync] overlay action GAGAL: $e');
+      }
     });
   }
 
@@ -184,6 +192,106 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
           isCompleted: item.isCompleted,
           isSkipped: item.isSkipped,
         );
+  }
+
+  /// Push sync overlay langsung dari database (bukan cache build).
+  ///
+  /// Dipanggil setelah aksi popup memutasi progres. Jalur normal
+  /// (rebuild -> post-frame sync) tertunda saat app di background,
+  /// sehingga overlay menampilkan data lama. Helper ini membaca ulang
+  /// aktivitas + entri hari ini dari repository lalu mendorong payload
+  /// fresh dan menyelaraskan signature anti-duplikat.
+  Future<void> _pushFreshOverlaySyncFor(String activityId) async {
+    try {
+      final ActivityModel? activity = await ref
+          .read(activityRepositoryProvider)
+          .getById(activityId);
+      if (activity == null) return;
+
+      final DateTime now = DateTime.now();
+      final DateTime today = dateOnly(now);
+      final String todayKey = dateKeyFromDate(today);
+      final ProgressEntryModel? entry = await ref
+          .read(progressRepositoryProvider)
+          .getByActivityAndDate(activityId: activity.id, dateKey: todayKey);
+
+      final ActivityDailyProgressStatus status =
+          resolveActivityDailyProgressStatus(
+            scheduledDate: today,
+            today: now,
+            scheduleUpdatedAt:
+                activity.scheduleUpdatedAt ?? activity.createdAt,
+            subActivities: activity.subActivities,
+            scheduledTimeMinutes: activity.timeMinutes,
+            entry: entry,
+          );
+      final List<String> completedSub = normalizeCompletedSubActivities(
+        completedValues: entry?.completedSubActivities ?? const <String>[],
+        subActivities: activity.subActivities,
+      );
+      final bool isCompleted = status == ActivityDailyProgressStatus.done;
+      final bool isSkipped = status == ActivityDailyProgressStatus.skipped;
+
+      final List<ActivityModel> allActivities = await ref
+          .read(activityRepositoryProvider)
+          .getAll();
+      final List<ProgressEntryModel> allEntries = await ref
+          .read(progressRepositoryProvider)
+          .getAll();
+      final Map<String, ProgressEntryModel> todayProgressMap =
+          <String, ProgressEntryModel>{
+            for (final ProgressEntryModel e in allEntries)
+              if (e.dateKey == todayKey) e.activityId: e,
+          };
+      final List<ActivityModel> schedules = allActivities
+          .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
+          .toList()
+        ..sort(
+          (ActivityModel a, ActivityModel b) =>
+              a.timeMinutes.compareTo(b.timeMinutes),
+        );
+      final List<Map<String, dynamic>> todaySchedules = schedules
+          .map((ActivityModel a) {
+            final ProgressEntryModel? p = todayProgressMap[a.id];
+            final ActivityDailyProgressStatus s =
+                resolveActivityDailyProgressStatus(
+                  scheduledDate: now,
+                  today: now,
+                  scheduleUpdatedAt: a.scheduleUpdatedAt ?? a.createdAt,
+                  subActivities: a.subActivities,
+                  scheduledTimeMinutes: a.timeMinutes,
+                  entry: p,
+                );
+            return <String, dynamic>{
+              'id': a.id,
+              'title': a.title,
+              'timeMinutes': a.timeMinutes,
+              'isCompleted': s == ActivityDailyProgressStatus.done,
+              'isSkipped': s == ActivityDailyProgressStatus.skipped,
+            };
+          })
+          .toList();
+
+      final String schedulesSig = todaySchedules
+          .map((s) => '${s['id']}_${s['isCompleted']}_${s['isSkipped']}')
+          .join('|');
+      _lastSyncedSignature =
+          '${activity.id}_${_lastStreak}_${isCompleted}_${isSkipped}_${completedSub.join(',')}_$schedulesSig';
+
+      await ref
+          .read(popUpAssistServiceProvider)
+          .syncActivity(
+            activityId: activity.id,
+            title: activity.title,
+            timeLabel: formatMinutesAsTime(activity.timeMinutes),
+            todaySchedules: todaySchedules,
+            streak: _lastStreak,
+            subActivities: activity.subActivities,
+            completedSubActivities: completedSub,
+            isCompleted: isCompleted,
+            isSkipped: isSkipped,
+          );
+    } catch (_) {}
   }
 
   void _startMinuteTicker() {
@@ -492,7 +600,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         floatingActionButton: FloatingActionButton(
           onPressed: _openActivityForm,
           tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
-          backgroundColor: const Color(0xFF1D4ED8),
+          backgroundColor: const Color(0xFF3B7BD6),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 8,
@@ -1131,19 +1239,19 @@ class _TodayHeroCard extends StatelessWidget {
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1D4ED8),
+                                    color: const Color(0xFF3B7BD6),
                                   ),
                                 ),
                                 const TextSpan(
                                   text: ' \u2022 ',
-                                  style: TextStyle(color: Color(0xFF1D4ED8)),
+                                  style: TextStyle(color: Color(0xFF3B7BD6)),
                                 ),
                                 TextSpan(
                                   text: actionCue!.countdown,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1D4ED8),
+                                    color: const Color(0xFF3B7BD6),
                                   ),
                                 ),
                               ],

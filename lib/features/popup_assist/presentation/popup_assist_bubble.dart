@@ -41,6 +41,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   Timer? _scheduleTicker;
   Timer? _idleTimer;
   Timer? _autoMinimizeTimer;
+  Timer? _echoTimer;
   StreamSubscription<dynamic>? _overlaySubscription;
 
   @override
@@ -136,6 +137,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         }
 
         if (data['type'] == 'sync_activity' || data.containsKey('title')) {
+          // Echo kebenaran dari app tiba: batalkan watchdog rollback.
+          _echoTimer?.cancel();
           setState(() {
             if (data['activityId'] != null) {
               _activityId = data['activityId'].toString();
@@ -182,6 +185,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     _autoMinimizeTimer?.cancel();
     _speechTimer?.cancel();
     _scheduleTicker?.cancel();
+    _echoTimer?.cancel();
     _overlaySubscription?.cancel();
     super.dispose();
   }
@@ -386,7 +390,8 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   Future<void> _handleOpenActivity() async {
     _autoMinimizeTimer?.cancel();
     if (_activityId.isNotEmpty) {
-      await _sendAction('open_app_detail');
+      // Fire-and-forget: buka app tidak boleh tertahan timeout transport.
+      unawaited(_sendAction('open_app_detail'));
       await FlutterOverlayWindow.openApp(_activityId);
     } else {
       await FlutterOverlayWindow.openApp();
@@ -394,23 +399,62 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
     await _collapseOverlay();
   }
 
-  Future<void> _sendAction(String type, [Map<String, dynamic>? extras]) async {
+  /// Kirim aksi ke app. Balikan true = native teruskan ke main engine.
+  /// False/timeout = transport mati -> rollback langsung tanpa tunggu watchdog.
+  Future<bool> _sendAction(String type, [Map<String, dynamic>? extras]) async {
     _autoMinimizeTimer?.cancel();
     final Map<String, dynamic> payload = <String, dynamic>{
       'type': type,
       'activityId': _activityId,
       ...?extras,
     };
-    await FlutterOverlayWindow.shareData(jsonEncode(payload));
+    try {
+      final Object? reply = await FlutterOverlayWindow.shareData(
+        jsonEncode(payload),
+      ).timeout(const Duration(seconds: 5));
+      return reply == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Watchdog echo: aksi popup optimistis. Bila sync kebenaran dari app
+  /// tidak tiba dalam 4 detik (event hilang di transport / app mati),
+  /// kembalikan state lokal + tampilkan banner gagal. Mencegah divergensi
+  /// permanen popup-selesai vs app-belum.
+  void _armEchoWatchdog(VoidCallback rollback) {
+    _echoTimer?.cancel();
+    _echoTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      rollback();
+    });
   }
 
   void _handleComplete() {
+    final bool prevCompleted = _isCompleted;
+    final bool prevSkipped = _isSkipped;
     setState(() {
       _isCompleted = true;
       _isSkipped = false;
       _statusBanner = 'Hebat! Aktivitas selesai';
     });
-    _sendAction('action_complete');
+    void rollback() {
+      if (!mounted) return;
+      setState(() {
+        _isCompleted = prevCompleted;
+        _isSkipped = prevSkipped;
+        _statusBanner = 'Gagal tersimpan, coba lagi';
+      });
+    }
+
+    _sendAction('action_complete').then((bool ok) {
+      if (!mounted) return;
+      if (!ok) {
+        rollback();
+      } else {
+        _armEchoWatchdog(rollback);
+      }
+    });
     Timer(const Duration(milliseconds: 1400), () {
       if (mounted) _collapseOverlay();
     });
@@ -420,12 +464,30 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   }
 
   void _handleSkip() {
+    final bool prevCompleted = _isCompleted;
+    final bool prevSkipped = _isSkipped;
     setState(() {
       _isSkipped = true;
       _isCompleted = false;
       _statusBanner = 'Aktivitas dilewati hari ini';
     });
-    _sendAction('action_skip');
+    void rollback() {
+      if (!mounted) return;
+      setState(() {
+        _isCompleted = prevCompleted;
+        _isSkipped = prevSkipped;
+        _statusBanner = 'Gagal tersimpan, coba lagi';
+      });
+    }
+
+    _sendAction('action_skip').then((bool ok) {
+      if (!mounted) return;
+      if (!ok) {
+        rollback();
+      } else {
+        _armEchoWatchdog(rollback);
+      }
+    });
     Timer(const Duration(milliseconds: 1400), () {
       if (mounted) _collapseOverlay();
     });
@@ -436,13 +498,30 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
 
   void _handleReopen() {
     final bool wasCompleted = _isCompleted;
+    final bool prevSkipped = _isSkipped;
     setState(() {
       _isCompleted = false;
       _isSkipped = false;
       _statusBanner =
           wasCompleted ? 'Selesai dibatalkan' : 'Lewati dibatalkan';
     });
-    _sendAction('action_reopen');
+    void rollback() {
+      if (!mounted) return;
+      setState(() {
+        _isCompleted = wasCompleted;
+        _isSkipped = prevSkipped;
+        _statusBanner = 'Gagal tersimpan, coba lagi';
+      });
+    }
+
+    _sendAction('action_reopen').then((bool ok) {
+      if (!mounted) return;
+      if (!ok) {
+        rollback();
+      } else {
+        _armEchoWatchdog(rollback);
+      }
+    });
     Timer(const Duration(milliseconds: 1400), () {
       if (mounted) _collapseOverlay();
     });
@@ -454,6 +533,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
   void _toggleSubActivity(String sub) {
     _startAutoMinimizeTimer();
     final bool nextCompleted = !_completedSubActivities.contains(sub);
+    final Set<String> prevSubs = Set<String>.from(_completedSubActivities);
     setState(() {
       if (nextCompleted) {
         _completedSubActivities.add(sub);
@@ -461,9 +541,26 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
         _completedSubActivities.remove(sub);
       }
     });
+    void rollback() {
+      if (!mounted) return;
+      setState(() {
+        _completedSubActivities
+          ..clear()
+          ..addAll(prevSubs);
+        _statusBanner = 'Gagal tersimpan, coba lagi';
+      });
+    }
+
     _sendAction('toggle_sub_activity', <String, dynamic>{
       'subActivity': sub,
       'completed': nextCompleted,
+    }).then((bool ok) {
+      if (!mounted) return;
+      if (!ok) {
+        rollback();
+      } else {
+        _armEchoWatchdog(rollback);
+      }
     });
   }
 
@@ -473,7 +570,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF1A5BAD),
+        colorSchemeSeed: const Color(0xFF3B7BD6),
         brightness: Brightness.light,
       ),
       home: Scaffold(
@@ -514,16 +611,12 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
             ),
           ),
         ),
-        // Bubble di-pin ke tepi kanan/kiri, tidak pernah bergerak.
-        // Padding 2 (total 4): 52 bubble + 4 = 56 < 57.9 constraint,
-        // aman dari rounding floating-point density.
+        // Bubble 58dp pas memenuhi window native 58x58: tanpa padding
+        // luar agar artwork tidak terpotong.
         Align(
           alignment:
               isRight ? Alignment.centerRight : Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: bubble,
-          ),
+          child: bubble,
         ),
       ],
     );
@@ -606,33 +699,18 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
           _resetIdleTimer();
           _expandOverlay();
         },
-        child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[
-              const Color(0xFF2563EB),
-              const Color(0xFF1D4ED8),
-            ],
-          ),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white,
-            width: 2.0,
-          ),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Image.asset(
-              'assets/branding/nousen_logo.png',
-              width: 32,
-              height: 32,
-              fit: BoxFit.contain,
-            ),
+        child: SizedBox(
+          width: 58,
+          height: 58,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Image.asset(
+                'assets/branding/bubble/bubble.png',
+                width: 58,
+                height: 58,
+                fit: BoxFit.contain,
+              ),
             if (_streak > 0)
               Positioned(
                 right: 0,
@@ -677,7 +755,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A5BAD),
+                    color: const Color(0xFF3B7BD6),
                     shape: BoxShape.circle,
                   ),
                   child: NousenNavIcon(
@@ -780,15 +858,15 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: <Color>[
-                                            Color(0xFF2563EB),
-                                            Color(0xFF3B82F6),
+                                            Color(0xFF3B7BD6),
+                                            Color(0xFF3B7BD6),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(12)),
                                       ),
                                       child: Image.asset(
-                                        'assets/branding/nousen_logo.png',
+                                        'assets/branding/nousen_mark_192.png',
                                         width: 28,
                                         height: 28,
                                         fit: BoxFit.contain,
@@ -802,7 +880,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                         height: 10,
                                         decoration: BoxDecoration(
                                           color:
-                                              const Color(0xFF1A5BAD),
+                                              const Color(0xFF3B7BD6),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: Colors.white,
@@ -820,33 +898,13 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                         CrossAxisAlignment.start,
                                     children: <Widget>[
                                       Row(
-                                        children: <Widget>[
-                                          const Text(
+                                        children: const <Widget>[
+                                          Text(
                                             'NOUSEN Assist',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w800,
-                                              color: Color(0xFF1E3A8A),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFDBEAFE),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: const Text(
-                                              'AI',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF1D4ED8),
-                                              ),
+                                              color: Color(0xFF3B7BD6),
                                             ),
                                           ),
                                         ],
@@ -942,7 +1000,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                           children: <Widget>[
                                             NousenNavIcon(
                                               Icons.auto_awesome_rounded,
-                                              color: Color(0xFF2563EB),
+                                              color: Color(0xFF3B7BD6),
                                               size: 20,
                                             ),
                                             const SizedBox(width: 10),
@@ -1056,7 +1114,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                       style: TextStyle(
                                                         fontSize: 12,
                                                         color: Color(
-                                                            0xFF2563EB),
+                                                            0xFF3B7BD6),
                                                         fontWeight:
                                                             FontWeight
                                                                 .w600,
@@ -1067,7 +1125,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                           .chevron_right_rounded,
                                                       size: 15,
                                                       color: Color(
-                                                          0xFF2563EB),
+                                                          0xFF3B7BD6),
                                                     ),
                                                   ],
                                                 ),
@@ -1133,7 +1191,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       color: Color(
-                                                          0xFF2563EB),
+                                                          0xFF3B7BD6),
                                                     ),
                                                   ),
                                                 ),
@@ -1191,7 +1249,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                               BoxDecoration(
                                                             color: isChecked
                                                                 ? const Color(
-                                                                    0xFF1A5BAD)
+                                                                    0xFF3B7BD6)
                                                                 : Colors
                                                                     .transparent,
                                                             borderRadius:
@@ -1201,7 +1259,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                                                 Border.all(
                                                               color: isChecked
                                                                   ? const Color(
-                                                                      0xFF1A5BAD)
+                                                                      0xFF3B7BD6)
                                                                   : const Color(
                                                                       0xFF94A3B8),
                                                               width: 1.5,
@@ -1355,7 +1413,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                         child: FilledButton(
                                           style: FilledButton.styleFrom(
                                             backgroundColor:
-                                                const Color(0xFF1A5BAD),
+                                                const Color(0xFF3B7BD6),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(
@@ -1382,7 +1440,7 @@ class _PopUpAssistBubbleAppState extends State<PopUpAssistBubbleApp> {
                                 child: FilledButton.icon(
                                   style: FilledButton.styleFrom(
                                     backgroundColor:
-                                        const Color(0xFF1D4ED8),
+                                        const Color(0xFF3B7BD6),
                                     shape: RoundedRectangleBorder(
                                       borderRadius:
                                           BorderRadius.circular(14),

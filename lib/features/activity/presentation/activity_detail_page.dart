@@ -638,7 +638,7 @@ class ActivityDetailPage extends ConsumerWidget {
                           ),
                           child: NousenNavIcon(
                             Icons.auto_awesome_rounded,
-                            color: Color(0xFF4F46E5),
+                            color: Color(0xFF3B7BD6),
                             size: 16,
                           ),
                         ),
@@ -2166,7 +2166,7 @@ class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF2563EB),
+                      color: Color(0xFF3B7BD6),
                       width: 1.5,
                     ),
                   ),
@@ -2262,7 +2262,7 @@ class _SessionNoteComposerState extends ConsumerState<_SessionNoteComposer> {
                   ),
                   FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: const Color(0xFF3B7BD6),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -2432,14 +2432,14 @@ class _RangeTriggerButton extends StatelessWidget {
       icon: NousenNavIcon(
         Icons.date_range_rounded,
         size: 16,
-        color: Color(0xFF2563EB),
+        color: Color(0xFF3B7BD6),
       ),
       label: Text(
         localeCode == 'id' ? 'Rentang' : 'Range',
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF2563EB),
+          color: Color(0xFF3B7BD6),
         ),
       ),
     );
@@ -2478,7 +2478,7 @@ class _RangeActiveChip extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
               ),
             ),
           ),
@@ -2488,7 +2488,7 @@ class _RangeActiveChip extends StatelessWidget {
             child: NousenNavIcon(
               Icons.close_rounded,
               size: 16,
-              color: Color(0xFF1D4ED8),
+              color: Color(0xFF3B7BD6),
             ),
           ),
         ],
@@ -2540,7 +2540,7 @@ class _TimelineWeekStrip extends StatelessWidget {
       final Color textColor = isToday
           ? Colors.white
           : isDone
-          ? const Color(0xFF1D4ED8)
+          ? const Color(0xFF3B7BD6)
           : const Color(0xFF64748B);
       dayNodes.add(
         SizedBox(
@@ -2565,17 +2565,17 @@ class _TimelineWeekStrip extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: isToday
-                        ? const Color(0xFF2563EB)
+                        ? const Color(0xFF3B7BD6)
                         : isDone
                         ? const Color(0xFFDBEAFE)
                         : Colors.transparent,
                     shape: BoxShape.circle,
                     border: isSelected
-                        ? Border.all(color: const Color(0xFF1D4ED8), width: 2)
+                        ? Border.all(color: const Color(0xFF3B7BD6), width: 2)
                         : (isToday
                               ? Border.all(
                                   color: const Color(
-                                    0xFF2563EB,
+                                    0xFF3B7BD6,
                                   ).withValues(alpha: 0.25),
                                   width: 4,
                                 )
@@ -2629,7 +2629,7 @@ class _TimelineWeekStrip extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1D4ED8),
+                      color: Color(0xFF3B7BD6),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -3008,7 +3008,7 @@ class _ComparisonTimelineSectionState
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
               ),
             ),
           ],
@@ -4764,7 +4764,7 @@ class _ActivityAiInsightSectionState
                 NousenNavIcon(
                   Icons.trending_up_rounded,
                   size: 14,
-                  color: Color(0xFF2563EB),
+                  color: Color(0xFF3B7BD6),
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -4773,7 +4773,7 @@ class _ActivityAiInsightSectionState
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.05,
-                    color: Color(0xFF1D4ED8),
+                    color: Color(0xFF3B7BD6),
                   ),
                 ),
               ],
@@ -4889,7 +4889,7 @@ class _ActivityAiInsightSectionState
                       child: NousenNavIcon(
                         Icons.wb_sunny_rounded,
                         size: 16,
-                        color: Color(0xFF2563EB),
+                        color: Color(0xFF3B7BD6),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -4917,7 +4917,7 @@ class _ActivityAiInsightSectionState
                                 ),
                                 decoration: BoxDecoration(
                                   color: const Color(
-                                    0xFF2563EB,
+                                    0xFF3B7BD6,
                                   ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
@@ -4926,7 +4926,7 @@ class _ActivityAiInsightSectionState
                                   style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1D4ED8),
+                                    color: Color(0xFF3B7BD6),
                                   ),
                                 ),
                               ),
@@ -5052,7 +5052,7 @@ class _ActivityAiInsightSectionState
                         margin: EdgeInsets.only(left: index == 0 ? 0 : 6),
                         decoration: BoxDecoration(
                           color: index < data.patternDotsFilled
-                              ? const Color(0xFF2563EB)
+                              ? const Color(0xFF3B7BD6)
                               : const Color(0xFFCBD5E1),
                           shape: BoxShape.circle,
                         ),
@@ -5097,7 +5097,7 @@ class _ActivityAiInsightSectionState
                       child: NousenNavIcon(
                         Icons.lightbulb_rounded,
                         size: 14,
-                        color: Color(0xFF2563EB),
+                        color: Color(0xFF3B7BD6),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -5190,7 +5190,7 @@ class _ActivityAiInsightSectionState
             height: 52,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: const Color(0xFF3B7BD6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),

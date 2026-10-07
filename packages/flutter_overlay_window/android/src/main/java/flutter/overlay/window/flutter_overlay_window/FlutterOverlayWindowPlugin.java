@@ -45,6 +45,12 @@ public class FlutterOverlayWindowPlugin implements
     private Result pendingResult;
     final int REQUEST_CODE_FOR_OVERLAY_PERMISSION = 1248;
 
+    // Investigasi transport overlay<->main: lacak engine mana yang attach.
+    // Messenger pertama = main engine; attach berikutnya dengan messenger
+    // berbeda = overlay engine.
+    private static io.flutter.plugin.common.BinaryMessenger sMainMessenger = null;
+    private boolean mIsOverlayEngine = false;
+
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         this.context = flutterPluginBinding.getApplicationContext();
@@ -55,8 +61,20 @@ public class FlutterOverlayWindowPlugin implements
                 JSONMessageCodec.INSTANCE);
         messenger.setMessageHandler(this);
 
-        WindowSetup.messenger = messenger;
-        WindowSetup.messenger.setMessageHandler(this);
+        if (sMainMessenger == null) {
+            sMainMessenger = flutterPluginBinding.getBinaryMessenger();
+        }
+        mIsOverlayEngine = flutterPluginBinding.getBinaryMessenger() != sMainMessenger;
+
+        messenger.setMessageHandler(this);
+        if (mIsOverlayEngine) {
+            WindowSetup.overlayMessenger = messenger;
+        } else {
+            WindowSetup.messenger = messenger;
+        }
+        android.util.Log.d("OverlayNative",
+                "plugin attached isOverlayEngine=" + mIsOverlayEngine
+                        + " messenger=" + System.identityHashCode(messenger));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -168,6 +186,27 @@ public class FlutterOverlayWindowPlugin implements
 
     @Override
     public void onMessage(@Nullable Object message, @NonNull BasicMessageChannel.Reply reply) {
+        if (mIsOverlayEngine) {
+            // overlay -> main: teruskan ke messenger MAIN engine.
+            android.util.Log.d("OverlayNative",
+                    "plugin.onMessage isOverlayEngine=true forwarding to main engine");
+            if (WindowSetup.messenger == null) {
+                android.util.Log.e("OverlayNative", "DROP: main messenger is null");
+                reply.reply(Boolean.FALSE);
+                return;
+            }
+            try {
+                WindowSetup.messenger.send(message,
+                        replyObj -> reply.reply(Boolean.TRUE));
+            } catch (Exception e) {
+                android.util.Log.e("OverlayNative",
+                        "FORWARD FAILED to main: " + e.getMessage());
+                reply.reply(Boolean.FALSE);
+            }
+            return;
+        }
+        android.util.Log.d("OverlayNative",
+                "plugin.onMessage isOverlayEngine=false forwarding to cached overlay engine");
         BasicMessageChannel overlayMessageChannel = new BasicMessageChannel(
                 FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG)
                         .getDartExecutor(),

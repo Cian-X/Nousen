@@ -1475,7 +1475,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                               ),
                               Switch.adaptive(
                                 value: _isNotificationEnabled,
-                                activeTrackColor: const Color(0xFF1D4ED8),
+                                activeTrackColor: const Color(0xFF3B7BD6),
                                 onChanged: (bool value) {
                                   setState(() {
                                     _isNotificationEnabled = value;
@@ -2371,7 +2371,7 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF1D4ED8) : Colors.white,
+                  color: selected ? const Color(0xFF3B7BD6) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: selected
                       ? null
@@ -2380,7 +2380,7 @@ class _CustomSegmentedDayPicker extends StatelessWidget {
                       ? <BoxShadow>[
                           BoxShadow(
                             color: const Color(
-                              0xFF1D4ED8,
+                              0xFF3B7BD6,
                             ).withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 2),

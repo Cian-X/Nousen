@@ -15,6 +15,10 @@ public abstract class WindowSetup {
     static int flag = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
     static int gravity = Gravity.CENTER;
     static BasicMessageChannel<Object> messenger = null;
+    // Messenger milik OVERLAY engine. Dipisah dari messenger (main engine)
+    // karena static tunggal selalu tertimpa attach terakhir (= overlay),
+    // sehingga pesan overlay->main menggemakan diri sendiri.
+    static BasicMessageChannel<Object> overlayMessenger = null;
     static String overlayTitle = "Overlay is activated";
     static String overlayContent = "Tap to edit settings or disable";
     static String positionGravity = "none";

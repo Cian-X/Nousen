@@ -82,7 +82,8 @@ flutter:
 
   assets:
     - assets/ai/activity_profiles.json
-    - assets/branding/nousen_logo.png
+    - assets/branding/bubble/bubble.png
+    - assets/branding/nousen_mark_192.png
     # Kept out of release bundle to optimize app size and startup performance:
     # - assets/ai/catalog_activities.json
     # - assets/ai/progress_entries.json (40MB synthetic data)

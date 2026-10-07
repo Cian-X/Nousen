@@ -156,7 +156,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1D4ED8),
+        backgroundColor: const Color(0xFF3B7BD6),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 8,
@@ -236,7 +236,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                     NousenNavIcon(
                       Icons.calendar_month_rounded,
                       size: 18,
-                      color: Color(0xFF1D4ED8),
+                      color: Color(0xFF3B7BD6),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -273,7 +273,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1D4ED8),
+                                color: Color(0xFF3B7BD6),
                               ),
                             ),
                           ),
@@ -320,7 +320,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                                     : (w == today.weekday &&
                                               _inWindow(today) &&
                                               _weekOffset == 0
-                                          ? const Color(0xFF1D4ED8)
+                                          ? const Color(0xFF3B7BD6)
                                           : const Color(0xFF64748B)),
                               ),
                             ),
@@ -359,13 +359,13 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                 Row(
                   children: <Widget>[
                     _MatrixLegend(
-                      color: const Color(0xFF1D4ED8),
+                      color: const Color(0xFF3B7BD6),
                       filled: true,
                       label: isId ? 'Ada Jadwal' : 'Scheduled',
                     ),
                     const SizedBox(width: 12),
                     _MatrixLegend(
-                      color: const Color(0xFF1D4ED8),
+                      color: const Color(0xFF3B7BD6),
                       filled: false,
                       label: isId ? 'Hari Ini' : 'Today',
                     ),
@@ -462,11 +462,11 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
               height: 52,
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4ED8),
+                  backgroundColor: const Color(0xFF3B7BD6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  shadowColor: const Color(0xFF1D4ED8).withValues(alpha: 0.25),
+                  shadowColor: const Color(0xFF3B7BD6).withValues(alpha: 0.25),
                   elevation: 4,
                 ),
                 onPressed: () => _openCtaTarget(
@@ -481,6 +481,23 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
+                ),
+              ),
+            ),
+          ],
+          // Hint footer ala Beranda: hanya bila ada jadwal tampil.
+          if (all.isNotEmpty) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 32, bottom: 32),
+              child: Text(
+                isId
+                    ? 'Tekan + untuk menambah jadwal'
+                    : 'Tap + to add a schedule',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF94A3B8),
                 ),
               ),
             ),
@@ -524,7 +541,7 @@ class _AgendaFilterPill extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: selected
-                  ? const Color(0xFF1D4ED8)
+                  ? const Color(0xFF3B7BD6)
                   : const Color(0xFF64748B),
             ),
           ),
@@ -626,7 +643,7 @@ class _DateCell extends StatelessWidget {
         width: 38,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFF1D4ED8),
+          color: const Color(0xFF3B7BD6),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -675,7 +692,7 @@ class _DateCell extends StatelessWidget {
         height: 48,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF1D4ED8), width: 1.5),
+          border: Border.all(color: const Color(0xFF3B7BD6), width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -685,7 +702,7 @@ class _DateCell extends StatelessWidget {
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
               ),
             ),
             Text(
@@ -701,7 +718,7 @@ class _DateCell extends StatelessWidget {
               width: 5,
               height: 5,
               decoration: const BoxDecoration(
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
                 shape: BoxShape.circle,
               ),
             ),
@@ -729,7 +746,7 @@ class _DateCell extends StatelessWidget {
           width: 5,
           height: 5,
           decoration: BoxDecoration(
-            color: hasItems ? const Color(0xFF1D4ED8) : Colors.transparent,
+            color: hasItems ? const Color(0xFF3B7BD6) : Colors.transparent,
             shape: BoxShape.circle,
           ),
         ),
@@ -800,7 +817,7 @@ class _DayAgendaSection extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: const BoxDecoration(
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF3B7BD6),
                 shape: BoxShape.circle,
               ),
             ),
@@ -830,7 +847,7 @@ class _DayAgendaSection extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D4ED8),
+                    color: Color(0xFF3B7BD6),
                   ),
                 ),
               ),
@@ -924,7 +941,7 @@ class _DayAgendaGroupCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1D4ED8),
+                      color: Color(0xFF3B7BD6),
                     ),
                   ),
                 ),

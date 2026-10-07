@@ -57,7 +57,7 @@ class NousenBottomNavBar extends StatelessWidget {
       builder: (BuildContext context) {
         final ThemeData theme = Theme.of(context);
         final Color color = tab.isSelected
-            ? const Color(0xFF1D4ED8)
+            ? const Color(0xFF3B7BD6)
             : const Color(0xFF64748B);
         return InkWell(
           onTap: tab.onTap,
@@ -84,7 +84,7 @@ class NousenBottomNavBar extends StatelessWidget {
                   width: 4,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: tab.isSelected ? const Color(0xFF1D4ED8) : Colors.transparent,
+                    color: tab.isSelected ? const Color(0xFF3B7BD6) : Colors.transparent,
                     shape: BoxShape.circle,
                   ),
                 ),

@@ -480,7 +480,35 @@ public class OverlayService extends Service implements View.OnTouchListener {
             }
         });
         overlayMessageChannel.setMessageHandler((message, reply) -> {
-            WindowSetup.messenger.send(message);
+            String actionType = "unknown";
+            try {
+                if (message instanceof String) {
+                    actionType = new org.json.JSONObject((String) message)
+                            .optString("type", "unknown");
+                } else if (message instanceof java.util.Map) {
+                    Object t = ((java.util.Map<?, ?>) message).get("type");
+                    if (t != null) {
+                        actionType = t.toString();
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            Log.d("OverlayNative", "received " + actionType + " from overlay");
+            if (WindowSetup.messenger == null) {
+                Log.e("OverlayNative", "DROP " + actionType + ": main messenger is null");
+                reply.reply(Boolean.FALSE);
+                return;
+            }
+            Log.d("OverlayNative", "forwarding " + actionType
+                    + " via messenger=" + System.identityHashCode(WindowSetup.messenger));
+            try {
+                WindowSetup.messenger.send(message);
+                Log.d("OverlayNative", actionType + " forwarded to main engine");
+                reply.reply(Boolean.TRUE);
+            } catch (Exception e) {
+                Log.e("OverlayNative", "FORWARD FAILED " + actionType + ": " + e.getMessage());
+                reply.reply(Boolean.FALSE);
+            }
         });
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
