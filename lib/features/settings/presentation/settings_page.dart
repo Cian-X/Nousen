@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liburan_create/app/providers.dart';
+import 'package:liburan_create/app/router.dart';
+import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
 import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 import 'package:liburan_create/core/theme/app_layout.dart';
@@ -54,6 +56,40 @@ class SettingsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      // Sembunyikan navbar saat setup awal agar alur onboarding utuh.
+      bottomNavigationBar: forceUserSetup
+          ? null
+          : NousenBottomNavBar(
+        tabs: <NousenNavTab>[
+          NousenNavTab(
+            icon: Icons.home_rounded,
+            label: isId ? 'Harian' : 'Daily',
+            onTap: () => Navigator.of(
+              context,
+            ).popUntil((Route<dynamic> route) => route.isFirst),
+          ),
+          NousenNavTab(
+            icon: Icons.calendar_today_rounded,
+            label: isId ? 'Agenda' : 'Agenda',
+            onTap: () => Navigator.of(
+              context,
+            ).pushNamed(AppRoutes.scheduleAgenda),
+          ),
+          NousenNavTab(
+            icon: Icons.insights_rounded,
+            label: isId ? 'Statistik' : 'Analytics',
+            onTap: () => Navigator.of(
+              context,
+            ).pushNamed(AppRoutes.activitySummary),
+          ),
+          NousenNavTab(
+            icon: Icons.person_rounded,
+            label: isId ? 'Pengaturan' : 'Profile',
+            isSelected: true,
+            onTap: () {},
+          ),
+        ],
+      ),
       appBar: AppBar(
         automaticallyImplyLeading: !forceUserSetup,
         leadingWidth: 64,

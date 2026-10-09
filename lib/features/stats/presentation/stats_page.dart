@@ -12,6 +12,8 @@ import 'package:liburan_create/features/progress/domain/progress_entry_model.dar
 import 'package:liburan_create/features/stats/domain/stats_models.dart';
 import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
 import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
+import 'package:liburan_create/features/settings/presentation/settings_page.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -93,6 +95,39 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      bottomNavigationBar: NousenBottomNavBar(
+        tabs: <NousenNavTab>[
+          NousenNavTab(
+            icon: Icons.home_rounded,
+            label: localeCode == 'id' ? 'Harian' : 'Daily',
+            onTap: () => Navigator.of(
+              context,
+            ).popUntil((Route<dynamic> route) => route.isFirst),
+          ),
+          NousenNavTab(
+            icon: Icons.calendar_today_rounded,
+            label: localeCode == 'id' ? 'Agenda' : 'Agenda',
+            onTap: () => Navigator.of(
+              context,
+            ).pushNamed(AppRoutes.scheduleAgenda),
+          ),
+          NousenNavTab(
+            icon: Icons.insights_rounded,
+            label: localeCode == 'id' ? 'Statistik' : 'Analytics',
+            isSelected: true,
+            onTap: () {},
+          ),
+          NousenNavTab(
+            icon: Icons.person_rounded,
+            label: localeCode == 'id' ? 'Pengaturan' : 'Profile',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const SettingsPage(),
+              ),
+            ),
+          ),
+        ],
+      ),
       appBar: AppBar(
         leadingWidth: 64,
         leading: (ModalRoute.of(context)?.canPop ?? false)

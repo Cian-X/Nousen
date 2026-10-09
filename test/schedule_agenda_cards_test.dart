@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/core/theme/app_theme.dart';
+import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
 import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:liburan_create/features/one_time_reminder/presentation/schedule_agenda_page.dart';
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
@@ -71,6 +72,14 @@ void main() {
     return DateTime(now.year, now.month, now.day, hour, minute);
   }
 
+  /// Ikon custom (NousenNavIcon) tidak terdeteksi find.byIcon.
+  Finder findNousenIcon(IconData icon) {
+    return find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is NousenNavIcon && widget.icon == icon,
+    );
+  }
+
   testWidgets('kartu tanpa ikon status, progres sub terlihat', (
     WidgetTester tester,
   ) async {
@@ -88,7 +97,7 @@ void main() {
     expect(find.byIcon(Icons.check_rounded), findsNothing);
     expect(find.text('2 sub aktivitas'), findsOneWidget);
     expect(find.text('Agenda terjadwal'), findsOneWidget);
-    expect(find.byIcon(Icons.expand_more_rounded), findsOneWidget);
+    expect(findNousenIcon(Icons.expand_more_rounded), findsOneWidget);
   });
 
   testWidgets('chevron membuka checklist sub', (
@@ -104,16 +113,16 @@ void main() {
     ]);
 
     expect(find.text('a'), findsNothing);
-    await tester.ensureVisible(find.byIcon(Icons.expand_more_rounded));
+    await tester.ensureVisible(findNousenIcon(Icons.expand_more_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.expand_more_rounded));
+    await tester.tap(findNousenIcon(Icons.expand_more_rounded));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    expect(find.byIcon(Icons.expand_less_rounded), findsOneWidget);
+    expect(findNousenIcon(Icons.expand_less_rounded), findsOneWidget);
     expect(find.text('b'), findsOneWidget);
-    await tester.ensureVisible(find.byIcon(Icons.expand_less_rounded));
+    await tester.ensureVisible(findNousenIcon(Icons.expand_less_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.expand_less_rounded));
+    await tester.tap(findNousenIcon(Icons.expand_less_rounded));
     await tester.pumpAndSettle();
     expect(find.text('a'), findsNothing);
   });
@@ -150,16 +159,16 @@ void main() {
     ]);
 
     Future<Color?> expandedCheckboxColor() async {
-      await tester.ensureVisible(find.byIcon(Icons.expand_more_rounded).first);
+      await tester.ensureVisible(findNousenIcon(Icons.expand_more_rounded).first);
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.expand_more_rounded).first);
+      await tester.tap(findNousenIcon(Icons.expand_more_rounded).first);
       await tester.pumpAndSettle();
       final Checkbox box =
           tester.widget<Checkbox>(find.byType(Checkbox).first);
       return box.activeColor;
     }
 
-    expect(await expandedCheckboxColor(), const Color(0xFF1A5BAD));
+    expect(await expandedCheckboxColor(), const Color(0xFF3B7BD6));
 
     final DateTime futureDay = atDays(1, 10).copyWith();
     final Finder dayCell =

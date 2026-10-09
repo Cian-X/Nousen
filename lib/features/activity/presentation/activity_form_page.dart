@@ -404,10 +404,10 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     required bool isGeminiActiveForTitle,
   }) {
     if (isHybridActive) {
-      return localeCode == 'id' ? 'Saran pintar' : 'Smart suggestion';
+      return localeCode == 'id' ? 'Saran' : 'Suggestion';
     }
     if (isGeminiActiveForTitle) {
-      return 'Gemini';
+      return null;
     }
     return null;
   }
@@ -1217,7 +1217,9 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                                       ? (localeCode == 'id'
                                             ? 'Refresh'
                                             : 'Refresh')
-                                      : 'Gemini',
+                                      : (localeCode == 'id'
+                                            ? 'Analisis'
+                                            : 'Analyze'),
                                   isLoading: _isGeminiLoading,
                                   onTap: _isGeminiLoading
                                       ? null
@@ -1244,7 +1246,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                     if (showAiSection) ...<Widget>[
                       const SizedBox(height: fieldGap),
                       Text(
-                        localeCode == 'id' ? 'SARAN AI' : 'AI SUGGESTION',
+                        localeCode == 'id' ? 'SARAN' : 'SUGGESTION',
                         style: sectionLabelStyle,
                       ),
                     ],

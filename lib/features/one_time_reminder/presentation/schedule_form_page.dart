@@ -399,7 +399,9 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
                   ? Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: _TitleFieldGeminiButton(
-                        label: isGeminiActiveForTitle ? 'Refresh' : 'Gemini',
+                        label: isGeminiActiveForTitle
+                            ? 'Refresh'
+                            : (isId ? 'Analisis' : 'Analyze'),
                         isLoading: _isGeminiLoading,
                         onTap: _isGeminiLoading ? null : _analyzeWithGemini,
                       ),
@@ -410,7 +412,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
           if (showAiSection) ...<Widget>[
             const SizedBox(height: 12),
             Text(
-              isId ? 'SARAN AI' : 'AI SUGGESTION',
+              isId ? 'SARAN' : 'SUGGESTION',
               style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF64748B),
@@ -695,28 +697,6 @@ class _AgendaAiSuggestionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isGeminiResult) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'GEMINI',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.primary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
               GestureDetector(
                 onTap: onDismiss,
                 child: NousenNavIcon(

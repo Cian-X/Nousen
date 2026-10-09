@@ -20,8 +20,23 @@ class ScheduleAgendaPage extends ConsumerStatefulWidget {
   ConsumerState<ScheduleAgendaPage> createState() => _ScheduleAgendaPageState();
 }
 
+/// Jendela tanggal agenda: 14 hari kalender berurutan mulai HARI INI.
+///
+/// Hari ini selalu di indeks pertama; hari ke-14 = hari ini + 13.
+/// Mengikuti tanggal perangkat dan bergeser otomatis saat hari berganti.
+/// Fungsi murni agar bisa diuji tanpa widget/clock.
+DateTime agendaWindowStart(DateTime today) => dateOnly(today);
+
+/// 14 tanggal berurutan dari [agendaWindowStart].
+List<DateTime> agendaWindowDays(DateTime today) {
+  final DateTime start = agendaWindowStart(today);
+  return List<DateTime>.generate(
+    14,
+    (int i) => start.add(Duration(days: i)),
+  );
+}
+
 class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
-  int _weekOffset = 0;
   late DateTime _selectedDate;
   bool _upcomingOnly = false;
   DateTime? _dateOverride;
@@ -32,40 +47,8 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
     _selectedDate = dateOnly(DateTime.now());
   }
 
-  DateTime get _windowStart {
-    final DateTime today = dateOnly(DateTime.now());
-    final DateTime monday = today.subtract(Duration(days: today.weekday - 1));
-    return monday.add(Duration(days: _weekOffset * 14));
-  }
-
-  List<DateTime> get _windowDays =>
-      List<DateTime>.generate(14, (i) => _windowStart.add(Duration(days: i)));
-
-  bool _inWindow(DateTime date) {
-    final DateTime end = _windowStart.add(const Duration(days: 13));
-    return !date.isBefore(_windowStart) && !date.isAfter(end);
-  }
-
-  void _shiftWindow(int delta) {
-    setState(() {
-      _weekOffset += delta;
-      if (!_inWindow(_selectedDate)) {
-        final DateTime today = dateOnly(DateTime.now());
-        _selectedDate = _inWindow(today) ? today : _windowStart;
-
-        _dateOverride = null;
-      }
-    });
-  }
-
-  void _resetToCurrentFortnight() {
-    setState(() {
-      _weekOffset = 0;
-      _selectedDate = dateOnly(DateTime.now());
-
-      _dateOverride = null;
-    });
-  }
+  /// Awal jendela SELALU hari ini (dosen: today di posisi pertama).
+  List<DateTime> get _windowDays => agendaWindowDays(DateTime.now());
 
   void _selectDate(DateTime date) {
     final DateTime today = dateOnly(DateTime.now());
@@ -239,15 +222,10 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                       color: Color(0xFF3B7BD6),
                     ),
                     const SizedBox(width: 6),
-                    Expanded(
-                      child: Row(
-                        children: <Widget>[
-                          Flexible(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(6),
-                              onTap: _weekOffset == 0
-                                  ? null
-                                  : _resetToCurrentFortnight,
+                      Expanded(
+                        child: Row(
+                          children: <Widget>[
+                            Flexible(
                               child: Text(
                                 '${formatDateShort(days.first, localeCode)} \u2013 ${formatDateShort(days.last, localeCode)}',
                                 style: const TextStyle(
@@ -257,7 +235,6 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                                 ),
                               ),
                             ),
-                          ),
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -277,58 +254,39 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      splashRadius: 18,
-                      icon: NousenNavIcon(
-                        Icons.chevron_left_rounded,
-                        size: 20,
-                        color: Color(0xFF64748B),
-                      ),
-                      onPressed: () => _shiftWindow(-1),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      splashRadius: 18,
-                      icon: NousenNavIcon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: Color(0xFF64748B),
-                      ),
-                      onPressed: () => _shiftWindow(1),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: <Widget>[
-                    for (int w = 1; w <= 7; w++)
-                      Expanded(
-                        child: SizedBox(
-                          height: 28,
-                          child: Center(
-                            child: Text(
-                              weekdayShortLabel(w, localeCode),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: w == DateTime.sunday
-                                    ? const Color(0xFFEF4444)
-                                    : (w == today.weekday &&
-                                              _inWindow(today) &&
-                                              _weekOffset == 0
-                                          ? const Color(0xFF3B7BD6)
-                                          : const Color(0xFF64748B)),
-                              ),
-                            ),
-                          ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            // Header hari mengikuti tanggal aktual kolomnya (7 hari pertama
+            // jendela; baris kedua mengulang urutan yang sama). Senin-tetap
+            // hanya berlaku bila hari ini Senin.
+            children: <Widget>[
+              for (int i = 0; i < 7; i++)
+                Expanded(
+                  child: SizedBox(
+                    height: 28,
+                    child: Center(
+                      child: Text(
+                        weekdayShortLabel(days[i].weekday, localeCode),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: days[i].weekday == DateTime.sunday
+                              ? const Color(0xFFEF4444)
+                              : (days[i] == today
+                                    ? const Color(0xFF3B7BD6)
+                                    : const Color(0xFF64748B)),
                         ),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
+            ],
+          ),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
