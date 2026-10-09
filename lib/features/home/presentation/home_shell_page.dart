@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:liburan_create/app/app.dart';
 import 'package:liburan_create/app/providers.dart';
 import 'package:liburan_create/app/router.dart';
 import 'package:liburan_create/core/constants/app_constants.dart';
@@ -26,7 +24,6 @@ import 'package:liburan_create/features/progress/domain/progress_entry_model.dar
 import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
 import 'package:liburan_create/features/settings/presentation/settings_page.dart';
 import 'package:liburan_create/l10n/app_localizations.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 class HomeShellPage extends ConsumerStatefulWidget {
   const HomeShellPage({super.key});
@@ -43,265 +40,17 @@ class HomeShellPage extends ConsumerStatefulWidget {
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
   Timer? _countdownTimer;
-  StreamSubscription<dynamic>? _overlayActionSubscription;
-  _ActivityTileData? _lastFocusItem;
-  int _lastStreak = 0;
-  String _lastSyncedSignature = '';
-  List<Map<String, dynamic>> _lastTodaySchedules =
-      const <Map<String, dynamic>>[];
 
   @override
   void initState() {
     super.initState();
     _startMinuteTicker();
-    _setupOverlayActionListener();
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _overlayActionSubscription?.cancel();
     super.dispose();
-  }
-
-  void _setupOverlayActionListener() {
-    _overlayActionSubscription = FlutterOverlayWindow.overlayListener.listen((
-      dynamic event,
-    ) async {
-      if (event == null || !mounted) return;
-      try {
-        final Map<String, dynamic> data = event is String
-            ? jsonDecode(event) as Map<String, dynamic>
-            : Map<String, dynamic>.from(event as Map);
-        final String? type = data['type']?.toString();
-        final String? activityId = data['activityId']?.toString();
-        debugPrint('[popup-sync] received ${type ?? 'unknown'}');
-
-        if (type == 'request_sync') {
-          _lastSyncedSignature = ''; // Force fresh sync
-          _syncCurrentFocusToOverlay(triggerGreeting: true);
-          return;
-        }
-
-        if (activityId == null || activityId.isEmpty) return;
-
-        // Baca langsung dari repository: cache stream bisa kosong saat app
-        // di background, sehingga lookup lama membuang event popup.
-        debugPrint('[popup-sync] event=$type activity=$activityId');
-        final ActivityModel? activity = await ref
-            .read(activityRepositoryProvider)
-            .getById(activityId);
-        if (activity == null) {
-          debugPrint('[popup-sync] activity tidak ditemukan: $activityId');
-          return;
-        }
-
-        if (type == 'action_complete') {
-          await ref
-              .read(activityActionsProvider)
-              .toggleTodayCompletion(activity: activity, completed: true);
-          await _pushFreshOverlaySyncFor(activity.id);
-        } else if (type == 'action_reopen') {
-          await ref
-              .read(activityActionsProvider)
-              .toggleTodayCompletion(activity: activity, completed: false);
-          await _pushFreshOverlaySyncFor(activity.id);
-        } else if (type == 'action_skip') {
-          await ref
-              .read(activityActionsProvider)
-              .skipToday(activity: activity, note: 'Lewati dari Pop Up Assist');
-          await _pushFreshOverlaySyncFor(activity.id);
-        } else if (type == 'action_postpone') {
-          final int minutes =
-              int.tryParse(data['minutes']?.toString() ?? '') ?? 10;
-          await ref
-              .read(notificationSchedulerProvider)
-              .postponeActivityReminder(activity: activity, minutes: minutes);
-        } else if (type == 'toggle_sub_activity') {
-          final String? sub = data['subActivity']?.toString();
-          final bool completed = data['completed'] == true;
-          if (sub != null && sub.isNotEmpty) {
-            await ref
-                .read(activityActionsProvider)
-                .toggleTodaySubActivity(
-                  activity: activity,
-                  subActivity: sub,
-                  completed: completed,
-                );
-            await _pushFreshOverlaySyncFor(activity.id);
-          }
-        } else if (type == 'open_app_detail') {
-          appNavigatorKey.currentState?.pushNamed(
-            AppRoutes.activityDetail,
-            arguments: ActivityDetailArgs(activityId: activity.id),
-          );
-        }
-        debugPrint('[popup-sync] action $type OK untuk ${activity.id}');
-      } catch (e) {
-        debugPrint('[popup-sync] overlay action GAGAL: $e');
-      }
-    });
-  }
-
-  void _syncCurrentFocusToOverlay({bool triggerGreeting = false}) {
-    final _ActivityTileData? item = _lastFocusItem;
-    if (item == null) {
-      final String sig = 'empty_${_lastTodaySchedules.length}';
-      if (_lastSyncedSignature == sig && !triggerGreeting) return;
-      _lastSyncedSignature = sig;
-      ref
-          .read(popUpAssistServiceProvider)
-          .syncActivity(
-            activityId: '',
-            title: 'Belum ada jadwal',
-            timeLabel: 'Hari ini santai',
-            speechText: triggerGreeting ? 'NOUSEN Assist siap mendampingi harimu!' : null,
-            isGreeting: triggerGreeting,
-            streak: _lastStreak,
-            todaySchedules: _lastTodaySchedules,
-            subActivities: const <String>[],
-            completedSubActivities: const <String>[],
-            isCompleted: false,
-            isSkipped: false,
-          );
-      return;
-    }
-    final ActivityModel activity = item.activity;
-    final ProgressEntryModel? entry = item.progressEntry;
-    final List<String> completedSub = normalizeCompletedSubActivities(
-      completedValues: entry?.completedSubActivities ?? const <String>[],
-      subActivities: activity.subActivities,
-    );
-
-    final String schedulesSig = _lastTodaySchedules
-        .map((s) => '${s['id']}_${s['isCompleted']}_${s['isSkipped']}')
-        .join('|');
-    final String sig =
-        '${activity.id}_${_lastStreak}_${item.isCompleted}_${item.isSkipped}_${completedSub.join(',')}_$schedulesSig';
-    if (sig == _lastSyncedSignature && !triggerGreeting) return;
-    _lastSyncedSignature = sig;
-
-    final String speech = triggerGreeting
-        ? (item.isCompleted
-            ? 'Aktivitas ${activity.title} sudah selesai, mantap!'
-            : 'Fokus saat ini: ${activity.title}')
-        : '';
-
-    ref
-        .read(popUpAssistServiceProvider)
-        .syncActivity(
-          activityId: activity.id,
-          title: activity.title,
-          timeLabel: formatMinutesAsTime(activity.timeMinutes),
-          speechText: speech.isNotEmpty ? speech : null,
-          isGreeting: triggerGreeting,
-          todaySchedules: _lastTodaySchedules,
-          streak: _lastStreak,
-          subActivities: activity.subActivities,
-          completedSubActivities: completedSub,
-          isCompleted: item.isCompleted,
-          isSkipped: item.isSkipped,
-        );
-  }
-
-  /// Push sync overlay langsung dari database (bukan cache build).
-  ///
-  /// Dipanggil setelah aksi popup memutasi progres. Jalur normal
-  /// (rebuild -> post-frame sync) tertunda saat app di background,
-  /// sehingga overlay menampilkan data lama. Helper ini membaca ulang
-  /// aktivitas + entri hari ini dari repository lalu mendorong payload
-  /// fresh dan menyelaraskan signature anti-duplikat.
-  Future<void> _pushFreshOverlaySyncFor(String activityId) async {
-    try {
-      final ActivityModel? activity = await ref
-          .read(activityRepositoryProvider)
-          .getById(activityId);
-      if (activity == null) return;
-
-      final DateTime now = DateTime.now();
-      final DateTime today = dateOnly(now);
-      final String todayKey = dateKeyFromDate(today);
-      final ProgressEntryModel? entry = await ref
-          .read(progressRepositoryProvider)
-          .getByActivityAndDate(activityId: activity.id, dateKey: todayKey);
-
-      final ActivityDailyProgressStatus status =
-          resolveActivityDailyProgressStatus(
-            scheduledDate: today,
-            today: now,
-            scheduleUpdatedAt:
-                activity.scheduleUpdatedAt ?? activity.createdAt,
-            subActivities: activity.subActivities,
-            scheduledTimeMinutes: activity.timeMinutes,
-            entry: entry,
-          );
-      final List<String> completedSub = normalizeCompletedSubActivities(
-        completedValues: entry?.completedSubActivities ?? const <String>[],
-        subActivities: activity.subActivities,
-      );
-      final bool isCompleted = status == ActivityDailyProgressStatus.done;
-      final bool isSkipped = status == ActivityDailyProgressStatus.skipped;
-
-      final List<ActivityModel> allActivities = await ref
-          .read(activityRepositoryProvider)
-          .getAll();
-      final List<ProgressEntryModel> allEntries = await ref
-          .read(progressRepositoryProvider)
-          .getAll();
-      final Map<String, ProgressEntryModel> todayProgressMap =
-          <String, ProgressEntryModel>{
-            for (final ProgressEntryModel e in allEntries)
-              if (e.dateKey == todayKey) e.activityId: e,
-          };
-      final List<ActivityModel> schedules = allActivities
-          .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
-          .toList()
-        ..sort(
-          (ActivityModel a, ActivityModel b) =>
-              a.timeMinutes.compareTo(b.timeMinutes),
-        );
-      final List<Map<String, dynamic>> todaySchedules = schedules
-          .map((ActivityModel a) {
-            final ProgressEntryModel? p = todayProgressMap[a.id];
-            final ActivityDailyProgressStatus s =
-                resolveActivityDailyProgressStatus(
-                  scheduledDate: now,
-                  today: now,
-                  scheduleUpdatedAt: a.scheduleUpdatedAt ?? a.createdAt,
-                  subActivities: a.subActivities,
-                  scheduledTimeMinutes: a.timeMinutes,
-                  entry: p,
-                );
-            return <String, dynamic>{
-              'id': a.id,
-              'title': a.title,
-              'timeMinutes': a.timeMinutes,
-              'isCompleted': s == ActivityDailyProgressStatus.done,
-              'isSkipped': s == ActivityDailyProgressStatus.skipped,
-            };
-          })
-          .toList();
-
-      final String schedulesSig = todaySchedules
-          .map((s) => '${s['id']}_${s['isCompleted']}_${s['isSkipped']}')
-          .join('|');
-      _lastSyncedSignature =
-          '${activity.id}_${_lastStreak}_${isCompleted}_${isSkipped}_${completedSub.join(',')}_$schedulesSig';
-
-      await ref
-          .read(popUpAssistServiceProvider)
-          .syncActivity(
-            activityId: activity.id,
-            title: activity.title,
-            timeLabel: formatMinutesAsTime(activity.timeMinutes),
-            todaySchedules: todaySchedules,
-            streak: _lastStreak,
-            subActivities: activity.subActivities,
-            completedSubActivities: completedSub,
-            isCompleted: isCompleted,
-            isSkipped: isSkipped,
-          );
-    } catch (_) {}
   }
 
   void _startMinuteTicker() {
@@ -557,47 +306,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       selectedIsToday: selectedIsToday,
       focusItem: focusItem,
     );
-
-    _lastFocusItem =
-        focusItem ?? (activityItems.isNotEmpty ? activityItems.first : null);
-    _lastStreak = currentStreak;
-
-    final String todayDateKey = DateFormat('yyyy-MM-dd').format(now);
-    final List<ActivityModel> todayActivities =
-        allActivities
-            .where((ActivityModel a) => a.selectedDays.contains(now.weekday))
-            .toList()
-          ..sort(
-            (ActivityModel a, ActivityModel b) =>
-                a.timeMinutes.compareTo(b.timeMinutes),
-          );
-    final Map<String, ProgressEntryModel> todayProgressMap =
-        <String, ProgressEntryModel>{
-          for (final ProgressEntryModel entry in historicalProgress)
-            if (entry.dateKey == todayDateKey) entry.activityId: entry,
-        };
-    _lastTodaySchedules = todayActivities.map((ActivityModel a) {
-      final ProgressEntryModel? p = todayProgressMap[a.id];
-      final ActivityDailyProgressStatus s = resolveActivityDailyProgressStatus(
-        scheduledDate: now,
-        today: now,
-        scheduleUpdatedAt: a.scheduleUpdatedAt ?? a.createdAt,
-        subActivities: a.subActivities,
-        scheduledTimeMinutes: a.timeMinutes,
-        entry: p,
-      );
-      return <String, dynamic>{
-        'id': a.id,
-        'title': a.title,
-        'timeMinutes': a.timeMinutes,
-        'isCompleted': s == ActivityDailyProgressStatus.done,
-        'isSkipped': s == ActivityDailyProgressStatus.skipped,
-      };
-    }).toList();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _syncCurrentFocusToOverlay();
-    });
 
     return PopScope(
       canPop: false,

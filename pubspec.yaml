@@ -49,8 +49,6 @@ dependencies:
   url_launcher: ^6.3.1
   http: ^1.2.2
   flutter_onnxruntime: ^1.7.0
-  flutter_overlay_window:
-    path: packages/flutter_overlay_window
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -78,8 +76,6 @@ flutter:
 
   assets:
     - assets/ai/activity_profiles.json
-    - assets/branding/bubble/bubble.png
-    - assets/branding/nousen_mark_192.png
     # Kept out of release bundle to optimize app size and startup performance:
     # - assets/ai/catalog_activities.json
     # - assets/ai/progress_entries.json (40MB synthetic data)
