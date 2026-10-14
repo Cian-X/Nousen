@@ -262,6 +262,61 @@ void main() {
         CloudWriteStatus.skippedOffline,
       );
     });
+
+    test('restoreFromCloud tarik entry cloud ke lokal', () async {
+      final _FakeLocalRepo local = _FakeLocalRepo();
+      final _FakeCloudRepo cloud = _FakeCloudRepo();
+      final _FakeAuthState auth = _FakeAuthState()..uid = 'u1';
+      final DualWriteProgressRepository repo = DualWriteProgressRepository(
+        local: local,
+        authState: auth,
+        cloudFactory: (_) => cloud,
+      );
+      // Simulasi: ada data di cloud tapi lokal kosong (install ulang).
+      cloud.store['c1'] = _entry(id: 'c1');
+      cloud.store['c2'] = _entry(id: 'c2');
+
+      final int restored = await repo.restoreFromCloud();
+
+      expect(restored, 2);
+      expect(local.store.containsKey('c1'), isTrue);
+      expect(local.store.containsKey('c2'), isTrue);
+    });
+
+    test('restoreFromCloud skip entry yang sudah ada di lokal', () async {
+      final _FakeLocalRepo local = _FakeLocalRepo();
+      final _FakeCloudRepo cloud = _FakeCloudRepo();
+      final _FakeAuthState auth = _FakeAuthState()..uid = 'u1';
+      final DualWriteProgressRepository repo = DualWriteProgressRepository(
+        local: local,
+        authState: auth,
+        cloudFactory: (_) => cloud,
+      );
+      // Lokal sudah punya e1, cloud juga punya e1 + c2.
+      await local.upsert(_entry(id: 'e1'));
+      cloud.store['e1'] = _entry(id: 'e1');
+      cloud.store['c2'] = _entry(id: 'c2');
+
+      final int restored = await repo.restoreFromCloud();
+
+      expect(restored, 1); // Hanya c2 yang baru.
+      expect(local.store.length, 2);
+    });
+
+    test('restoreFromCloud tanpa login mengembalikan 0', () async {
+      final _FakeLocalRepo local = _FakeLocalRepo();
+      final _FakeCloudRepo cloud = _FakeCloudRepo();
+      final _FakeAuthState auth = _FakeAuthState()..uid = null;
+      final DualWriteProgressRepository repo = DualWriteProgressRepository(
+        local: local,
+        authState: auth,
+        cloudFactory: (_) => cloud,
+      );
+
+      final int restored = await repo.restoreFromCloud();
+
+      expect(restored, 0);
+    });
   });
 
   group('FirestoreProgressRepository mapping', () {
