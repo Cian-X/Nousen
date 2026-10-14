@@ -90,6 +90,50 @@ class DualWriteProgressRepository implements ProgressRepository {
     }
   }
 
+  // ---- Restore: cloud → lokal (setelah login) ----
+
+  /// Tarik semua progress dari Firestore dan tulis ke Isar lokal.
+  /// Entry yang sudah ada di lokal (sama id) di-skip, bukan ditimpa,
+  /// agar data lokal yang mungkin lebih baru tidak hilang.
+  /// Mengembalikan jumlah entry yang di-restore.
+  Future<int> restoreFromCloud() async {
+    final String? uid = _authState.currentUid;
+    final ProgressRepository? cloud = _cloudFor(uid);
+    if (cloud == null) {
+      debugPrint('[restore] skip: tidak ada sesi cloud');
+      return 0;
+    }
+
+    debugPrint('[restore] mulai tarik data dari Firestore uid=$uid');
+    final List<ProgressEntryModel> cloudEntries = await cloud.getAll();
+    debugPrint('[restore] cloud punya ${cloudEntries.length} entry');
+
+    if (cloudEntries.isEmpty) {
+      return 0;
+    }
+
+    // Ambil semua id lokal untuk de-duplikasi.
+    final List<ProgressEntryModel> localEntries = await _local.getAll();
+    final Set<String> localIds =
+        localEntries.map((e) => e.id).toSet();
+
+    int restored = 0;
+    for (final ProgressEntryModel entry in cloudEntries) {
+      if (localIds.contains(entry.id)) {
+        continue;
+      }
+      try {
+        await _local.upsert(entry);
+        restored++;
+      } catch (e) {
+        debugPrint('[restore] gagal upsert lokal ${entry.id}: $e');
+      }
+    }
+
+    debugPrint('[restore] selesai: $restored entry baru ditulis ke lokal');
+    return restored;
+  }
+
   // ---- Baca: selalu lokal ----
 
   @override

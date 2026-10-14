@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nousen/app/providers.dart';
+import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
 import 'package:nousen/services/firebase/firebase_auth_service.dart';
 import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 
@@ -121,23 +123,116 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
 /// Gerbang sesi: tanpa Firebase → langsung app (mode lokal, perilaku lama);
 /// dengan Firebase → tunggu sesi, belum login → [LoginPage].
-class AuthGate extends ConsumerWidget {
+/// Setelah login → restore cloud → baru tampilkan app.
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key, required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  /// UID yang terakhir berhasil di-restore, agar tidak restore ulang
+  /// di rebuild yang sama (misalnya rotasi layar).
+  String? _restoredForUid;
+  bool _restoring = false;
+  String? _restoreError;
+
+  Future<void> _doRestore(String uid) async {
+    if (_restoredForUid == uid) return;
+    setState(() {
+      _restoring = true;
+      _restoreError = null;
+    });
+    try {
+      final repo = ref.read(progressRepositoryProvider);
+      if (repo is DualWriteProgressRepository) {
+        final int count = await repo.restoreFromCloud();
+        debugPrint('[authgate] restore selesai: $count entry');
+      }
+      _restoredForUid = uid;
+    } catch (e) {
+      debugPrint('[authgate] restore error: $e');
+      // Non-fatal: tetap masuk app meski restore gagal.
+      _restoredForUid = uid;
+      _restoreError = e.toString();
+    } finally {
+      if (mounted) {
+        setState(() => _restoring = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     if (!FirebaseBootstrap.isAvailable) {
-      return child;
+      return widget.child;
     }
     final AsyncValue<User?> session = ref.watch(firebaseAuthStateProvider);
     return session.when(
-      data: (User? user) => user == null ? const LoginPage() : child,
+      data: (User? user) {
+        if (user == null) {
+          // Reset restore state saat logout.
+          _restoredForUid = null;
+          return const LoginPage();
+        }
+        if (_restoring) {
+          return const _CloudRestoreView();
+        }
+        if (_restoredForUid != user.uid) {
+          // Trigger restore sekali setelah login.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _doRestore(user.uid);
+          });
+          return const _CloudRestoreView();
+        }
+        return widget.child;
+      },
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (Object error, StackTrace stackTrace) => child,
+      error: (Object error, StackTrace stackTrace) => widget.child,
+    );
+  }
+}
+
+/// Loading screen saat restore cloud → lokal.
+class _CloudRestoreView extends StatelessWidget {
+  const _CloudRestoreView();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Menyinkronkan data…',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: const Color(0xFF334155),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mengambil progres dari cloud',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
