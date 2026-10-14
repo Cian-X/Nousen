@@ -57,7 +57,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 Text(
                   'NOUSEN',
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
                     letterSpacing: 2,
                   ),
@@ -91,10 +91,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Sign in with Google',
-                            style: TextStyle(
-                              fontSize: 15,
+                            style: theme.textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
