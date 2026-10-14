@@ -134,6 +134,38 @@ class DualWriteProgressRepository implements ProgressRepository {
     return restored;
   }
 
+  /// Push semua progress lokal ke Firestore yang belum ada di cloud.
+  /// Dipanggil sekali saat pertama kali login agar data lama
+  /// yang sudah ada di Isar ter-sync ke cloud.
+  Future<int> syncUpExisting() async {
+    final String? uid = _authState.currentUid;
+    final ProgressRepository? cloud = _cloudFor(uid);
+    if (cloud == null) {
+      debugPrint('[syncup-progress] skip: tidak ada sesi cloud');
+      return 0;
+    }
+
+    final List<ProgressEntryModel> localEntries = await _local.getAll();
+    if (localEntries.isEmpty) return 0;
+
+    final List<ProgressEntryModel> cloudEntries = await cloud.getAll();
+    final Set<String> cloudIds = cloudEntries.map((e) => e.id).toSet();
+
+    int pushed = 0;
+    for (final ProgressEntryModel entry in localEntries) {
+      if (cloudIds.contains(entry.id)) continue;
+      try {
+        await cloud.upsert(entry);
+        pushed++;
+      } catch (e) {
+        debugPrint('[syncup-progress] gagal push ${entry.id}: $e');
+      }
+    }
+
+    debugPrint('[syncup-progress] selesai: $pushed entry dipush ke cloud');
+    return pushed;
+  }
+
   // ---- Baca: selalu lokal ----
 
   @override

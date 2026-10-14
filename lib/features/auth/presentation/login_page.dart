@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nousen/app/providers.dart';
+import 'package:nousen/features/activity/data/dual_write_activity_repository.dart';
 import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
 import 'package:nousen/services/firebase/firebase_auth_service.dart';
 import 'package:nousen/services/firebase/firebase_bootstrap.dart';
@@ -147,15 +148,29 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       _restoreError = null;
     });
     try {
-      final repo = ref.read(progressRepositoryProvider);
-      if (repo is DualWriteProgressRepository) {
-        final int count = await repo.restoreFromCloud();
-        debugPrint('[authgate] restore selesai: $count entry');
+      // 1. Restore activities dari cloud → lokal.
+      final activityRepo = ref.read(activityRepositoryProvider);
+      if (activityRepo is DualWriteActivityRepository) {
+        final int aCount = await activityRepo.restoreFromCloud();
+        debugPrint('[authgate] activity restore: $aCount entry');
+        // 2. Push aktivitas lokal yang belum ada di cloud.
+        final int aPushed = await activityRepo.syncUpExisting();
+        debugPrint('[authgate] activity sync up: $aPushed pushed');
       }
+
+      // 3. Restore progress dari cloud → lokal.
+      final progressRepo = ref.read(progressRepositoryProvider);
+      if (progressRepo is DualWriteProgressRepository) {
+        final int pCount = await progressRepo.restoreFromCloud();
+        debugPrint('[authgate] progress restore: $pCount entry');
+        // 4. Push progress lokal yang belum ada di cloud.
+        final int pPushed = await progressRepo.syncUpExisting();
+        debugPrint('[authgate] progress sync up: $pPushed pushed');
+      }
+
       _restoredForUid = uid;
     } catch (e) {
       debugPrint('[authgate] restore error: $e');
-      // Non-fatal: tetap masuk app meski restore gagal.
       _restoredForUid = uid;
       _restoreError = e.toString();
     } finally {
