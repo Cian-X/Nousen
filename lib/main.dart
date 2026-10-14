@@ -15,6 +15,7 @@ import 'package:nousen/features/progress/data/progress_entry_entity.dart';
 import 'package:nousen/features/settings/data/app_settings_entity.dart';
 import 'package:nousen/services/notification_action.dart';
 import 'package:nousen/services/notification_scheduler.dart';
+import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {
@@ -50,6 +51,11 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SmartActivityAdvisor.initializeProfiles();
+
+  // Firebase opsional: tanpa google-services.json, bootstrap mengembalikan
+  // false dan fitur Auth/Firestore nonaktif tanpa crash. Isar lokal tetap
+  // menjadi sumber utama data (tidak dimigrasikan).
+  await FirebaseBootstrap.initialize();
 
   final directory = await getApplicationDocumentsDirectory();
   final Isar isar = await Isar.open(
