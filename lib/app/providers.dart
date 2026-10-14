@@ -21,6 +21,8 @@ import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart'
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 import 'package:nousen/features/progress/data/isar_progress_repository.dart';
+import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
+import 'package:nousen/services/firebase/firebase_auth_state.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/progress/domain/progress_repository.dart';
 import 'package:nousen/features/home/application/home_ml_service.dart';
@@ -182,7 +184,12 @@ final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
 });
 
 final progressRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
-  return IsarProgressRepository(ref.watch(isarProvider));
+  // Pilot dual-write: Isar tetap primer untuk baca; tulis diteruskan ke
+  // Firestore bila login. Tanpa login/cloud: perilaku identik Isar murni.
+  return DualWriteProgressRepository(
+    local: IsarProgressRepository(ref.watch(isarProvider)),
+    authState: FirebaseCloudAuthState(),
+  );
 });
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((Ref ref) {
