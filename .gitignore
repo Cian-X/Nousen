@@ -48,6 +48,10 @@ app.*.map.json
 # Local demo secrets
 config/gemini_demo.local.env
 
+# Firebase config berisi secret: hanya lokal, jangan commit.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # Local tool artifacts
 .figma_*.png
 call_*.txt
