@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 
 part 'synthetic_entities.g.dart';
 

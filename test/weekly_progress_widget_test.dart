@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/core/widgets/weekly_progress_widget.dart';
+import 'package:nousen/core/widgets/weekly_progress_widget.dart';
 
 void main() {
   group('weeklyProgressBarHeight', () {

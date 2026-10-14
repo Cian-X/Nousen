@@ -1,4 +1,4 @@
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
 
 class DailyStat {
   const DailyStat({

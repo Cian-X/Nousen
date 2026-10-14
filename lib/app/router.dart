@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/activity/presentation/activity_detail_page.dart';
-import 'package:liburan_create/features/activity/presentation/activity_form_page.dart';
-import 'package:liburan_create/features/home/presentation/home_shell_page.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/one_time_reminder_detail_page.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/schedule_agenda_page.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/schedule_form_page.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
-import 'package:liburan_create/features/settings/presentation/initial_setup_onboarding_page.dart';
-import 'package:liburan_create/features/stats/presentation/stats_page.dart';
-import 'package:liburan_create/features/stats/presentation/stats_report_page.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/presentation/activity_detail_page.dart';
+import 'package:nousen/features/activity/presentation/activity_form_page.dart';
+import 'package:nousen/features/home/presentation/home_shell_page.dart';
+import 'package:nousen/features/one_time_reminder/presentation/one_time_reminder_detail_page.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_agenda_page.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/presentation/initial_setup_onboarding_page.dart';
+import 'package:nousen/features/stats/presentation/stats_page.dart';
+import 'package:nousen/features/stats/presentation/stats_report_page.dart';
 
 class AppRoutes {
   static const String home = '/';

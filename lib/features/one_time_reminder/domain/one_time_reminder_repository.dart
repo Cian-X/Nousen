@@ -1,5 +1,5 @@
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
 
 abstract class OneTimeReminderRepository {
   Stream<List<OneTimeReminderModel>> watchAll();

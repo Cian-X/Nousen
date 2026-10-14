@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/schedule_agenda_page.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_agenda_page.dart';
 
 void main() {
   group('agendaWindowStart', () {

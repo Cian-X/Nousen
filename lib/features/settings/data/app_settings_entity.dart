@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
-import 'package:liburan_create/core/constants/app_constants.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
-import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
+import 'package:nousen/core/constants/app_constants.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 
 part 'app_settings_entity.g.dart';
 

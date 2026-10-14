@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/theme/app_layout.dart';
+import 'package:nousen/core/theme/app_layout.dart';
 
 @immutable
 class HabitBrandPalette extends ThemeExtension<HabitBrandPalette> {

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:liburan_create/core/constants/ai_demo_config.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/core/constants/ai_demo_config.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
 
 class GeminiActivityService {
   GeminiActivityService({http.Client? client, String? apiKeyOverride})

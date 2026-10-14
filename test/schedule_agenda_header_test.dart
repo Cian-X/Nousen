@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/schedule_agenda_page.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_agenda_page.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
 
 void main() {
   setUpAll(() async {

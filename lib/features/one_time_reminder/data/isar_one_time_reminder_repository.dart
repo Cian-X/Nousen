@@ -1,9 +1,9 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/one_time_reminder/data/agenda_note_entity.dart';
-import 'package:liburan_create/features/one_time_reminder/data/one_time_reminder_entity.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_repository.dart';
+import 'package:nousen/features/one_time_reminder/data/agenda_note_entity.dart';
+import 'package:nousen/features/one_time_reminder/data/one_time_reminder_entity.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 
 class IsarOneTimeReminderRepository implements OneTimeReminderRepository {
   IsarOneTimeReminderRepository(this._isar);

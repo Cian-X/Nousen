@@ -1,8 +1,8 @@
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_repository.dart';
-import 'package:liburan_create/features/settings/domain/settings_repository.dart';
-import 'package:liburan_create/services/notification_scheduler.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
+import 'package:nousen/features/settings/domain/settings_repository.dart';
+import 'package:nousen/services/notification_scheduler.dart';
 import 'package:uuid/uuid.dart';
 
 class OneTimeReminderActions {

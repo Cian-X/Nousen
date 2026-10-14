@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_visual_state.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_visual_state.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
 
 void main() {
   group('resolveAgendaVisualState', () {

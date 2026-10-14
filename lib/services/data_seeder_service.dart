@@ -4,9 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/activity/data/activity_entity.dart';
-import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
-import 'package:liburan_create/features/settings/data/isar_settings_repository.dart';
+import 'package:nousen/features/activity/data/activity_entity.dart';
+import 'package:nousen/features/progress/data/progress_entry_entity.dart';
+import 'package:nousen/features/settings/data/isar_settings_repository.dart';
 
 class DataSeederService {
   final Isar isar;
@@ -27,11 +27,15 @@ class DataSeederService {
 
     try {
       // Seed activities first
-      await _seedActivities();
+      final bool activitiesOk = await _seedActivities();
       // Then seed progress entries
-      await _seedProgressEntries();
-      // Mark sebagai sudah di-seed
-      await _markAsSeeded();
+      final bool progressOk = await _seedProgressEntries();
+      // Tandai selesai hanya bila KEDUA bagian benar-benar terseed;
+      // bila aset hilang dan dilewati, biarkan false agar dicoba lagi
+      // saat aset tersedia (tidak mengunci state seeded palsu).
+      if (activitiesOk && progressOk) {
+        await _markAsSeeded();
+      }
       print('Data seeding completed successfully');
       return true;
     } catch (e) {
@@ -40,7 +44,8 @@ class DataSeederService {
     }
   }
 
-  Future<void> _seedActivities() async {
+  /// true bila seeding jalan (walau 0 baris); false bila aset hilang.
+  Future<bool> _seedActivities() async {
     try {
       final jsonString = await rootBundle.loadString('assets/ai/catalog_activities.json');
       final List<dynamic> jsonList = json.decode(jsonString);
@@ -68,13 +73,16 @@ class DataSeederService {
 
       await isar.writeTxn(() => isar.activityEntitys.putAll(entities));
       print('Seeded ${entities.length} activities');
+      return true;
     } catch (e) {
-      print('Error seeding activities: $e');
-      rethrow;
+      // Aset seeder opsional (tidak dibundel rilis): lewati tanpa crash.
+      print('Skip seeding activities (aset tidak tersedia): $e');
+      return false;
     }
   }
 
-  Future<void> _seedProgressEntries() async {
+  /// true bila seeding jalan; false bila aset hilang.
+  Future<bool> _seedProgressEntries() async {
     try {
       final jsonString = await rootBundle.loadString('assets/ai/progress_entries.json');
       final List<dynamic> jsonList = json.decode(jsonString);
@@ -103,9 +111,11 @@ class DataSeederService {
 
       await isar.writeTxn(() => isar.progressEntryEntitys.putAll(entities));
       print('Seeded ${entities.length} progress entries');
+      return true;
     } catch (e) {
-      print('Error seeding progress entries: $e');
-      rethrow;
+      // Aset seeder opsional (tidak dibundel rilis): lewati tanpa crash.
+      print('Skip seeding progress entries (aset tidak tersedia): $e');
+      return false;
     }
   }
 

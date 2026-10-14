@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/core/utils/time_utils.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
-import 'package:liburan_create/features/activity/domain/activity_category.dart';
-import 'package:liburan_create/services/gemini_activity_service.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
-import 'package:liburan_create/l10n/app_localizations.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/features/activity/domain/activity_category.dart';
+import 'package:nousen/services/gemini_activity_service.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 class ScheduleFormArgs {
   const ScheduleFormArgs({this.reminder, this.initialDate});

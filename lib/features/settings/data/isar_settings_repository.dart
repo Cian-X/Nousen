@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/settings/data/app_settings_entity.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
-import 'package:liburan_create/features/settings/domain/settings_repository.dart';
+import 'package:nousen/features/settings/data/app_settings_entity.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/domain/settings_repository.dart';
 
 class IsarSettingsRepository implements SettingsRepository {
   IsarSettingsRepository(this._isar);

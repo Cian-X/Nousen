@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/theme/app_theme.dart';
-import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
+import 'package:nousen/core/theme/app_theme.dart';
+import 'package:nousen/features/activity/domain/activity_daily_progress_status.dart';
 
 IconData activityStatusIcon(ActivityDailyProgressStatus status) {
   return switch (status) {

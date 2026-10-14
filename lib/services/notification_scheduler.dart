@@ -4,11 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:liburan_create/core/utils/notification_ids.dart';
-import 'package:liburan_create/features/activity/application/activity_notification_copy_service.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/core/utils/notification_ids.dart';
+import 'package:nousen/features/activity/application/activity_notification_copy_service.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 

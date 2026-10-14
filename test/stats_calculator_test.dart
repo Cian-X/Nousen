@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
-import 'package:liburan_create/features/stats/application/stats_service.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/stats/application/stats_service.dart';
 
 void main() {
   ActivityModel activity({required String id}) {

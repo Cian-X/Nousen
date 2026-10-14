@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/core/constants/ai_demo_config.dart';
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/core/utils/weekday_utils.dart';
-import 'package:liburan_create/features/stats/domain/stats_models.dart';
-import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/core/constants/ai_demo_config.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/core/utils/weekday_utils.dart';
+import 'package:nousen/features/stats/domain/stats_models.dart';
+import 'package:nousen/features/stats/domain/stats_view_models.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 enum _DayIntensity { high, medium, rest }
 

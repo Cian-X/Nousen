@@ -1,12 +1,12 @@
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/features/activity/application/activity_notification_copy_service.dart';
-import 'package:liburan_create/features/activity/application/three_day_rule_service.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/activity/domain/activity_repository.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_repository.dart';
-import 'package:liburan_create/features/settings/domain/settings_repository.dart';
-import 'package:liburan_create/services/notification_scheduler.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/features/activity/application/activity_notification_copy_service.dart';
+import 'package:nousen/features/activity/application/three_day_rule_service.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/domain/activity_repository.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/progress/domain/progress_repository.dart';
+import 'package:nousen/features/settings/domain/settings_repository.dart';
+import 'package:nousen/services/notification_scheduler.dart';
 import 'package:uuid/uuid.dart';
 
 class ActivityActions {

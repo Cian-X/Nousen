@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/theme/app_layout.dart';
-import 'package:liburan_create/core/utils/activity_icon_utils.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/core/theme/app_layout.dart';
+import 'package:nousen/core/utils/activity_icon_utils.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 class ActivityStickerBadge extends StatelessWidget {
   const ActivityStickerBadge({

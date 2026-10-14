@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/theme/app_layout.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/core/theme/app_layout.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 class CartoonAppBarActionButton extends StatelessWidget {
   const CartoonAppBarActionButton({

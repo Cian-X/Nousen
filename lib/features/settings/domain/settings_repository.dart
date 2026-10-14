@@ -1,4 +1,4 @@
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
 
 abstract class SettingsRepository {
   Stream<AppSettingsModel> watch();

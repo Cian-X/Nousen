@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
 
 part 'agenda_note_entity.g.dart';
 

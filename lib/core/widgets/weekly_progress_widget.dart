@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/core/utils/weekday_utils.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/core/utils/weekday_utils.dart';
 
 enum WeeklyProgressDayVisualState {
   complete,

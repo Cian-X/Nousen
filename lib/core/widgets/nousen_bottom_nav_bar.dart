@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 /// Defines a single tab in the Nousen bottom navigation bar.
 class NousenNavTab {

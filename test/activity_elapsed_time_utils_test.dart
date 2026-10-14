@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/core/utils/activity_elapsed_time_utils.dart';
+import 'package:nousen/core/utils/activity_elapsed_time_utils.dart';
 
 void main() {
   test('running activity shows elapsed time after scheduled start', () {
