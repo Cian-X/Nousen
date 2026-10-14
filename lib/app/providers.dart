@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -35,6 +36,7 @@ import 'package:nousen/features/stats/application/stats_ml_service.dart';
 import 'package:nousen/features/stats/domain/stats_models.dart';
 import 'package:nousen/services/device_health_service.dart';
 import 'package:nousen/services/gemini_activity_service.dart';
+import 'package:nousen/services/firebase/firebase_auth_service.dart';
 import 'package:nousen/services/image_storage_service.dart';
 import 'package:nousen/services/ml/ml_model_encoder_service.dart';
 import 'package:nousen/services/ml/ml_model_schema_service.dart';
@@ -69,6 +71,21 @@ final deviceHealthServiceProvider = Provider<DeviceHealthService>(
 final geminiActivityServiceProvider = Provider<GeminiActivityService>(
   (Ref ref) => GeminiActivityService(),
 );
+
+/// Layanan Auth Firebase + Google Sign-In (nonaktif bila Firebase belum
+/// dikonfigurasi; lihat [FirebaseAuthService]).
+final firebaseAuthServiceProvider = Provider<FirebaseAuthService>(
+  (Ref ref) => FirebaseAuthService(),
+);
+
+/// Status login Firebase. Null = belum login / Firebase nonaktif.
+final firebaseAuthStateProvider = StreamProvider<User?>((Ref ref) {
+  try {
+    return ref.watch(firebaseAuthServiceProvider).authStateChanges();
+  } on FirebaseNotConfigured {
+    return Stream<User?>.value(null);
+  }
+});
 
 final onnxModelServiceProvider = Provider<OnnxModelService>(
   (Ref ref) => OnnxModelService(),

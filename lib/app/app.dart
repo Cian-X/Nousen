@@ -5,6 +5,7 @@ import 'package:nousen/app/providers.dart';
 import 'package:nousen/app/router.dart';
 import 'package:nousen/core/constants/app_constants.dart';
 import 'package:nousen/core/theme/app_theme.dart';
+import 'package:nousen/features/auth/presentation/login_page.dart';
 import 'package:nousen/l10n/app_localizations.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -34,7 +35,7 @@ class ReminderScheduleApp extends ConsumerWidget {
       initialRoute: AppRoutes.home,
       builder: (BuildContext context, Widget? child) {
         return bootstrap.when(
-          data: (_) => child ?? const SizedBox.shrink(),
+          data: (_) => AuthGate(child: child ?? const SizedBox.shrink()),
           loading: () => const _BootstrapLoadingView(),
           error: (Object err, StackTrace _) => _BootstrapErrorView(error: err),
         );
