@@ -14,6 +14,7 @@ import 'package:nousen/features/activity/application/activity_notification_copy_
 import 'package:nousen/features/activity/application/ai_feedback_log_service.dart';
 import 'package:nousen/features/activity/application/three_day_rule_service.dart';
 import 'package:nousen/features/activity/data/isar_activity_repository.dart';
+import 'package:nousen/features/activity/data/dual_write_activity_repository.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/domain/activity_repository.dart';
 import 'package:nousen/features/one_time_reminder/application/one_time_reminder_actions.dart';
@@ -191,7 +192,10 @@ final notificationHealthProvider = FutureProvider<NotificationHealthState>((
 });
 
 final activityRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
-  return IsarActivityRepository(ref.watch(isarProvider));
+  return DualWriteActivityRepository(
+    local: IsarActivityRepository(ref.watch(isarProvider)),
+    authState: FirebaseCloudAuthState(),
+  );
 });
 
 final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
