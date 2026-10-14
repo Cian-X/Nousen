@@ -8,6 +8,7 @@ import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/constants/app_constants.dart';
 import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 import 'package:nousen/core/theme/app_layout.dart';
+import 'package:nousen/features/progress/presentation/cloud_sync_indicator.dart';
 import 'package:nousen/core/utils/time_utils.dart';
 import 'package:nousen/l10n/app_localizations.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
@@ -123,6 +124,12 @@ class SettingsPage extends ConsumerWidget {
               )
             : null,
         title: Text(isId ? 'Pengaturan' : 'Settings'),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CloudSyncIndicator(),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {

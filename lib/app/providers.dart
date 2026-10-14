@@ -209,6 +209,19 @@ final progressRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
   );
 });
 
+/// Akses [DualWriteProgressRepository.syncState] untuk UI sync indicator.
+final cloudSyncStateProvider =
+    Provider<ValueNotifier<CloudSyncState>>((Ref ref) {
+  final repo = ref.watch(progressRepositoryProvider);
+  if (repo is DualWriteProgressRepository) {
+    return repo.syncState;
+  }
+  // Fallback: selalu skipped jika bukan dual-write.
+  return ValueNotifier<CloudSyncState>(
+    CloudSyncState(status: CloudWriteStatus.skippedOffline, at: DateTime.now()),
+  );
+});
+
 final settingsRepositoryProvider = Provider<SettingsRepository>((Ref ref) {
   return IsarSettingsRepository(ref.watch(isarProvider));
 });
