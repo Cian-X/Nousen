@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,12 +51,15 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint('[boot] profiles start');
   await SmartActivityAdvisor.initializeProfiles();
+  debugPrint('[boot] profiles ok');
 
   // Firebase opsional: tanpa google-services.json, bootstrap mengembalikan
   // false dan fitur Auth/Firestore nonaktif tanpa crash. Isar lokal tetap
   // menjadi sumber utama data (tidak dimigrasikan).
-  await FirebaseBootstrap.initialize();
+  final bool firebaseOk = await FirebaseBootstrap.initialize();
+  debugPrint('[boot] firebase ${firebaseOk ? "ok" : "skipped"}');
 
   final directory = await getApplicationDocumentsDirectory();
   final Isar isar = await Isar.open(
@@ -70,9 +74,11 @@ Future<void> main() async {
     name: 'reminder_schedule_v2',
     inspector: false,
   );
+  debugPrint('[boot] isar ok');
 
   final NotificationScheduler scheduler = NotificationScheduler();
   await scheduler.initialize(onTap: _handleNotificationResponse);
+  debugPrint('[boot] scheduler ok');
 
   runApp(
     ProviderScope(

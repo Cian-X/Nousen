@@ -131,16 +131,21 @@ class DualWriteProgressRepository implements ProgressRepository {
   @override
   Future<void> upsert(ProgressEntryModel entry) async {
     await _local.upsert(entry);
-    final ProgressRepository? cloud =
-        _cloudFor(_authState.currentUid);
+    final String? uid = _authState.currentUid;
+    debugPrint('[dualwrite] upsert uid=$uid entryId=${entry.id} '
+        'activity=${entry.activityId} date=${entry.dateKey}');
+    final ProgressRepository? cloud = _cloudFor(uid);
     if (cloud == null) {
+      debugPrint('[dualwrite] cloud SKIP — no uid/cloud');
       _record(CloudWriteStatus.skippedOffline, 'tanpa login/cloud');
       return;
     }
     try {
       await cloud.upsert(entry);
+      debugPrint('[dualwrite] cloud SYNCED entryId=${entry.id}');
       _record(CloudWriteStatus.synced);
     } catch (e) {
+      debugPrint('[dualwrite] cloud FAILED entryId=${entry.id}: $e');
       _record(CloudWriteStatus.failed, e.toString());
     }
   }

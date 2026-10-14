@@ -134,10 +134,14 @@ class FirestoreProgressRepository implements ProgressRepository {
 
   @override
   Future<void> upsert(ProgressEntryModel entry) async {
+    final Map<String, dynamic> data = toMap(entry);
+    debugPrint('[firestore] upsert doc=${entry.id} path=${_col.path}/${entry.id} '
+        'payload=$data');
     try {
-      await _col.doc(entry.id).set(toMap(entry), SetOptions(merge: true));
+      await _col.doc(entry.id).set(data, SetOptions(merge: true));
+      debugPrint('[firestore] upsert OK doc=${entry.id}');
     } catch (e) {
-      debugPrint('[dualwrite] cloud upsert gagal: $e');
+      debugPrint('[firestore] upsert FAIL doc=${entry.id}: $e');
       rethrow;
     }
   }
