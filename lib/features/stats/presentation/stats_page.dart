@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/app/router.dart';
-import 'package:liburan_create/core/constants/ai_demo_config.dart';
-import 'package:liburan_create/core/theme/app_theme.dart';
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/core/utils/weekday_utils.dart';
-import 'package:liburan_create/features/activity/domain/activity_category.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
-import 'package:liburan_create/features/stats/domain/stats_models.dart';
-import 'package:liburan_create/features/stats/domain/stats_view_models.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
-import 'package:liburan_create/core/widgets/nousen_bottom_nav_bar.dart';
-import 'package:liburan_create/features/settings/presentation/settings_page.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/app/router.dart';
+import 'package:nousen/core/constants/ai_demo_config.dart';
+import 'package:nousen/core/theme/app_theme.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/core/utils/weekday_utils.dart';
+import 'package:nousen/features/activity/domain/activity_category.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/stats/domain/stats_models.dart';
+import 'package:nousen/features/stats/domain/stats_view_models.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
+import 'package:nousen/features/settings/presentation/settings_page.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});

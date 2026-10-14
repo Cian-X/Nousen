@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
-import 'package:liburan_create/app/app.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/app/router.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
-import 'package:liburan_create/features/activity/data/activity_entity.dart';
-import 'package:liburan_create/features/one_time_reminder/data/agenda_note_entity.dart';
-import 'package:liburan_create/features/one_time_reminder/data/one_time_reminder_entity.dart';
-import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
-import 'package:liburan_create/features/settings/data/app_settings_entity.dart';
-import 'package:liburan_create/services/notification_action.dart';
-import 'package:liburan_create/services/notification_scheduler.dart';
+import 'package:nousen/app/app.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/app/router.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/features/activity/data/activity_entity.dart';
+import 'package:nousen/features/one_time_reminder/data/agenda_note_entity.dart';
+import 'package:nousen/features/one_time_reminder/data/one_time_reminder_entity.dart';
+import 'package:nousen/features/progress/data/progress_entry_entity.dart';
+import 'package:nousen/features/settings/data/app_settings_entity.dart';
+import 'package:nousen/services/notification_action.dart';
+import 'package:nousen/services/notification_scheduler.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {

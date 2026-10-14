@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/activity/data/activity_entity.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/activity/domain/activity_repository.dart';
+import 'package:nousen/features/activity/data/activity_entity.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/domain/activity_repository.dart';
 
 class IsarActivityRepository implements ActivityRepository {
   IsarActivityRepository(this._isar);

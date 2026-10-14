@@ -1,4 +1,4 @@
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 
 enum ActivityProgressState { notStarted, partial, complete }
 

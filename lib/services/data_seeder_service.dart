@@ -4,9 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/activity/data/activity_entity.dart';
-import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
-import 'package:liburan_create/features/settings/data/isar_settings_repository.dart';
+import 'package:nousen/features/activity/data/activity_entity.dart';
+import 'package:nousen/features/progress/data/progress_entry_entity.dart';
+import 'package:nousen/features/settings/data/isar_settings_repository.dart';
 
 class DataSeederService {
   final Isar isar;
@@ -69,8 +69,9 @@ class DataSeederService {
       await isar.writeTxn(() => isar.activityEntitys.putAll(entities));
       print('Seeded ${entities.length} activities');
     } catch (e) {
-      print('Error seeding activities: $e');
-      rethrow;
+      // Aset seeder opsional (tidak dibundel rilis): lewati tanpa crash.
+      print('Skip seeding activities (aset tidak tersedia): $e');
+      return;
     }
   }
 
@@ -104,8 +105,9 @@ class DataSeederService {
       await isar.writeTxn(() => isar.progressEntryEntitys.putAll(entities));
       print('Seeded ${entities.length} progress entries');
     } catch (e) {
-      print('Error seeding progress entries: $e');
-      rethrow;
+      // Aset seeder opsional (tidak dibundel rilis): lewati tanpa crash.
+      print('Skip seeding progress entries (aset tidak tersedia): $e');
+      return;
     }
   }
 

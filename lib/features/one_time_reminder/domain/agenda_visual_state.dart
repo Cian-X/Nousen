@@ -1,6 +1,6 @@
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
 
 enum AgendaVisualState { done, ongoing, missed, upcoming, skipped }
 

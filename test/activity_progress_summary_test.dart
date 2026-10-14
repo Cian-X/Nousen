@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
-import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/activity/domain/activity_daily_progress_status.dart';
+import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 
 void main() {
   group('resolveActivityProgressSummary', () {

@@ -2,10 +2,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart';
 import 'package:flutter_onnxruntime/src/flutter_onnxruntime_platform_interface.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
-import 'package:liburan_create/services/ml/ml_model_encoder_service.dart';
-import 'package:liburan_create/services/ml/ml_model_schema_service.dart';
-import 'package:liburan_create/services/ml/onnx_model_service.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/services/ml/ml_model_encoder_service.dart';
+import 'package:nousen/services/ml/ml_model_schema_service.dart';
+import 'package:nousen/services/ml/onnx_model_service.dart';
 
 @immutable
 class StatsMlRequest {

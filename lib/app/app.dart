@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/app/router.dart';
-import 'package:liburan_create/core/constants/app_constants.dart';
-import 'package:liburan_create/core/theme/app_theme.dart';
-import 'package:liburan_create/l10n/app_localizations.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/app/router.dart';
+import 'package:nousen/core/constants/app_constants.dart';
+import 'package:nousen/core/theme/app_theme.dart';
+import 'package:nousen/l10n/app_localizations.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 

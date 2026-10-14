@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/core/constants/app_constants.dart';
-import 'package:liburan_create/core/utils/time_utils.dart';
-import 'package:liburan_create/features/home/presentation/home_shell_page.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
-import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/core/constants/app_constants.dart';
+import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/features/home/presentation/home_shell_page.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 class InitialSetupOnboardingPage extends ConsumerStatefulWidget {
   const InitialSetupOnboardingPage({

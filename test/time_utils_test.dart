@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/core/utils/time_utils.dart';
+import 'package:nousen/core/utils/time_utils.dart';
 
 void main() {
   test('formatMinutesAsTime formats HH:mm', () {

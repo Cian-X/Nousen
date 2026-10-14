@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:liburan_create/app/providers.dart';
-import 'package:liburan_create/app/router.dart';
-import 'package:liburan_create/core/theme/app_layout.dart';
-import 'package:liburan_create/core/theme/app_theme.dart';
-import 'package:liburan_create/core/utils/time_utils.dart';
-import 'package:liburan_create/core/widgets/optimized_file_image.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_note_model.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/agenda_visual_state.dart';
-import 'package:liburan_create/features/one_time_reminder/domain/one_time_reminder_model.dart';
-import 'package:liburan_create/features/one_time_reminder/presentation/schedule_form_page.dart';
-import 'package:liburan_create/l10n/app_localizations.dart';
-import 'package:liburan_create/services/photo_access_service.dart';
-import 'package:liburan_create/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/app/providers.dart';
+import 'package:nousen/app/router.dart';
+import 'package:nousen/core/theme/app_layout.dart';
+import 'package:nousen/core/theme/app_theme.dart';
+import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/core/widgets/optimized_file_image.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/agenda_visual_state.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
+import 'package:nousen/l10n/app_localizations.dart';
+import 'package:nousen/services/photo_access_service.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 
 class OneTimeReminderDetailPage extends ConsumerWidget {
   const OneTimeReminderDetailPage({super.key, required this.args});

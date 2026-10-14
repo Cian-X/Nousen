@@ -1,8 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   const SmartActivityAdvisor advisor = SmartActivityAdvisor();
+
+  setUpAll(() async {
+    // Produksi memanggil initializeProfiles() saat startup (main.dart);
+    // tanpa ini tes menguji state profil kosong yang tak pernah terjadi.
+    await SmartActivityAdvisor.initializeProfiles();
+  });
 
   group('SmartActivityAdvisor', () {
     test('classifies avoidance health activity', () {
@@ -37,7 +44,7 @@ void main() {
       expect(result, isNotNull);
       expect(result!.type, SmartActivityType.action);
       expect(result.category, SmartActivityCategory.sosial);
-      expect(result.keyword, 'telepon');
+      expect(result.keyword, 'telepon orang tua');
       expect(result.recommendedTimeMinutes, 1110);
     });
 

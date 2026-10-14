@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liburan_create/core/utils/notification_ids.dart';
+import 'package:nousen/core/utils/notification_ids.dart';
 
 void main() {
   test('notification IDs are deterministic and unique across type/day', () {

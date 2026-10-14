@@ -1,4 +1,4 @@
-import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
+import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 
 class AppSettingsModel {
   const AppSettingsModel({

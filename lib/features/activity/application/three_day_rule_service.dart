@@ -1,9 +1,9 @@
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/activity/domain/activity_progress_summary.dart';
-import 'package:liburan_create/features/activity/domain/activity_repository.dart';
-import 'package:liburan_create/features/progress/domain/progress_repository.dart';
-import 'package:liburan_create/services/notification_scheduler.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
+import 'package:nousen/features/activity/domain/activity_repository.dart';
+import 'package:nousen/features/progress/domain/progress_repository.dart';
+import 'package:nousen/services/notification_scheduler.dart';
 
 class ThreeDayRuleService {
   ThreeDayRuleService({

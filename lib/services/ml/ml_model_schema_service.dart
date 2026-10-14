@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:liburan_create/services/ml/onnx_model_service.dart';
+import 'package:nousen/services/ml/onnx_model_service.dart';
 
 class MlModelSchema {
   const MlModelSchema({

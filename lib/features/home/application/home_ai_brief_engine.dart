@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
-import 'package:liburan_create/core/utils/date_utils.dart';
-import 'package:liburan_create/core/utils/time_utils.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
-import 'package:liburan_create/features/activity/domain/activity_daily_progress_status.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/core/utils/date_utils.dart';
+import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/features/activity/domain/activity_daily_progress_status.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 
 enum HomeAiActionType { addActivity, openStats, none }
 enum HomeAiBriefSource { local, ml }

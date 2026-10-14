@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart'; // Keep this for IconData
-import 'package:liburan_create/features/activity/domain/activity_model.dart'; // For ActivityModel
+import 'package:nousen/features/activity/domain/activity_model.dart'; // For ActivityModel
 
 class StatsAiSummaryData {
   const StatsAiSummaryData({

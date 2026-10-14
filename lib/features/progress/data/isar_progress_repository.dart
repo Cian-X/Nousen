@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/progress/data/progress_entry_entity.dart';
-import 'package:liburan_create/features/progress/domain/progress_entry_model.dart';
-import 'package:liburan_create/features/progress/domain/progress_repository.dart';
+import 'package:nousen/features/progress/data/progress_entry_entity.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/progress/domain/progress_repository.dart';
 
 class IsarProgressRepository implements ProgressRepository {
   IsarProgressRepository(this._isar);

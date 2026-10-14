@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
-import 'package:liburan_create/features/activity/domain/activity_category.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/activity/domain/activity_category.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
 
 part 'activity_entity.g.dart';
 

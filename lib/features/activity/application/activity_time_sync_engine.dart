@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
-import 'package:liburan_create/core/utils/time_utils.dart';
-import 'package:liburan_create/core/utils/weekday_utils.dart';
-import 'package:liburan_create/features/activity/application/smart_activity_advisor.dart';
-import 'package:liburan_create/features/activity/application/user_availability_note_parser.dart';
-import 'package:liburan_create/features/activity/domain/activity_model.dart';
-import 'package:liburan_create/features/settings/domain/app_settings_model.dart';
-import 'package:liburan_create/features/settings/domain/weekly_routine_models.dart';
+import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/core/utils/weekday_utils.dart';
+import 'package:nousen/features/activity/application/smart_activity_advisor.dart';
+import 'package:nousen/features/activity/application/user_availability_note_parser.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 
 class ActivityTimeSyncEngine {
   const ActivityTimeSyncEngine()
