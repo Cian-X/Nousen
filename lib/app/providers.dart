@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:nousen/core/constants/ai_demo_config.dart';
 import 'package:nousen/core/constants/app_constants.dart';
+import 'package:nousen/core/migration/migration_flags.dart';
 import 'package:nousen/core/utils/date_utils.dart';
 import 'package:nousen/features/activity/application/activity_actions.dart';
 import 'package:nousen/features/activity/application/activity_detail_ml_service.dart';
@@ -14,6 +16,8 @@ import 'package:nousen/features/activity/application/activity_notification_copy_
 import 'package:nousen/features/activity/application/ai_feedback_log_service.dart';
 import 'package:nousen/features/activity/application/three_day_rule_service.dart';
 import 'package:nousen/features/activity/data/isar_activity_repository.dart';
+import 'package:nousen/features/activity/data/cloud_activities_backend.dart';
+import 'package:nousen/features/activity/data/cloud_first_activity_repository.dart';
 import 'package:nousen/features/activity/data/dual_write_activity_repository.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/domain/activity_repository.dart';
@@ -191,10 +195,50 @@ final notificationHealthProvider = FutureProvider<NotificationHealthState>((
   );
 });
 
+/// Flag migrasi cloud-first. Default = [MigrationFlags.fromEnvironment]:
+/// tanpa `--dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true` semua flag mati
+/// (perilaku produksi tetap jalur lama Isar/dual-write). APK uji device
+/// owner dibangun dengan define tersebut (S1 — lihat README migrasi §13).
+final migrationFlagsProvider = Provider<MigrationFlags>(
+  (Ref ref) => MigrationFlags.fromEnvironment,
+);
+
+/// Sumber lokal activities (Isar).
+/// Dipakai jalur produksi (dual-write, primer) dan sebagai mirror
+/// cloud-first supaya rollback (flag OFF) tetap melihat data terbaru.
+final activityLocalRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
+  return IsarActivityRepository(ref.watch(isarProvider));
+});
+
+/// Backend dokumen cloud activities (skema v2). Seam tes: bisa diganti
+/// fake backend tanpa Firebase asli.
+final cloudActivitiesBackendProvider = Provider<CloudActivitiesBackend>((
+  Ref ref,
+) {
+  return FirestoreCloudActivitiesBackend(FirebaseFirestore.instance);
+});
+
+/// Status login Firebase — seam tes bersama untuk kedua jalur activity.
+final cloudAuthStateProvider = Provider<CloudAuthState>(
+  (Ref ref) => FirebaseCloudAuthState(),
+);
+
 final activityRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
-  return DualWriteActivityRepository(
-    local: IsarActivityRepository(ref.watch(isarProvider)),
-    authState: FirebaseCloudAuthState(),
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<ActivityRepository>(
+    cloudFirst: flags.cloudFirstActivities,
+    // Jalur cloud-first (S1): Firestore primer + mirror Isar best-effort.
+    // Mirror hanya untuk rollback; baca TIDAK pernah dari mirror.
+    cloud: () => CloudFirstActivityRepository(
+      backend: ref.watch(cloudActivitiesBackendProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(activityLocalRepositoryProvider),
+    ),
+    // Jalur produksi saat ini: Isar primer + dual-write best-effort.
+    fallback: () => DualWriteActivityRepository(
+      local: ref.watch(activityLocalRepositoryProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+    ),
   );
 });
 
@@ -214,8 +258,9 @@ final progressRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
 });
 
 /// Akses [DualWriteProgressRepository.syncState] untuk UI sync indicator.
-final cloudSyncStateProvider =
-    Provider<ValueNotifier<CloudSyncState>>((Ref ref) {
+final cloudSyncStateProvider = Provider<ValueNotifier<CloudSyncState>>((
+  Ref ref,
+) {
   final repo = ref.watch(progressRepositoryProvider);
   if (repo is DualWriteProgressRepository) {
     return repo.syncState;
@@ -273,9 +318,9 @@ final agendaNotesStreamProvider =
       Ref ref,
       String reminderId,
     ) {
-      return ref.watch(oneTimeReminderRepositoryProvider).watchNotes(
-            reminderId,
-          );
+      return ref
+          .watch(oneTimeReminderRepositoryProvider)
+          .watchNotes(reminderId);
     });
 
 final allProgressStreamProvider = StreamProvider<List<ProgressEntryModel>>((

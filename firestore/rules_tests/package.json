@@ -1,0 +1,13 @@
+{
+  "name": "nousen-firestore-rules-tests",
+  "private": true,
+  "description": "Emulator test untuk firestore.rules.draft + uji konkurensi create-if-absent backfill (S0). Setup + cara jalan lihat docs/firestore-migration/README.md.",
+  "scripts": {
+    "test": "node firestore.rules.test.cjs",
+    "test:concurrency": "node backfill_concurrency.test.cjs"
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.0.0"
+  }
+}

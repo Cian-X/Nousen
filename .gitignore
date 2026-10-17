@@ -56,3 +56,6 @@ ios/Runner/GoogleService-Info.plist
 .figma_*.png
 call_*.txt
 _call_*.txt
+
+# Firestore rules emulator test deps (S0)
+firestore/rules_tests/node_modules/

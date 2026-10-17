@@ -1,0 +1,413 @@
+# Migrasi Firestore — Catatan S0 (tooling + draft)
+
+Status: **S0 tereksekusi (temuan QC ronde 1 & 2 diperbaiki, §12); S1 dikerjakan — cloud-first + mirror Isar untuk build uji device owner (§13). Belum di-deploy; flag produksi masih mati (aktivasi S1 hanya build-time, khusus APK owner).**
+Semua artefak di bawah adalah draft lokal untuk review; tidak ada deploy,
+tidak ada perubahan data produksi, tidak ada aktivasi flag di produksi.
+
+## 1. Apa yang ada di S0
+
+| Artefak | File | Fungsi |
+| --- | --- | --- |
+| Feature flag | `lib/core/migration/migration_flags.dart` | `MigrationFlags` (default SEMUA mati) + `pickCloudFirst` |
+| Wiring provider | `lib/app/providers.dart` | `migrationFlagsProvider`; `activityRepositoryProvider` bercabang flag |
+| Repo cloud-first | `lib/features/activity/data/cloud_first_activity_repository.dart` | Firestore primer + tombstone + server timestamp + **mirror Isar best-effort (S1)** (khusus activities) |
+| Backend cloud (seam) | `lib/features/activity/data/cloud_activities_backend.dart` | `CloudActivitiesBackend` + impl Firestore — repo cloud-first bisa dites tanpa Firebase asli (S1) |
+| Backfill | `lib/features/migration/**` | `BackfillService`, sink Firestore, source Isar, checkpoint, mappers |
+| Rules draft | `firestore.rules.draft` | Draft rules skema v2 (belum deploy) |
+| Indexes draft | `firestore.indexes.json` | Draft composite indexes (belum deploy) |
+| Config CLI | `firebase.json` | Menunjuk rules ke `firestore.rules.draft` + port emulator |
+| Emulator test | `firestore/rules_tests/` | 19 check rules + 20 ronde konkurensi 2-client (create-if-absent) di Firestore Emulator |
+| Tes unit | `test/migration_flags_test.dart`, `test/backfill_service_test.dart`, `test/cloud_first_activity_repository_test.dart`, `test/s1_cloud_first_wiring_test.dart` | 15 tes S0 (flag + backfill full-rescan) + 16 tes S1 (CRUD/mirror cloud-first, wiring provider, aktivasi build) |
+
+`firestore.rules` (rules lama) **tidak diubah** — file itu tetap referensi
+aturan yang berlaku sekarang.
+
+## 2. Feature flag
+
+- Default: `MigrationFlags.disabled` → `activityRepositoryProvider` mengembalikan
+  `DualWriteActivityRepository` persis seperti sebelumnya. Tidak ada perubahan
+  perilaku produksi.
+- Uji coba (dev/test saja):
+  ```dart
+  ProviderScope(
+    overrides: [
+      migrationFlagsProvider.overrideWithValue(
+        const MigrationFlags(cloudFirstActivities: true),
+      ),
+    ],
+    child: const NousenApp(),
+  )
+  ```
+- Dengan flag hidup: login Firebase wajib (uid null → `StateError`, tidak ada
+  fallback senyap). Dokumen lama tanpa field `deleted` TIDAK muncul di query —
+  jalankan backfill dulu (bagian 3).
+- Aktivasi build-time (S1 — APK uji device owner; **tidak** mengubah default):
+  ```bash
+  flutter build apk --debug --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true
+  ```
+  Tanpa define, `MigrationFlags.fromEnvironment` identik dengan
+  `MigrationFlags.disabled` (semua mati). Rollback = pasang APK tanpa define
+  (atau APK lama) — data selama S1 sudah ada di mirror Isar. Detail §13.
+
+## 3. Backfill Isar → Firestore
+
+Sifat yang dijanjikan (dan diuji):
+
+- **Idempoten & bebas race** — tiap dokumen ditulis lewat SATU operasi atomik
+  `createDoc` (create-if-absent; transaksi di Firestore); dokumen cloud yang
+  sudah ada dilewati (`skippedExisting`), tidak pernah ditimpa. Dua device
+  yang backfill bersamaan aman — diuji unit + di emulator dengan dua client
+  nyata (§6).
+- **Full rescan tiap run** — tidak ada baris yang dilewati berdasarkan
+  `isarId`: setiap run memverifikasi SEMUA baris lokal lewat `createDoc`,
+  sehingga baris baru yang muncul terlambat di bawah kursor checkpoint lama
+  tetap tertangkap (temuan QC ronde 2; trade-off biaya di §12 butir 4).
+  Crash kapan pun → rerun = verifikasi ulang penuh; isarId duplikat aman
+  (dedup via `docId`, bukan `isarId`). Checkpoint tetap menyimpan kursor
+  `lastIsarId` + status `done` ke `BackfillCheckpointStore` (produksi:
+  `<appDocuments>/migration/backfill_checkpoint.json`) sebagai informasi
+  progres kumulatif — bukan penentu skip.
+- **Tanpa login = batal** — uid null → berhenti tanpa tulis apa pun.
+- **Checkpoint per uid** — checkpoint uid lain diabaikan (mulai dari nol).
+- **Urutan** — `settings → activities → reminders → agendaNotes → progress`,
+  baris urut `isarId` menaik. Counter di laporan bersifat **kumulatif**
+  (termasuk nilai checkpoint yang di-restore).
+
+Contoh pemakaian (dari harness dev — TIDAK ada pemanggilan otomatis di
+aplikasi):
+
+```dart
+final report = await BackfillService(
+  sink: FirestoreBackfillSink(
+    firestore: FirebaseFirestore.instance,
+    uid: FirebaseAuth.instance.currentUser?.uid,
+  ),
+  source: IsarBackfillLocalSource(isar),
+  checkpoints: FileBackfillCheckpointStore(
+    baseDirectoryProvider: getApplicationDocumentsDirectory,
+  ),
+  log: debugPrint,
+).run();
+```
+
+Reset: hapus file `migration/backfill_checkpoint.json` di app documents.
+Jangan jalankan terhadap data produksi sampai ada instruksi eksplisit.
+
+## 4. Rules draft — kontrak skema v2
+
+`firestore.rules.draft` memberlakukan:
+
+1. Owner-only (`request.auth.uid == uid`) untuk `users/{uid}/activities|progress|reminders|agendaNotes|settings`.
+2. **Setiap create/update wajib `updatedAt == request.time`** — artinya klien
+   harus menulis `FieldValue.serverTimestamp()`. Timestamp jam device DITOLAK
+   (anti clock-spoof), tanpa `updatedAt` DITOLAK.
+3. Hard delete DILARANG; hapus = tombstone `{deleted: true, deletedAt: serverTimestamp()}`.
+4. Create wajib `deleted: false` dan `id` == doc id (settings hanya `app`).
+5. Default deny untuk semua path lain (termasuk dashboard admin).
+
+**Peringatan sequencing:** klien lama (dual-write) menulis `updatedAt` string
+ISO → akan TERTOLAK. Deploy rules hanya setelah semua device memakai klien
+cloud-first (S2/S3), bukan sebelum.
+
+## 5. Indexes draft
+
+`firestore.indexes.json`: 5 composite index (activities, progress ×2,
+reminders, agendaNotes) — semuanya prefix `deleted == false`. Aman
+di-deploy kapan pun (tidak mengubah perilaku).
+
+## 6. Verifikasi emulator (hasil nyata)
+
+Dijalankan 2026-10-17 di mesin dev Windows:
+
+```
+firestore/rules_tests $ npm install firebase @firebase/rules-unit-testing
+repo root $ npx firebase-tools@13 emulators:exec --only firestore \
+  --project demo-nousen-rules "node firestore/rules_tests/firestore.rules.test.cjs"
+```
+
+Hasil: **19/19 checks PASSED** (emulator `cloud-firestore-emulator v1.19.8`,
+tanpa project online — `demo-` prefix = offline). Termasuk yang diminta
+reviewer:
+
+- `CREATE + FieldValue.serverTimestamp() → DITERIMA (updatedAt == request.time)` ✅
+- `CREATE dengan Timestamp jam device → DITOLAK` ✅ (anti clock-spoof)
+- `CREATE tanpa updatedAt → DITOLAK` ✅
+- `UPDATE + serverTimestamp() → DITERIMA`; `UPDATE tanpa updatedAt → DITOLAK` ✅
+- `TOMBSTONE → DITERIMA`; `HARD DELETE → DITOLAK` ✅
+- cross-user & anonim ditolak; `settings/app` boleh, doc id lain ditolak ✅
+
+### Uji konkurensi nyata — 2 client, transaksi create-if-absent (QC ronde 2)
+
+```
+repo root $ npx --yes firebase-tools@13 emulators:exec --only firestore \
+  --project demo-nousen-rules \
+  "node firestore/rules_tests/backfill_concurrency.test.cjs"
+```
+
+Dua client SDK Firestore terpisah (context/app terpisah dari
+rules-unit-testing → koneksi SDK sendiri-sendiri, uid sama = dua "device")
+menjalankan transaksi create-if-absent **bersamaan** pada doc id yang sama
+dengan payload berbeda — pola transaksi identik dengan
+`FirestoreBackfillSink.createDoc` (Dart): `runTransaction { get → exists? →
+set }`, dengan rules `firestore.rules.draft` aktif.
+
+Hasil (2026-10-17): **20/20 ronde PASSED** — tiap ronde tepat satu create
+menang (distribusi run ini: A=7, B=13 — menang bergantian, bukan selalu
+device yang sama), yang kalah selalu `false` tanpa error (retry otomatis
+SDK), create ketiga → `false`, sweep akhir 20/20 dokumen utuh & valid
+(`updatedAt` berupa Timestamp server). File:
+`firestore/rules_tests/backfill_concurrency.test.cjs`.
+
+Catatan tooling: firebase-tools v15 menuntut **Java 21+**; mesin ini Java 17,
+karena itu dipakai **firebase-tools v13** (didukung). Sebelum deploy di
+mesin lain, bebas memakai CLI terbaru (deploy tidak butuh emulator/Java).
+
+## 7. Field yang TIDAK ikut backfill (sengaja)
+
+Path file perangkat tidak berguna di device lain dan upload Storage ditunda:
+
+- `progress.photoPaths`, `progress.photoPath` (dan `photoNote` tetap ikut)
+- `agendaNotes.photoPaths`
+- `settings.profileAvatarPath`
+
+Efek: sampai tahap Storage, foto/avatar tetap lokal per device. Dokumen
+cloud hanya membawa metadata.
+
+## 8. Kehilangan field lama (disetujui owner untuk tahap uji coba)
+
+`ActivityEntity` (Isar) sejak awal tidak menyimpan `family`, `tags`,
+`duration`, `isAnomali` — backfill TIDAK bisa memulihkannya, dokumen cloud
+aktivitas lama akan tanpa field tersebut sampai entri tersebut diedit ulang
+lewat app (upsert dari model domain akan mengisinya kembali).
+
+Field lain aman: `isCompleted` progress diwakili via `status` dengan fallback
+`'done'` (sama seperti `toDomain`); `hasSeededData` ikut terbawa di dalam
+`weeklyRoutineJson` apa adanya; `notificationVibration`/`extraActivitiesNote`
+juga berada di dalam JSON itu.
+
+## 9. Rollback & pull-merge — STATUS: BELUM DIRANCANG (di luar S0)
+
+Catatan S1: rollback sementara untuk uji owner tersedia lewat **flag OFF +
+mirror Isar** (§13) — aplikasi kembali membaca Isar yang selalu di-mirror
+saat flag ON. Pull-merge penuh (cloud → Isar, LWW, tombstone, foto) tetap
+belum dirancang.
+
+Reviewer menandai "pull-merge rollback jangan dianggap gratis". Disetujui —
+S0 tidak mengimplementasikannya. Yang wajib diputuskan sebelum rollout S2:
+
+- arah merge cloud→Isar saat rollback, LWW memakai **server time**;
+- tombstone: jangan hapus data lokal hanya karena cloud bilang deleted;
+- path foto lokal tidak ada di cloud — merge tidak boleh menghapus foto;
+- rekonsiliasi penjadwalan notifikasi setelah merge harus idempoten.
+
+## 10. Instruksi deploy manual (Aslam)
+
+```bash
+# 1. CLI + login (sekali)
+npm install -g firebase-tools
+firebase login
+firebase use nousen-747fb    # atau: firebase use --add
+
+# 2. (disarankan) ulangi emulator test dahulu
+cd firestore/rules_tests && npm install firebase @firebase/rules-unit-testing
+cd ../..
+npx firebase-tools@13 emulators:exec --only firestore --project demo-nousen-rules \
+  "node firestore/rules_tests/firestore.rules.test.cjs"
+
+# 3. indexes (aman kapan saja)
+firebase deploy --only firestore:indexes
+
+# 4. rules — HANYA setelah semua device memakai klien cloud-first
+firebase deploy --only firestore:rules
+```
+
+Catatan:
+
+- `firebase.json` saat ini menunjuk `firestore.rules.draft` sebagai rules.
+  Setelah review menyetujui, boleh di-rename menjadi `firestore.rules`
+  (update juga `firebase.json`) sebelum deploy.
+- Rollback rules: simpan salinan rules yang sedang aktif sebelum deploy;
+  redeploy salinan itu untuk kembali.
+- Jangan deploy rules selama klien lama (dual-write) masih menulis —
+  tulisannya akan tertolak.
+
+## 11. Batasan S0 (jujur)
+
+- Cloud-first hanya untuk **activities** (kerangka/reference). Progress,
+  reminders, agendaNotes, settings masih jalur lama; flag per entitas
+  ditambahkan saat entitasnya dikerjakan.
+- `CloudFirstActivityRepository` — **S1 selesai**: seam backend + 12 tes
+  unit (CRUD cloud, mirror Isar, jalur error, tanpa login) + 3 tes wiring
+  provider; emulator Dart tetap tidak bisa headless (§13.2).
+- Belum ada UI/otomasi yang memanggil `BackfillService` — tooling manual.
+- Foto/avatar belum di-upload (Storage ditunda, tanpa Blaze).
+
+## 12. QC Hermes (S0) — temuan & perbaikan
+
+Temuan QC (Hermes, 2026-10-17) dan statusnya:
+
+1. **Race backfill** — pola `docExists` lalu `set()` terpisah: dua device
+   yang backfill bersamaan bisa sama-sama melihat "belum ada" dan saling
+   menimpa. **Diperbaiki**: sink kini hanya punya SATU operasi atomik
+   `createDoc` (create-if-absent). Catatan implementasi: `cloud_firestore`
+   Dart tidak menyediakan `DocumentReference.create()` (itu admin SDK),
+   jadi `FirestoreBackfillSink.createDoc` memakai `runTransaction` (baca +
+   tulis satu transaksi, retry otomatis saat konflik) — semantik sama
+   dengan `create()`: gagal/tidak menulis bila dokumen sudah ada. Tes
+   baru: dua device paralel dengan isi berbeda → dokumen dibuat tepat
+   sekali, tidak ada yang ditimpa.
+2. **IsarId duplikat vs kursor resume** — baris di bawah kursor dilewati
+   tanpa verifikasi sehingga duplikat isarId bisa salah ter-skip, lalu
+   entitas ditandai selesai. **Diperbaiki**: kursor disnapshot di awal run;
+   baris tepat di kursor diverifikasi ulang lewat `createDoc` (idempoten).
+   Tes baru: resume di kursor dengan isarId duplikat.
+3. **`package-lock.json` tak terlacak** — `firestore/rules_tests/package.json`
+   + `package-lock.json` adalah bagian S0 dan ikut di-commit saat S0
+   di-commit; `firestore/rules_tests/node_modules/` sudah masuk `.gitignore`
+   (deklarasi di laporan awal kurang lengkap — bukan file nyasar).
+
+### Ronde 2
+
+4. **Resume melewati baris baru di bawah kursor** — strategi ronde 1
+   "skip `isarId < lastIsarId`" membuat baris yang muncul terlambat dengan
+   id di bawah kursor tidak pernah ter-backfill. **Diperbaiki**: full rescan
+   tiap run — TIDAK ada skip berbasis `isarId`; semua baris diverifikasi
+   `createDoc` atomik (baris lama = skip terkalkulasi, bukan skip buta).
+   Trade-off: biaya satu operasi Firestore (transaksi baca) per baris per
+   run — diterima karena skala data personal (ribuan baris) dan correctness
+   > kecepatan. Alternatif watermark/count-based ditolak karena tidak
+   menjamin (insert+delete bisa saling menyamarkan). Tes unit baru:
+   "baris baru muncul DI BAWAH kursor checkpoint → tetap dibuat".
+5. **Uji konkurensi wajib emulator nyata (bukan fake sink)** — **Dipenuhi**:
+   `firestore/rules_tests/backfill_concurrency.test.cjs` — 2 client SDK
+   independen × 20 ronde transaksi create-if-absent bersamaan pada doc id
+   yang sama, payload berbeda, rules asli aktif → **20/20 ronde PASSED**
+   (satu pemenang, tanpa penimpaan, dokumen akhir valid; lihat §6).
+   Catatan jujur: `cloud_firestore` Dart tidak punya implementasi
+   desktop/headless (platform: android/ios/macos/web), jadi tidak bisa
+   dijalankan headless di mesin ini; invariant yang diuji (transaksi
+   create-if-absent) adalah semantik server Firestore yang dipakai
+   `FirestoreBackfillSink.createDoc` lewat primitif yang sama
+   (`runTransaction`: get → exists? → set). Menjalankan varian Dart penuh
+   butuh device Android/iOS/macOS — sisa risiko yang ditandai.
+
+Status alur review: **Kima perbaiki (ronde 1 & 2 selesai) → QC ulang
+Hermes → review arsitektur Bang Muse → keputusan owner untuk S1.** Belum
+ada commit; belum ada apa pun yang menyentuh produksi.
+
+Owner memberi lampu hijau S1 → S1 dikerjakan (§13): mirror Isar pada
+cloud-first + build uji khusus device owner. S1 menunggu QC sebelum
+gate 2 hari dijalankan owner.
+
+## 13. S1 — build uji device owner (cloud-first + mirror Isar)
+
+Status: **artefak + tes selesai; APK dibangun; BELUM ada verifikasi runtime
+di device; gate 2 hari baru mulai setelah owner memasang APK.**
+
+### 13.1 Perubahan S1 (di atas S0)
+
+QC wiring (temuan Muse) dikonfirmasi benar: kerangka S0 **tidak punya
+mirror Isar** — flag ON hanya menulis Firestore. S1 menambahkan:
+
+1. **Mirror Isar di `CloudFirstActivityRepository`** (`mirror:` param):
+   - BACA: tetap Firestore-only (authoritative) — mirror tidak pernah
+     dipakai untuk baca dan tidak di-refresh oleh baca;
+   - TULIS/UPSERT: Firestore dulu (di-await; gagal → rethrow, mirror TIDAK
+     ditulis), lalu mirror Isar best-effort (gagal → hanya log, operasi
+     yang sudah tersimpan di cloud tidak digagalkan);
+   - DELETE: tombstone cloud dulu (tidak pernah hard delete), lalu
+     `mirror.delete` — supaya rollback tidak memunculkan entri yang sudah
+     dihapus.
+2. **Seam `CloudActivitiesBackend`** (`cloud_activities_backend.dart`):
+   operasi Firestore (setDoc/query/watch/get) dipindah ke balik interface —
+   supaya repository + mirror bisa dites unit tanpa Firebase asli
+   (`cloud_firestore` tidak headless di mesin ini).
+3. **Aktivasi build-time** `MigrationFlags.fromEnvironment`
+   (`--dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true`) — default produksi
+   tetap semua mati (§2).
+4. **Seam provider** di `providers.dart`: `activityLocalRepositoryProvider`,
+   `cloudActivitiesBackendProvider`, `cloudAuthStateProvider` — wiring
+   cloud-first bisa dites end-to-end dengan fake.
+
+### 13.2 Hasil verifikasi yang benar-benar dijalankan
+
+| Verifikasi | Perintah | Hasil |
+| --- | --- | --- |
+| Repo + mirror + wiring + flag (tanpa define) | `flutter test test/cloud_first_activity_repository_test.dart test/s1_cloud_first_wiring_test.dart test/migration_flags_test.dart test/dual_write_activity_test.dart --no-pub` | **28/28 PASSED** |
+| Jalur aktivasi dart-define | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true test/migration_flags_test.dart test/s1_cloud_first_wiring_test.dart --no-pub` | **7/7 PASSED** — flag true; provider default (tanpa override) memilih `CloudFirstActivityRepository` |
+| Analyze | `flutter analyze` | 64 temuan **pre-existing** (generated Isar, seeder, dll — file lama); **0 di file S1** |
+| Build APK | §13.3 | §13.3 |
+
+Cakupan tes S1 (16 tes baru):
+- CRUD: upsert create/update → cloud merge-set skema v2 (`deleted:false`,
+  `updatedAt` server timestamp, `clientUpdatedAt` ISO) + mirror ikut;
+  delete → tombstone + mirror.delete; baca dari cloud + filter `deleted`;
+  `getById` null untuk tombstone/missing.
+- Jalur error: cloud gagal → rethrow, mirror tidak ditulis (tidak ada
+  partial state); mirror gagal → operasi tetap sukses; tanpa login →
+  `StateError`, tidak menyentuh backend/mirror.
+- Wiring: flag OFF → `DualWriteActivityRepository` (lama); flag ON →
+  cloud-first + mirror hidup lewat provider.
+
+Yang **BELUM** diverifikasi (jujur): runtime device — login nyata, Firestore
+produksi nyata, antrean offline SDK nyata, perilaku lintas-device. Yang
+diuji otomatis untuk offline hanyalah kontrak repository (cloud error →
+rethrow tanpa mirror; cloud sukses → mirror ikut). Antrean/reconnect
+Firestore asli wajib diuji manual di device (§13.5).
+
+### 13.3 APK uji + instalasi owner
+
+Dibangun 2026-10-17 (debug; signing debug keystore mesin ini — sama dengan
+signing release repo ini, jadi upgrade di atas build dari mesin yang sama
+tidak butuh uninstall):
+
+| Artefak | Flag | Size | SHA256 |
+| --- | --- | --- | --- |
+| `build/s1-owner-apks/nousen-s1-cloudfirst-debug.apk` | S1 ON | 245.335.517 B (~234 MB) | `750974A85357AAA0DE96A59483DEB8442A6FFB92E6FE30C85319DB76AAC85323` |
+| `build/s1-owner-apks/nousen-s1-rollback-debug.apk` | OFF (rollback) | 245.331.789 B (~234 MB) | `196888C1149807747F9B0E777657B9434C9A1AFA9DA4101AC07DC9B0C3A42BEC` |
+
+Build ulang dari source (artefak mentah di `build/app/outputs/flutter-apk/app-debug.apk`):
+
+```bash
+flutter build apk --debug --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true   # APK S1 owner
+flutter build apk --debug                                                    # APK rollback (flag OFF)
+```
+
+Device terdeteksi saat build: **hanya emulator** (`emulator-5554`) — HP
+fisik owner TIDAK tersambung, jadi emulator **sengaja tidak diinstal**
+(instruksi brief). Langkah install owner:
+
+1. Salin `nousen-s1-cloudfirst-debug.apk` ke HP (USB / file sharing).
+2. Buka file di HP → izinkan "install unknown apps" bila diminta.
+3. Install **di atas** app yang terpasang (upgrade, data tidak dihapus).
+   Bila muncul "App not installed" / signature mismatch: app lama beda
+   signing key → JANGAN langsung uninstall (uninstall menghapus data app);
+   lapor ke Kima dulu.
+4. Buka app → login Firebase seperti biasa → jalankan checklist §13.5.
+
+Rollback: pasang `nousen-s1-rollback-debug.apk` di atas build S1 (upgrade,
+tanpa hapus data) → flag OFF → app kembali membaca Isar; data selama S1
+tetap ada di mirror.
+
+### 13.4 Perilaku yang harus diekspektasi owner saat S1 ON
+
+- Daftar aktivitas = **isi Firestore** uid login, difilter `deleted == false`
+  → hanya dokumen skema v2. Backfill produksi TIDAK dijalankan di S1, jadi
+  dokumen lama (dual-write tanpa field `deleted`) belum muncul di daftar;
+  entri baru / entri lama yang di-edit ulang lewat app akan muncul.
+- Semua tulis (create/edit/delete) masuk cloud + mirror Isar.
+- Rollback (flag OFF): aplikasi kembali membaca Isar (mirror) — data selama
+  S1 tetap ada; perilaku kembali seperti sebelum S1.
+- Tanpa login Firebase: operasi activity melempar error (tidak ada fallback
+  senyap) — sesuai desain cloud-first.
+
+### 13.5 Checklist manual gate S2 (2 hari, owner)
+
+1. CRUD online: buat/edit/hapus beberapa activity → pastikan tampil benar.
+2. Offline: airplane mode → buat/edit → tutup app → buka lagi (data harus
+   tetap tampil) → internet menyala → tunggu sync → cek konsistensi
+   (device lain / Firebase console bila tersedia).
+3. Rollback drill (disarankan di akhir): pasang APK rollback → pastikan
+   daftar kembali ke Isar dan data S1 masih ada.
+4. Catat setiap error/keanehan (screenshot + waktu) → lapor; jangan klaim
+   gate lulus sebelum 2 hari tanpa insiden.
