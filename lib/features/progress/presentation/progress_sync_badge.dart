@@ -6,7 +6,9 @@ import 'package:nousen/features/progress/presentation/progress_sync_messages.dar
 
 /// Badge status tulis cloud per-entry progress (S2):
 /// - `failed`  → awan silang merah (tooltip pesan server, non-silent);
-/// - `pending` → awan panah amber (menunggu ack server / offline);
+/// - `pending` → awan panah amber (tulisan belum di-ACK server lebih dari
+///   [pendingBadgeGrace] — praktisnya offline/lambat; ACK cepat saat online
+///   tidak sempat tampil, badge tidak kedip);
 /// - `synced`  → tidak ada ikon (status normal).
 ///
 /// `pending` berasal dari metadata snapshot Firestore (`hasPendingWrites`),

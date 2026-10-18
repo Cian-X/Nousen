@@ -132,16 +132,137 @@ class CloudFirstProgressRepository implements ProgressRepository {
     );
   }
 
-  // ---- Baca: selalu cloud ----
+  // ---- Baca: selalu cloud, reaktif terhadap sesi ----
+
+  /// Validasi perilaku lama: pemanggilan watch tanpa login melempar
+  /// `StateError` (dites), bukan diam-diam stream kosong.
+  String _requireUid() => _uid;
+
+  /// Stream cloud yang REAKTIF TERHADAP SESI (fix bug uji device S2).
+  ///
+  /// Listen Firestore lama TIDAK pernah hidup lagi setelah logout→login:
+  /// saat logout SDK me-restart listen tanpa auth → server menolak
+  /// (rules butuh auth) dan target itu gagal permanen; tanpa re-subscribe,
+  /// UI beku — tulis jalan tapi baca tidak pernah terlihat ("tidak bisa
+  /// ceklist / bikin aktivitas"). Karena itu listen dibuat ULANG setiap
+  /// uid berubah (logout, login lagi, atau ganti akun).
+  ///
+  /// Kenapa bukan `asyncExpand`: implementasi Dart-nya mem-PAUSE source
+  /// selama stream konversi hidup (`subscription.pause()`, dan `resume`
+  /// baru setelah stream konversi SELESAI). `snapshots()` Firestore tidak
+  /// pernah selesai, jadi setelah uid pertama source sesi ter-pause
+  /// permanen dan event logout/login tidak pernah diproses — re-subscribe
+  /// jadi no-op (bukti device 2026-10-18: `uid=` tercetak sekali per
+  /// stream, lalu `listen ERROR` permission-denied tanpa pemulihan).
+  ///
+  /// Implementasi: switch manual — subscription sesi (`uidChanges`)
+  /// SELALU hidup (tidak pernah di-pause); tiap uid baru, listen lama
+  /// dibatalkan dan listen baru dibuka.
+  ///
+  /// Sesi berakhir (uid null) → emisi kosong (bukan error) supaya stream
+  /// tetap hidup untuk sesi berikutnya.
+  Stream<T> _sessionStream<T>(
+    Stream<T> Function(String uid) open, {
+    required T Function() whenLoggedOut,
+    required String debugTag,
+  }) {
+    _requireUid();
+    late final StreamController<T> controller;
+    StreamSubscription<T>? inner;
+    StreamSubscription<String?>? session;
+    var closed = false;
+
+    void emit(T data) {
+      if (!closed) {
+        controller.add(data);
+      }
+    }
+
+    void emitError(Object error, StackTrace stackTrace) {
+      if (!closed) {
+        controller.addError(error, stackTrace);
+      }
+    }
+
+    void openListen(String uid) {
+      Stream<T> next;
+      try {
+        next = open(uid);
+      } catch (error, stackTrace) {
+        // Perilaku lama (asyncExpand) juga meneruskan kegagalan membuka
+        // listen sebagai error stream, bukan crash di callback.
+        emitError(error, stackTrace);
+        return;
+      }
+      inner = next.listen(
+        (T data) {
+          debugPrint('[cloudfirst-progress] $debugTag listen DATA');
+          emit(data);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint('[cloudfirst-progress] $debugTag listen ERROR: $error');
+          emitError(error, stackTrace);
+        },
+        onDone: () {
+          debugPrint('[cloudfirst-progress] $debugTag listen DONE');
+        },
+      );
+    }
+
+    void switchSession(String? uid) {
+      debugPrint('[cloudfirst-progress] $debugTag uid=${uid ?? 'null'}');
+      final StreamSubscription<T>? previous = inner;
+      inner = null;
+      if (previous != null) {
+        unawaited(previous.cancel());
+      }
+      if (uid == null || uid.isEmpty) {
+        emit(whenLoggedOut());
+        return;
+      }
+      openListen(uid);
+    }
+
+    controller = StreamController<T>(
+      onListen: () {
+        session = _authState.uidChanges().distinct().listen(
+          switchSession,
+          onError: emitError,
+        );
+      },
+      onCancel: () {
+        closed = true;
+        unawaited(session?.cancel());
+        final StreamSubscription<T>? previous = inner;
+        inner = null;
+        if (previous != null) {
+          unawaited(previous.cancel());
+        }
+      },
+    );
+    return controller.stream;
+  }
+
+  Stream<List<ProgressEntryModel>> _watchDocs({
+    required int Function(ProgressEntryModel a, ProgressEntryModel b) compare,
+    required String debugTag,
+    bool Function(CloudProgressDoc doc)? where,
+  }) {
+    return _sessionStream(
+      (String uid) => _backend.watchAll(uid).map(
+            (List<CloudProgressDoc> docs) => _visibleFrom(
+              (where == null ? docs : docs.where(where)).toList(),
+              compare: compare,
+            ),
+          ),
+      whenLoggedOut: () => const <ProgressEntryModel>[],
+      debugTag: debugTag,
+    );
+  }
 
   @override
   Stream<List<ProgressEntryModel>> watchAll() {
-    return _backend
-        .watchAll(_uid)
-        .map(
-          (List<CloudProgressDoc> docs) =>
-              _visibleFrom(docs, compare: _byDateKeyDesc),
-        );
+    return _watchDocs(compare: _byDateKeyDesc, debugTag: 'watchAll');
   }
 
   /// Stream id entry progress yang tulisannya masih menunggu ack server
@@ -150,41 +271,37 @@ class CloudFirstProgressRepository implements ProgressRepository {
   /// Dipakai UI untuk badge pending per-entry; durable lintas
   /// force-stop/relaunch karena cache + antrean tulis di-persist SDK.
   Stream<Set<String>> watchPendingIds() {
-    return _backend.watchAll(_uid).map((List<CloudProgressDoc> docs) {
-      final Set<String> pending = <String>{};
-      for (final CloudProgressDoc doc in docs) {
-        if (doc.hasPendingWrites) {
-          pending.add(doc.id);
+    return _sessionStream(
+      (String uid) => _backend.watchAll(uid).map((List<CloudProgressDoc> docs) {
+        final Set<String> pending = <String>{};
+        for (final CloudProgressDoc doc in docs) {
+          if (doc.hasPendingWrites) {
+            pending.add(doc.id);
+          }
         }
-      }
-      return pending;
-    });
+        return pending;
+      }),
+      whenLoggedOut: () => const <String>{},
+      debugTag: 'watchPendingIds',
+    );
   }
 
   @override
   Stream<List<ProgressEntryModel>> watchByActivity(String activityId) {
-    return _backend.watchAll(_uid).map(
-          (List<CloudProgressDoc> docs) => _visibleFrom(
-            docs
-                .where(
-                  (CloudProgressDoc d) => d.data['activityId'] == activityId,
-                )
-                .toList(),
-            compare: _byDateKeyDesc,
-          ),
-        );
+    return _watchDocs(
+      compare: _byDateKeyDesc,
+      debugTag: 'watchByActivity',
+      where: (CloudProgressDoc d) => d.data['activityId'] == activityId,
+    );
   }
 
   @override
   Stream<List<ProgressEntryModel>> watchByDate(String dateKey) {
-    return _backend.watchAll(_uid).map(
-          (List<CloudProgressDoc> docs) => _visibleFrom(
-            docs
-                .where((CloudProgressDoc d) => d.data['dateKey'] == dateKey)
-                .toList(),
-            compare: _byActivityIdAsc,
-          ),
-        );
+    return _watchDocs(
+      compare: _byActivityIdAsc,
+      debugTag: 'watchByDate',
+      where: (CloudProgressDoc d) => d.data['dateKey'] == dateKey,
+    );
   }
 
   @override
@@ -192,21 +309,17 @@ class CloudFirstProgressRepository implements ProgressRepository {
     required String fromDateKey,
     required String toDateKey,
   }) {
-    return _backend.watchAll(_uid).map(
-          (List<CloudProgressDoc> docs) => _visibleFrom(
-            docs
-                .where((CloudProgressDoc d) {
-                  final Object? key = d.data['dateKey'];
-                  if (key is! String) {
-                    return false;
-                  }
-                  return key.compareTo(fromDateKey) >= 0 &&
-                      key.compareTo(toDateKey) <= 0;
-                })
-                .toList(),
-            compare: _byDateKeyAsc,
-          ),
-        );
+    return _watchDocs(
+      compare: _byDateKeyAsc,
+      debugTag: 'watchByDateRange',
+      where: (CloudProgressDoc d) {
+        final Object? key = d.data['dateKey'];
+        if (key is! String) {
+          return false;
+        }
+        return key.compareTo(fromDateKey) >= 0 && key.compareTo(toDateKey) <= 0;
+      },
+    );
   }
 
   @override

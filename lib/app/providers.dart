@@ -271,9 +271,92 @@ final cloudFirstActivityRepositoryProvider =
       return repo is CloudFirstActivityRepository ? repo : null;
     });
 
+/// Grace badge pending (keputusan owner, uji device 2026-10-18): badge amber
+/// baru tampil kalau tulisan belum di-ACK server LEBIH LAMA dari ini.
+/// Online normal ACK ~0,1–0,5 dtk → badge tidak sempat tampil (tidak kedip);
+/// offline/lambat → badge muncul dan bertahan sampai ACK (tanda "belum
+/// sampai cloud"). Setel satu nilai di sini bila perlu.
+const Duration pendingBadgeGrace = Duration(seconds: 2);
+
+/// Saring stream id-pending (`hasPendingWrites` per snapshot): hanya id yang
+/// pending terus-menerus lebih lama dari [grace] yang lolos ke UI.
+///
+/// Kenapa duration, bukan deteksi sinyal jaringan langsung: "tidak ada
+/// network" tidak reliable dideteksi (WiFi tanpa internet tetap terlihat
+/// "online"); `hasPendingWrites` yang bertahan adalah sinyal nyata
+/// "tulisan belum sampai cloud".
+Stream<Set<String>> pendingIdsWithGrace(
+  Stream<Set<String>> source, {
+  Duration grace = pendingBadgeGrace,
+}) {
+  late final StreamController<Set<String>> controller;
+  StreamSubscription<Set<String>>? sub;
+  final Map<String, Timer> timers = <String, Timer>{};
+  final Set<String> armed = <String>{};
+  final Set<String> visible = <String>{};
+  Set<String> latest = <String>{};
+
+  void publish() => controller.add(Set<String>.unmodifiable(visible));
+
+  controller = StreamController<Set<String>>(
+    onListen: () {
+      sub = source.listen(
+        (Set<String> ids) {
+          latest = ids;
+          var changed = false;
+          // Id hilang dari set (ACK / doc terhapus) → batalkan grace.
+          for (final String id in armed.toList()) {
+            if (!ids.contains(id)) {
+              timers.remove(id)?.cancel();
+              armed.remove(id);
+            }
+          }
+          // Badge yang sudah tampil tapi tulisannya sudah di-ACK → sembunyikan.
+          for (final String id in visible.toList()) {
+            if (!ids.contains(id)) {
+              visible.remove(id);
+              changed = true;
+            }
+          }
+          // Id baru pending → mulai grace sekali saja.
+          for (final String id in ids) {
+            if (armed.contains(id) || visible.contains(id)) {
+              continue;
+            }
+            armed.add(id);
+            timers[id] = Timer(grace, () {
+              timers.remove(id);
+              armed.remove(id);
+              if (latest.contains(id)) {
+                visible.add(id);
+                publish();
+              }
+            });
+          }
+          if (changed) {
+            publish();
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) =>
+            controller.addError(error, stackTrace),
+      );
+    },
+    onCancel: () async {
+      await sub?.cancel();
+      for (final Timer timer in timers.values) {
+        timer.cancel();
+      }
+      timers.clear();
+    },
+  );
+  return controller.stream;
+}
+
 /// Id activity dengan tulisan lokal menunggu ack server (`hasPendingWrites`
-/// dari snapshot Firestore). Kosong bila flag OFF. Durable lintas
-/// force-stop karena persistence SDK Firestore.
+/// dari snapshot Firestore) — sudah disaring grace [pendingBadgeGrace]:
+/// hanya yang "belum sampai cloud" lebih lama dari itu yang tampil di badge.
+/// Kosong bila flag OFF. Durable lintas force-stop karena persistence SDK
+/// Firestore.
 final activityPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
   final CloudFirstActivityRepository? cloudFirst = ref.watch(
     cloudFirstActivityRepositoryProvider,
@@ -281,7 +364,7 @@ final activityPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
   if (cloudFirst == null) {
     return const Stream<Set<String>>.empty();
   }
-  return cloudFirst.watchPendingIds();
+  return pendingIdsWithGrace(cloudFirst.watchPendingIds());
 });
 
 final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
@@ -341,8 +424,10 @@ final cloudFirstProgressRepositoryProvider =
     });
 
 /// Id entry progress dengan tulisan lokal menunggu ack server
-/// (`hasPendingWrites` dari snapshot Firestore). Kosong bila flag OFF.
-/// Durable lintas force-stop karena persistence SDK Firestore.
+/// (`hasPendingWrites` dari snapshot Firestore) — sudah disaring grace
+/// [pendingBadgeGrace]: hanya yang "belum sampai cloud" lebih lama dari itu
+/// yang tampil di badge. Kosong bila flag OFF. Durable lintas force-stop
+/// karena persistence SDK Firestore.
 final progressPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
   final CloudFirstProgressRepository? cloudFirst = ref.watch(
     cloudFirstProgressRepositoryProvider,
@@ -350,7 +435,7 @@ final progressPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
   if (cloudFirst == null) {
     return const Stream<Set<String>>.empty();
   }
-  return cloudFirst.watchPendingIds();
+  return pendingIdsWithGrace(cloudFirst.watchPendingIds());
 });
 
 /// Akses [DualWriteProgressRepository.syncState] untuk UI sync indicator.

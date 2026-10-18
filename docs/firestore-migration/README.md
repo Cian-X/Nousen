@@ -573,10 +573,11 @@ messages. Lihat §13.2 tabel untuk hasil perintah nyata saat build S1b.
 
 ## 14. S2 — progress cloud-first + tombol logout (2026-10-18)
 
-Status: **diimplementasikan + 34 tes baru hijau (termasuk fix gap
-delete-reject activity-scoped dari QC Hermes); analyze 64 = baseline;
-belum di-commit/di-push; APK belum dibangun (tidak diminta brief);
-verifikasi runtime device = checklist §14.5.**
+Status: **diimplementasikan + 37 tes baru hijau (termasuk fix gap
+delete-reject activity-scoped dari QC Hermes dan fix bug uji device
+logout→login §14.6); analyze 64 = baseline; commit S2 + script APK
+sudah dibuat owner (`167ab74`, `baf740a`); fix §14.6 masih di working
+tree; verifikasi runtime device = checklist §14.5.**
 
 ### 14.1 Perubahan S2 (hanya jalur flag progress ON + tile logout)
 
@@ -645,21 +646,21 @@ verifikasi runtime device = checklist §14.5.**
   yang bisa ditempeli badge).
 - Mirror tetap ditulis walau cloud reject (local-first, konsisten S1b).
 
-### 14.3 Hasil verifikasi (dijalankan 2026-10-18, source belum di-commit)
+### 14.3 Hasil verifikasi (dijalankan 2026-10-18; fix §14.6 di working tree di atas commit owner)
 
 | Verifikasi | Perintah | Hasil |
 | --- | --- | --- |
-| Suite fokus S2 + regresi S1b/dual-write (11 file) | `flutter test test/cloud_first_progress_repository_test.dart test/cloud_first_progress_wiring_test.dart test/progress_sync_badge_widget_test.dart test/progress_sync_messages_test.dart test/settings_logout_test.dart test/migration_flags_test.dart test/dual_write_progress_test.dart test/s1_cloud_first_wiring_test.dart test/cloud_first_activity_repository_test.dart test/activity_sync_badge_widget_test.dart test/activity_sync_messages_test.dart` | **82/82 PASSED** |
+| Suite fokus S2 + regresi S1b/dual-write (11 file) | `flutter test test/cloud_first_progress_repository_test.dart test/cloud_first_progress_wiring_test.dart test/progress_sync_badge_widget_test.dart test/progress_sync_messages_test.dart test/settings_logout_test.dart test/migration_flags_test.dart test/dual_write_progress_test.dart test/s1_cloud_first_wiring_test.dart test/cloud_first_activity_repository_test.dart test/activity_sync_badge_widget_test.dart test/activity_sync_messages_test.dart` | **85/85 PASSED** |
 | Jalur aktivasi dart-define progress | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true test/migration_flags_test.dart test/cloud_first_progress_wiring_test.dart` | **9/9 PASSED** — flag true; provider default (tanpa override) memilih `CloudFirstProgressRepository` |
 | Kedua flag (S1b + S2) | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true --dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true test/migration_flags_test.dart test/s1_cloud_first_wiring_test.dart test/cloud_first_progress_wiring_test.dart` | **14/14 PASSED** |
-| Suite penuh | `flutter test` | **173 PASSED, 2 GAGAL pre-existing** (`typography_guardrails_test.dart` — sama seperti baseline S1b) |
+| Suite penuh | `flutter test` | **176 PASSED, 2 GAGAL pre-existing** (`typography_guardrails_test.dart` — sama seperti baseline S1b) |
 | Analyze | `flutter analyze` | **64 temuan — sama persis dengan baseline**; 0 di file S2 |
 | Whitespace | `git diff --check` | bersih |
-| APK | — | belum dibangun (di luar kebutuhan brief; bisa dibangun dari working tree bila owner minta) |
+| APK uji owner | `build-apk-s2.bat` (owner; KEDUA define ON) | dibangun owner 2026-10-18 20:49 → device test menemukan bug logout→login (§14.6); fix sudah di working tree, APK perlu di-rebuild untuk retest |
 
-Cakupan 34 tes baru S2:
+Cakupan 37 tes baru S2 (termasuk 3 tes fix bug device §14.6):
 
-- `cloud_first_progress_repository_test.dart` (18): upsert non-blocking +
+- `cloud_first_progress_repository_test.dart` (20): upsert non-blocking +
   mirror langsung walau ack menggantung (offline); reject save → failed
   per-entry + event; ack sukses → sembuh; race save/save tidak saling
   menimpa (guard key); delete non-blocking + mirror langsung terhapus;
@@ -668,7 +669,11 @@ Cakupan 34 tes baru S2:
   status dibersihkan; race delete/delete dua arah (reject lama diabaikan,
   ack lama tidak membersihkan reject terbaru); pending ids dari metadata;
   watch terfilter (activity/date/range); getAll; getByActivityAndDate;
-  tanpa login → `StateError`; mirror gagal tidak melempar.
+  tanpa login → `StateError`; mirror gagal tidak melempar; ganti sesi
+  (logout→login) → `watchAll` + `watchPendingIds` re-subscribe ke uid
+  baru (fix §14.6).
+- `cloud_first_activity_repository_test.dart` (+1, S1b): ganti sesi →
+  `watchAll` re-subscribe ke uid baru (fix §14.6 sama, lintas repo).
 - `cloud_first_progress_wiring_test.dart` (5): default build mengikuti
   dart-define; flag ON → repo cloud-first + tulis cloud & mirror lewat
   provider; flag OFF → dual-write lokal-only, repo cloud-first null,
@@ -695,6 +700,12 @@ Baru: `cloud_first_progress_repository.dart`, `cloud_progress_backend.dart`,
 `cloud_sync_indicator.dart`, `login_page.dart`, `settings_page.dart`,
 `migration_flags_test.dart`.
 
+Fix §14.6 (working tree di atas commit owner `167ab74`/`baf740a`,
+hanya jalur flag ON): `cloud_first_activity_repository.dart`,
+`cloud_first_progress_repository.dart`,
+`cloud_first_activity_repository_test.dart`,
+`cloud_first_progress_repository_test.dart`.
+
 ### 14.5 Checklist verifikasi manual owner (device)
 
 1. Bangun APK uji dari working tree:
@@ -720,10 +731,80 @@ Baru: `cloud_first_progress_repository.dart`, `cloud_progress_backend.dart`,
 8. Logout: Settings → Pengguna → "Keluar" → spinner singkat → halaman
    login; login Google ulang berhasil. Gagal → snackbar error terlihat +
    bisa dicoba lagi.
-9. Rollback: pasang build tanpa define → `CloudSyncIndicator` global
-   kembali tampil dan perilaku dual-write lama utuh.
+9. Setelah login ulang (item 8): cek/uncek progres + buat aktivitas baru
+   harus tampil langsung (fix §14.6 — sebelumnya beku karena listen
+   cloud lama mati saat logout). Bila masih beku: force-stop lalu buka
+   lagi — bila data yang tadi ditulis MUNCUL, artinya tulis sukses dan
+   sisa masalah murni sisi baca; lapor ke sesi ini.
+10. Rollback: pasang build tanpa define → `CloudSyncIndicator` global
+    kembali tampil dan perilaku dual-write lama utuh.
 
-### 14.6 Rollback S2
+### 14.6 Fix bug uji device owner (2026-10-18, pasca-APK 20:49)
+
+Gejala (laporan owner, build §14.5 item 1 dengan KEDUA define ON):
+setelah **logout → login**, tidak bisa ceklist/unceklist progres,
+tidak bisa membuat aktivitas, dan badge pending awan "pindah-pindah".
+
+#### 14.6.1 Percobaan fix #1 — re-subscribe dengan `asyncExpand` (GUGUR di device)
+
+Semua stream baca dibuat ulang setiap `CloudAuthState.uidChanges()`
+berubah (`.distinct().asyncExpand`); uid null → emisi kosong (stream
+tetap hidup). Perilaku lama dijaga: watch tanpa login tetap `StateError`.
+Jalur dual-write (flag OFF) tidak berubah.
+
+**Hasil uji device: GUGUR.** APK diagnostic (SHA256 `326D91F6…`) →
+logout→login tetap beku. Logcat (`build/phone_logcat_repro.txt`): `uid=`
+tercetak **sekali** per stream — 0× `uid=null`, 0× listen ulang, 6×
+`listen ERROR [cloud_firestore/permission-denied]` saat logout tanpa
+pemulihan. Writes tetap ACK (jalur tulis baca uid per operasi) tapi
+reads beku selamanya — persis keluhan owner.
+
+#### 14.6.2 Akar masalah #2 (final): `asyncExpand` mem-pause source sesi
+
+`asyncExpand` (Dart SDK) memanggil `subscription.pause()` pada source dan
+baru `resume()` saat stream konversi **selesai**. `snapshots()` Firestore
+**tidak pernah selesai** → setelah uid pertama, source `uidChanges`
+ter-pause permanen → event logout/login tidak pernah diproses →
+re-subscribe #1 no-op. Tes #1 lolos karena fake mengembalikan
+`Stream.value(...)` (selesai seketika → pause/resume jalan) — stream
+nyata tidak. Navigasi UI tetap jalan karena AuthGate memakai subscription
+terpisah ke `authStateChanges()`.
+
+#### 14.6.3 Fix final: switch manual (bukan `asyncExpand`)
+
+Kedua repo: `_sessionStream` diganti switch manual — `StreamController` +
+`.listen()` langsung ke `uidChanges().distinct()` yang **tidak pernah
+di-pause**; tiap uid baru → batalkan listen lama, buka listen baru; uid
+null → batalkan listen + emisi kosong; error listen diteruskan; buka
+listen dibungkus `try/catch` (perilaku sama dengan `asyncExpand`). Trace
+`[cloudfirst-*]` (`uid=`, `listen DATA/ERROR/DONE`) dipertahankan —
+konsisten dengan trace `mirror Isar SYNCED`/`cloud ACK` yang sudah ada.
+
+Tes diperkuat: `_FakeBackend.keepWatchOpen` — stream watch yang TIDAK
+selesai (pola `snapshots()`), dipakai tes ganti sesi. **Terbukti GAGAL di
+kode `asyncExpand`** (`Expected: empty / Actual: [data lama]`) dan lolos
+di switch manual; tes juga meng-assert listen lama dibatalkan (0 listen
+zombie) + listen baru tetap hidup (snapshot lanjutan mengalir).
+
+#### 14.6.4 Verifikasi device (build SHA256 `EE187CDB…`)
+
+Logcat `build/phone_logcat_fix.txt` (HP OPPO `8a2b6a45`, kedua define ON,
+`flutter build apk --debug --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true
+--dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true`):
+
+- Cold start 23:36:47: 6 stream `uid=5fqT…` + `listen DATA`.
+- Siklus owner 23:37:20→28: **`uid=null` ×6** lalu **`uid=5fqT…` ×6**
+  (listen dibuat ulang) → ceklist + buat aktivitas jalan (ACK 23:37:47–52).
+- Siklus kedua 23:40:04→23:41:06: idem; home kembali 8/8.
+- Uncheck→check "Mandi" (assistant): UI flip 7/8→8/8, ACK ~0,25 dtk,
+  badge pending muncul lalu bersih.
+- **0× `listen ERROR`** sepanjang sesi (build lama: 6× permission-denied).
+
+Suite: tes ganti-sesi 3/3 (yang sebelumnya gagal di `asyncExpand`), suite
+fokus 2 file 43/43, suite penuh 176 PASS (2 gagal pre-existing
+`typography_guardrails_test`), analyze 64 = baseline.
+
+### 14.7 Rollback S2
 
 - Build flag OFF (tanpa define) → `progressRepositoryProvider` kembali ke
   `DualWriteProgressRepository` (jalur produksi lama); tidak ada
@@ -731,3 +812,5 @@ Baru: `cloud_first_progress_repository.dart`, `cloud_progress_backend.dart`,
 - Tombol logout tidak bergantung flag (tampil bila Firebase tersedia);
   rollback logout = revert `settings_logout_tile.dart` + `settings_page.dart`
   + blok AuthGate di `login_page.dart`.
+- Fix §14.6 hanya menyentuh repo cloud-first (aktif saat flag ON); tidak
+  perlu undo terpisah — build flag OFF tidak memakai kode itu.

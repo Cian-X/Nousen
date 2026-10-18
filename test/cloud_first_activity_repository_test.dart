@@ -15,11 +15,27 @@ Future<void> _flush() => Future<void>.delayed(Duration.zero);
 class _FakeAuthState implements CloudAuthState {
   String? uid;
 
+  final StreamController<String?> _changes =
+      StreamController<String?>.broadcast();
+
   @override
   String? get currentUid => uid;
 
+  /// Pola `authStateChanges`: emisi awal = sesi saat ini, lalu setiap
+  /// transisi login/logout berikutnya.
   @override
-  Stream<String?> uidChanges() => Stream<String?>.value(uid);
+  Stream<String?> uidChanges() async* {
+    yield uid;
+    yield* _changes.stream;
+  }
+
+  /// Simulasi transisi sesi berikutnya (logout: null; login: uid baru).
+  void emitUidChange(String? next) {
+    uid = next;
+    _changes.add(next);
+  }
+
+  Future<void> close() => _changes.close();
 }
 
 class _SetCall {
@@ -76,10 +92,41 @@ class _FakeBackend implements CloudActivitiesBackend {
     return queryResults;
   }
 
+  /// uid setiap listen cloud dibuat (bukti re-subscribe antar sesi).
+  final List<String> watchUids = <String>[];
+
+  /// Data khusus per uid; bila tidak diisi pakai [watchDocs].
+  final Map<String, List<CloudActivityDoc>> watchDocsByUid =
+      <String, List<CloudActivityDoc>>{};
+
+  /// Bila true, `watchVisible` mengembalikan stream yang TIDAK selesai
+  /// sampai dibatalkan — pola `snapshots()` Firestore. Dipakai tes ganti
+  /// sesi: bug device terjadi karena `asyncExpand` mem-pause source sesi
+  /// selama stream konversi hidup, dan stream Firestore tidak pernah
+  /// selesai.
+  bool keepWatchOpen = false;
+
+  /// Controller per listen saat [keepWatchOpen] (indeks = urutan listen).
+  final List<StreamController<List<CloudActivityDoc>>> watchControllers =
+      <StreamController<List<CloudActivityDoc>>>[];
+
   @override
   Stream<List<CloudActivityDoc>> watchVisible(String uid) {
     if (failReads) throw StateError('cloud down');
-    return Stream<List<CloudActivityDoc>>.value(watchDocs);
+    watchUids.add(uid);
+    final List<CloudActivityDoc> docs = watchDocsByUid[uid] ?? watchDocs;
+    if (!keepWatchOpen) {
+      return Stream<List<CloudActivityDoc>>.value(docs);
+    }
+    final StreamController<List<CloudActivityDoc>> controller =
+        StreamController<List<CloudActivityDoc>>();
+    watchControllers.add(controller);
+    scheduleMicrotask(() {
+      if (!controller.isClosed) {
+        controller.add(docs);
+      }
+    });
+    return controller.stream;
   }
 
   @override
@@ -171,6 +218,7 @@ void main() {
 
   setUp(() {
     auth = _FakeAuthState()..uid = 'u1';
+    addTearDown(auth.close);
     backend = _FakeBackend();
     mirror = _FakeMirrorRepo();
     repo = CloudFirstActivityRepository(
@@ -475,6 +523,66 @@ void main() {
       final List<ActivityModel> first = await repo.watchAll().first;
 
       expect(first.map((ActivityModel a) => a.id), <String>['a1']);
+    });
+
+    test('ganti sesi (logout→login): watchAll re-subscribe ke uid baru — '
+        'listen lama dibatalkan, stream baru hidup meski listen lama tidak '
+        'pernah selesai (bug uji device S2)', () async {
+      backend.keepWatchOpen = true; // pola snapshots(): tidak pernah selesai
+      backend.watchDocsByUid['u1'] = <CloudActivityDoc>[
+        CloudActivityDoc(
+          id: 'a1',
+          data: _cloudDoc('a1'),
+          hasPendingWrites: false,
+        ),
+      ];
+      backend.watchDocsByUid['u2'] = <CloudActivityDoc>[
+        CloudActivityDoc(
+          id: 'a9',
+          data: _cloudDoc('a9'),
+          hasPendingWrites: false,
+        ),
+      ];
+
+      final List<List<ActivityModel>> received = <List<ActivityModel>>[];
+      final StreamSubscription<List<ActivityModel>> sub =
+          repo.watchAll().listen(received.add);
+      addTearDown(sub.cancel);
+      await pumpEventQueue();
+      expect(received.last.map((ActivityModel a) => a.id), <String>['a1']);
+
+      auth.emitUidChange(null); // logout: sesi berakhir
+      await pumpEventQueue();
+      expect(
+        received.last,
+        isEmpty,
+        reason: 'tanpa sesi → kosong (bukan data lama / error)',
+      );
+      expect(
+        backend.watchControllers.first.hasListener,
+        isFalse,
+        reason: 'listen lama dibatalkan saat logout (tanpa listen zombie)',
+      );
+
+      auth.emitUidChange('u2'); // login lagi (uid sama maupun akun lain)
+      await pumpEventQueue();
+      expect(received.last.map((ActivityModel a) => a.id), <String>['a9']);
+      expect(
+        backend.watchUids,
+        <String>['u1', 'u2'],
+        reason: 'listen Firestore dibuat ulang untuk uid sesi baru',
+      );
+
+      // Listen sesi baru tetap hidup: snapshot berikutnya ikut mengalir.
+      backend.watchControllers.last.add(<CloudActivityDoc>[
+        CloudActivityDoc(
+          id: 'a8',
+          data: _cloudDoc('a8'),
+          hasPendingWrites: false,
+        ),
+      ]);
+      await pumpEventQueue();
+      expect(received.last.map((ActivityModel a) => a.id), <String>['a8']);
     });
 
     test('cloud invoke langsung error → operasi tetap selesai (mirror jalan) + '

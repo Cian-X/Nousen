@@ -15,11 +15,27 @@ Future<void> _flush() => Future<void>.delayed(Duration.zero);
 class _FakeAuthState implements CloudAuthState {
   String? uid;
 
+  final StreamController<String?> _changes =
+      StreamController<String?>.broadcast();
+
   @override
   String? get currentUid => uid;
 
+  /// Pola `authStateChanges`: emisi awal = sesi saat ini, lalu setiap
+  /// transisi login/logout berikutnya.
   @override
-  Stream<String?> uidChanges() => Stream<String?>.value(uid);
+  Stream<String?> uidChanges() async* {
+    yield uid;
+    yield* _changes.stream;
+  }
+
+  /// Simulasi transisi sesi berikutnya (logout: null; login: uid baru).
+  void emitUidChange(String? next) {
+    uid = next;
+    _changes.add(next);
+  }
+
+  Future<void> close() => _changes.close();
 }
 
 class _SetCall {
@@ -93,9 +109,39 @@ class _FakeBackend implements CloudProgressBackend {
         d['activityId'] == activityId);
   }
 
+  /// uid setiap listen cloud dibuat (bukti re-subscribe antar sesi).
+  final List<String> watchUids = <String>[];
+
+  /// Data khusus per uid; bila tidak diisi pakai [watchDocs].
+  final Map<String, List<CloudProgressDoc>> watchDocsByUid =
+      <String, List<CloudProgressDoc>>{};
+
+  /// Bila true, `watchAll` mengembalikan stream yang TIDAK selesai sampai
+  /// dibatalkan — pola `snapshots()` Firestore. Dipakai tes ganti sesi:
+  /// bug device terjadi karena `asyncExpand` mem-pause source sesi selama
+  /// stream konversi hidup, dan stream Firestore tidak pernah selesai.
+  bool keepWatchOpen = false;
+
+  /// Controller per listen saat [keepWatchOpen] (indeks = urutan listen).
+  final List<StreamController<List<CloudProgressDoc>>> watchControllers =
+      <StreamController<List<CloudProgressDoc>>>[];
+
   @override
   Stream<List<CloudProgressDoc>> watchAll(String uid) {
-    return Stream<List<CloudProgressDoc>>.value(watchDocs);
+    watchUids.add(uid);
+    final List<CloudProgressDoc> docs = watchDocsByUid[uid] ?? watchDocs;
+    if (!keepWatchOpen) {
+      return Stream<List<CloudProgressDoc>>.value(docs);
+    }
+    final StreamController<List<CloudProgressDoc>> controller =
+        StreamController<List<CloudProgressDoc>>();
+    watchControllers.add(controller);
+    scheduleMicrotask(() {
+      if (!controller.isClosed) {
+        controller.add(docs);
+      }
+    });
+    return controller.stream;
   }
 
   @override
@@ -239,6 +285,7 @@ void main() {
 
   setUp(() {
     auth = _FakeAuthState()..uid = 'u1';
+    addTearDown(auth.close);
     backend = _FakeBackend();
     mirror = _FakeMirrorRepo();
     repo = CloudFirstProgressRepository(
@@ -526,6 +573,87 @@ void main() {
       expect(byRange.map((ProgressEntryModel e) => e.id), <String>['p2', 'p1', 'p3']);
 
       expect(mirror.readCalls, 0);
+    });
+
+    test('ganti sesi (logout→login): watchAll re-subscribe ke uid baru — '
+        'listen lama dibatalkan, stream baru hidup meski listen lama tidak '
+        'pernah selesai (bug uji device S2)', () async {
+      backend.keepWatchOpen = true; // pola snapshots(): tidak pernah selesai
+      backend.watchDocsByUid['u1'] = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p1')),
+      ];
+      backend.watchDocsByUid['u2'] = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p2')),
+      ];
+
+      final List<List<ProgressEntryModel>> received =
+          <List<ProgressEntryModel>>[];
+      final StreamSubscription<List<ProgressEntryModel>> sub =
+          repo.watchAll().listen(received.add);
+      addTearDown(sub.cancel);
+      await pumpEventQueue();
+      expect(received.last.map((ProgressEntryModel e) => e.id), <String>['p1']);
+
+      auth.emitUidChange(null); // logout: sesi berakhir
+      await pumpEventQueue();
+      expect(
+        received.last,
+        isEmpty,
+        reason: 'tanpa sesi → kosong (bukan data lama / error)',
+      );
+      expect(
+        backend.watchControllers.first.hasListener,
+        isFalse,
+        reason: 'listen lama dibatalkan saat logout (tanpa listen zombie)',
+      );
+
+      auth.emitUidChange('u2'); // login lagi (uid sama maupun akun lain)
+      await pumpEventQueue();
+      expect(received.last.map((ProgressEntryModel e) => e.id), <String>['p2']);
+      expect(
+        backend.watchUids,
+        <String>['u1', 'u2'],
+        reason: 'listen Firestore dibuat ulang untuk uid sesi baru',
+      );
+
+      // Listen sesi baru tetap hidup: snapshot berikutnya ikut mengalir.
+      backend.watchControllers.last.add(<CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p9')),
+      ]);
+      await pumpEventQueue();
+      expect(received.last.map((ProgressEntryModel e) => e.id), <String>['p9']);
+    });
+
+    test('ganti sesi: watchPendingIds re-subscribe — badge pending hidup '
+        'lagi setelah login ulang', () async {
+      backend.keepWatchOpen = true; // pola snapshots(): tidak pernah selesai
+      backend.watchDocsByUid['u1'] = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p1'), pending: true),
+      ];
+      backend.watchDocsByUid['u2'] = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p2'), pending: true),
+      ];
+
+      final List<Set<String>> received = <Set<String>>[];
+      final StreamSubscription<Set<String>> sub =
+          repo.watchPendingIds().listen(received.add);
+      addTearDown(sub.cancel);
+      await pumpEventQueue();
+      expect(received.last, <String>{'p1'});
+
+      auth.emitUidChange(null);
+      await pumpEventQueue();
+      expect(received.last, isEmpty);
+      expect(
+        backend.watchControllers.first.hasListener,
+        isFalse,
+        reason: 'listen lama dibatalkan saat logout (tanpa listen zombie)',
+      );
+
+      auth.emitUidChange('u2');
+      await pumpEventQueue();
+      expect(received.last, <String>{'p2'});
+      expect(backend.watchUids, <String>['u1', 'u2']);
     });
 
     test('getAll: baca dari cloud (queryAll), urut dateKey desc, mirror tidak '

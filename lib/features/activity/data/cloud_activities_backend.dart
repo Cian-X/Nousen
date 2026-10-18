@@ -71,9 +71,12 @@ class FirestoreCloudActivitiesBackend implements CloudActivitiesBackend {
 
   @override
   Stream<List<CloudActivityDoc>> watchVisible(String uid) {
+    // includeMetadataChanges WAJIB: transisi pending→acked (perubahan
+    // metadata saja) TIDAK memicu snapshot secara default — tanpa ini
+    // badge pending menempel selamanya (temuan uji device S2).
     return _col(uid)
         .where('deleted', isEqualTo: false)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map(
           (QuerySnapshot<Map<String, dynamic>> s) => s.docs
               .map(

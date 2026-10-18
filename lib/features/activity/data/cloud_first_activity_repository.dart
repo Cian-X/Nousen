@@ -149,16 +149,129 @@ class CloudFirstActivityRepository implements ActivityRepository {
     return list;
   }
 
-  // ---- Baca: selalu cloud ----
+  // ---- Baca: selalu cloud, reaktif terhadap sesi ----
+
+  /// Validasi perilaku lama: pemanggilan watch tanpa login melempar
+  /// `StateError` (dites), bukan diam-diam stream kosong.
+  String _requireUid() => _uid;
+
+  /// Stream cloud yang REAKTIF TERHADAP SESI (fix bug uji device S2).
+  ///
+  /// Listen Firestore lama TIDAK pernah hidup lagi setelah logout→login:
+  /// saat logout SDK me-restart listen tanpa auth → server menolak
+  /// (rules butuh auth) dan target itu gagal permanen; tanpa re-subscribe,
+  /// UI beku — tulis jalan tapi baca tidak pernah terlihat ("tidak bisa
+  /// ceklist / bikin aktivitas"). Karena itu listen dibuat ULANG setiap
+  /// uid berubah (logout, login lagi, atau ganti akun).
+  ///
+  /// Kenapa bukan `asyncExpand`: implementasi Dart-nya mem-PAUSE source
+  /// selama stream konversi hidup (`subscription.pause()`, dan `resume`
+  /// baru setelah stream konversi SELESAI). `snapshots()` Firestore tidak
+  /// pernah selesai, jadi setelah uid pertama source sesi ter-pause
+  /// permanen dan event logout/login tidak pernah diproses — re-subscribe
+  /// jadi no-op (bukti device 2026-10-18: `uid=` tercetak sekali per
+  /// stream, lalu `listen ERROR` permission-denied tanpa pemulihan).
+  ///
+  /// Implementasi: switch manual — subscription sesi (`uidChanges`)
+  /// SELALU hidup (tidak pernah di-pause); tiap uid baru, listen lama
+  /// dibatalkan dan listen baru dibuka.
+  ///
+  /// Sesi berakhir (uid null) → emisi kosong (bukan error) supaya stream
+  /// tetap hidup untuk sesi berikutnya.
+  Stream<T> _sessionStream<T>(
+    Stream<T> Function(String uid) open, {
+    required T Function() whenLoggedOut,
+    required String debugTag,
+  }) {
+    _requireUid();
+    late final StreamController<T> controller;
+    StreamSubscription<T>? inner;
+    StreamSubscription<String?>? session;
+    var closed = false;
+
+    void emit(T data) {
+      if (!closed) {
+        controller.add(data);
+      }
+    }
+
+    void emitError(Object error, StackTrace stackTrace) {
+      if (!closed) {
+        controller.addError(error, stackTrace);
+      }
+    }
+
+    void openListen(String uid) {
+      Stream<T> next;
+      try {
+        next = open(uid);
+      } catch (error, stackTrace) {
+        // Perilaku lama (asyncExpand) juga meneruskan kegagalan membuka
+        // listen sebagai error stream, bukan crash di callback.
+        emitError(error, stackTrace);
+        return;
+      }
+      inner = next.listen(
+        (T data) {
+          debugPrint('[cloudfirst-activity] $debugTag listen DATA');
+          emit(data);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint('[cloudfirst-activity] $debugTag listen ERROR: $error');
+          emitError(error, stackTrace);
+        },
+        onDone: () {
+          debugPrint('[cloudfirst-activity] $debugTag listen DONE');
+        },
+      );
+    }
+
+    void switchSession(String? uid) {
+      debugPrint('[cloudfirst-activity] $debugTag uid=${uid ?? 'null'}');
+      final StreamSubscription<T>? previous = inner;
+      inner = null;
+      if (previous != null) {
+        unawaited(previous.cancel());
+      }
+      if (uid == null || uid.isEmpty) {
+        emit(whenLoggedOut());
+        return;
+      }
+      openListen(uid);
+    }
+
+    controller = StreamController<T>(
+      onListen: () {
+        session = _authState.uidChanges().distinct().listen(
+          switchSession,
+          onError: emitError,
+        );
+      },
+      onCancel: () {
+        closed = true;
+        unawaited(session?.cancel());
+        final StreamSubscription<T>? previous = inner;
+        inner = null;
+        if (previous != null) {
+          unawaited(previous.cancel());
+        }
+      },
+    );
+    return controller.stream;
+  }
 
   @override
   Stream<List<ActivityModel>> watchAll() {
-    return _backend
-        .watchVisible(_uid)
-        .map(
-          (List<CloudActivityDoc> docs) =>
-              _visible(docs.map((CloudActivityDoc d) => d.data)),
-        );
+    return _sessionStream(
+      (String uid) => _backend
+          .watchVisible(uid)
+          .map(
+            (List<CloudActivityDoc> docs) =>
+                _visible(docs.map((CloudActivityDoc d) => d.data)),
+          ),
+      whenLoggedOut: () => const <ActivityModel>[],
+      debugTag: 'watchAll',
+    );
   }
 
   /// Stream id activity yang tulisannya masih menunggu ack server
@@ -167,15 +280,21 @@ class CloudFirstActivityRepository implements ActivityRepository {
   /// Dipakai UI untuk badge pending per-activity; durable lintas
   /// force-stop/relaunch karena cache + antrean tulis di-persist SDK.
   Stream<Set<String>> watchPendingIds() {
-    return _backend.watchVisible(_uid).map((List<CloudActivityDoc> docs) {
-      final Set<String> pending = <String>{};
-      for (final CloudActivityDoc doc in docs) {
-        if (doc.hasPendingWrites && doc.data['deleted'] != true) {
-          pending.add(doc.id);
-        }
-      }
-      return pending;
-    });
+    return _sessionStream(
+      (String uid) => _backend.watchVisible(uid).map(
+            (List<CloudActivityDoc> docs) {
+              final Set<String> pending = <String>{};
+              for (final CloudActivityDoc doc in docs) {
+                if (doc.hasPendingWrites && doc.data['deleted'] != true) {
+                  pending.add(doc.id);
+                }
+              }
+              return pending;
+            },
+          ),
+      whenLoggedOut: () => const <String>{},
+      debugTag: 'watchPendingIds',
+    );
   }
 
   @override

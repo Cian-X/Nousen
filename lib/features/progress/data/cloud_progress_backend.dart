@@ -79,7 +79,10 @@ class FirestoreCloudProgressBackend implements CloudProgressBackend {
 
   @override
   Stream<List<CloudProgressDoc>> watchAll(String uid) {
-    return _col(uid).snapshots().map(
+    // includeMetadataChanges WAJIB: transisi pending→acked (perubahan
+    // metadata saja) TIDAK memicu snapshot secara default — tanpa ini
+    // badge pending menempel selamanya (temuan uji device S2).
+    return _col(uid).snapshots(includeMetadataChanges: true).map(
           (QuerySnapshot<Map<String, dynamic>> s) => s.docs
               .map(
                 (QueryDocumentSnapshot<Map<String, dynamic>> d) =>
