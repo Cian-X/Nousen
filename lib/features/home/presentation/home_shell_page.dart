@@ -16,6 +16,9 @@ import 'package:nousen/core/widgets/checklist_confirm_dialog.dart';
 import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 import 'package:nousen/features/activity/domain/activity_daily_progress_status.dart';
+import 'package:nousen/features/activity/data/activity_sync_failures.dart';
+import 'package:nousen/features/activity/presentation/activity_sync_badge.dart';
+import 'package:nousen/features/activity/presentation/activity_sync_messages.dart';
 import 'package:nousen/features/activity/presentation/activity_status_visuals.dart';
 import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
@@ -40,17 +43,39 @@ class HomeShellPage extends ConsumerStatefulWidget {
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
   Timer? _countdownTimer;
+  StreamSubscription<ActivitySyncFailure>? _activitySyncFailureSub;
 
   @override
   void initState() {
     super.initState();
     _startMinuteTicker();
+    _activitySyncFailureSub = ref
+        .read(activitySyncFailuresProvider)
+        .events
+        .listen(_onActivitySyncFailure);
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _activitySyncFailureSub?.cancel();
     super.dispose();
+  }
+
+  /// Reject server dari tulis cloud-first di-surfacekan (tidak senyap).
+  void _onActivitySyncFailure(ActivitySyncFailure failure) {
+    if (!mounted) {
+      return;
+    }
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          activitySyncFailureSnackMessage(isId: isId, failure: failure),
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   void _startMinuteTicker() {
@@ -1446,16 +1471,25 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(
-                              activity.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                                decoration: null,
-                              ),
+                            Row(
+                              children: <Widget>[
+                                Flexible(
+                                  child: Text(
+                                    activity.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF0F172A),
+                                          decoration: null,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                ActivitySyncBadge(activityId: activity.id),
+                              ],
                             ),
                             const SizedBox(height: 4),
                             Text(

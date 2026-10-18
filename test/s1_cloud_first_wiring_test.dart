@@ -29,6 +29,7 @@ class _SetCall {
 class _FakeBackend implements CloudActivitiesBackend {
   final List<_SetCall> setCalls = <_SetCall>[];
   List<Map<String, dynamic>> queryResults = <Map<String, dynamic>>[];
+  List<CloudActivityDoc> watchDocs = <CloudActivityDoc>[];
 
   @override
   Future<void> setDoc(
@@ -45,8 +46,8 @@ class _FakeBackend implements CloudActivitiesBackend {
   }
 
   @override
-  Stream<List<Map<String, dynamic>>> watchVisible(String uid) {
-    return Stream<List<Map<String, dynamic>>>.value(queryResults);
+  Stream<List<CloudActivityDoc>> watchVisible(String uid) {
+    return Stream<List<CloudActivityDoc>>.value(watchDocs);
   }
 
   @override
@@ -122,44 +123,48 @@ void main() {
       return container;
     }
 
-    test(
-      'default build mengikuti dart-define: tanpa define → dual-write, '
-      'dengan define → cloud-first',
-      () {
-        // Jalur default (tanpa override flag) — ini yang dipakai APK owner.
-        final ActivityRepository picked = buildContainer().read(
-          activityRepositoryProvider,
-        );
+    test('default build mengikuti dart-define: tanpa define → dual-write, '
+        'dengan define → cloud-first', () {
+      // Jalur default (tanpa override flag) — ini yang dipakai APK owner.
+      final ActivityRepository picked = buildContainer().read(
+        activityRepositoryProvider,
+      );
 
-        if (MigrationFlags.fromEnvironment.cloudFirstActivities) {
-          expect(picked, isA<CloudFirstActivityRepository>());
-        } else {
-          expect(picked, isA<DualWriteActivityRepository>());
-        }
+      if (MigrationFlags.fromEnvironment.cloudFirstActivities) {
+        expect(picked, isA<CloudFirstActivityRepository>());
+      } else {
+        expect(picked, isA<DualWriteActivityRepository>());
+      }
+    });
+
+    test(
+      'flag ON: CRUD lewat provider → cloud primer + mirror Isar hidup',
+      () async {
+        final ActivityRepository picked = buildContainer(
+          flags: const MigrationFlags(cloudFirstActivities: true),
+        ).read(activityRepositoryProvider);
+        expect(picked, isA<CloudFirstActivityRepository>());
+
+        await picked.upsert(_activity());
+        expect(backend.setCalls, hasLength(1));
+        expect(backend.setCalls.single.data['deleted'], isFalse);
+        expect(local.store.containsKey('a1'), isTrue);
+
+        backend.queryResults = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'a1',
+            'title': 'Test Activity',
+            'deleted': false,
+          },
+        ];
+        final List<ActivityModel> all = await picked.getAll();
+        expect(all.map((ActivityModel a) => a.id), contains('a1'));
+
+        await picked.delete('a1');
+        expect(backend.setCalls.last.data['deleted'], isTrue);
+        expect(local.store, isEmpty);
       },
     );
-
-    test('flag ON: CRUD lewat provider → cloud primer + mirror Isar hidup', () async {
-      final ActivityRepository picked = buildContainer(
-        flags: const MigrationFlags(cloudFirstActivities: true),
-      ).read(activityRepositoryProvider);
-      expect(picked, isA<CloudFirstActivityRepository>());
-
-      await picked.upsert(_activity());
-      expect(backend.setCalls, hasLength(1));
-      expect(backend.setCalls.single.data['deleted'], isFalse);
-      expect(local.store.containsKey('a1'), isTrue);
-
-      backend.queryResults = <Map<String, dynamic>>[
-        <String, dynamic>{'id': 'a1', 'title': 'Test Activity', 'deleted': false},
-      ];
-      final List<ActivityModel> all = await picked.getAll();
-      expect(all.map((ActivityModel a) => a.id), contains('a1'));
-
-      await picked.delete('a1');
-      expect(backend.setCalls.last.data['deleted'], isTrue);
-      expect(local.store, isEmpty);
-    });
 
     test(
       'flag OFF: jalur lama — tulis ke lokal; cloud dilewati saat uid null',
@@ -176,5 +181,47 @@ void main() {
         expect(backend.setCalls, isEmpty);
       },
     );
+
+    test('flag ON: pending ids dari metadata backend + failures terhubung ke '
+        'repo cloud-first', () async {
+      final ProviderContainer container = buildContainer(
+        flags: const MigrationFlags(cloudFirstActivities: true),
+      );
+      backend.watchDocs = <CloudActivityDoc>[
+        CloudActivityDoc(
+          id: 'a1',
+          data: <String, dynamic>{'id': 'a1', 'deleted': false},
+          hasPendingWrites: true,
+        ),
+        CloudActivityDoc(
+          id: 'a2',
+          data: <String, dynamic>{'id': 'a2', 'deleted': false},
+          hasPendingWrites: false,
+        ),
+      ];
+
+      final Set<String> pending = await container.read(
+        activityPendingIdsProvider.future,
+      );
+      expect(pending, <String>{'a1'});
+
+      final CloudFirstActivityRepository? repo = container.read(
+        cloudFirstActivityRepositoryProvider,
+      );
+      expect(repo, isNotNull);
+      expect(
+        identical(repo!.failures, container.read(activitySyncFailuresProvider)),
+        isTrue,
+      );
+    });
+
+    test('flag OFF: repo cloud-first null dan pending ids tidak aktif', () {
+      final ProviderContainer container = buildContainer(
+        flags: MigrationFlags.disabled,
+      );
+
+      expect(container.read(cloudFirstActivityRepositoryProvider), isNull);
+      expect(container.read(activityPendingIdsProvider).value, isNull);
+    });
   });
 }

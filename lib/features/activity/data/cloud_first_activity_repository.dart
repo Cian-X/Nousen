@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:nousen/features/activity/data/activity_sync_failures.dart';
 import 'package:nousen/features/activity/data/cloud_activities_backend.dart';
 import 'package:nousen/features/activity/data/firestore_activity_repository.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/domain/activity_repository.dart';
 import 'package:nousen/services/firebase/firebase_auth_state.dart';
 
-/// Repository aktivitas cloud-first (S0 kerangka → S1 mirror Isar).
+/// Repository aktivitas cloud-first (S0 kerangka → S1 mirror Isar →
+/// S1b offline UX).
 ///
 /// Path: `/users/{uid}/activities/{activityId}` dengan skema v2:
 /// - `updatedAt` = server timestamp (LWW oleh jam server, bukan jam device);
@@ -14,17 +18,38 @@ import 'package:nousen/services/firebase/firebase_auth_state.dart';
 ///   tidak pernah hard delete;
 /// - `clientUpdatedAt` menyimpan jam device untuk audit.
 ///
-/// Semantik baca/tulis (S1):
+/// Semantik baca/tulis (S1b):
 /// - BACA selalu dari Firestore (authoritative, cloud-first).
-/// - TULIS: Firestore dulu (di-await; error di-rethrow), baru mirror [Isar]
-///   best-effort — mirror ada supaya rollback (flag OFF → jalur Isar/
-///   dual-write) tetap melihat data terbaru. Mirror gagal hanya di-log,
-///   tidak menggagalkan operasi yang sudah tersimpan di cloud.
+/// - TULIS: Firestore DIINISIASI lebih dulu, tetapi penyelesaian operasi
+///   TIDAK menunggu ack server — SDK Firestore hanya resolve/error setelah
+///   server menjawab, sehingga `await` penuh menggantung saat offline.
+///   Mirror Isar di-await segera setelahnya (cepat, offline-safe) supaya
+///   rollback (flag OFF → jalur Isar) melihat data terbaru; lalu operasi
+///   selesai dan UI tidak pernah menggantung saat offline.
+/// - Status tulis per-activity:
+///   - `pending` (local queue, belum di-ack server) dari metadata snapshot
+///     Firestore via [watchPendingIds] — durable lintas force-stop karena
+///     persistence SDK (terbukti di repro runtime, README §13.6);
+///   - `synced` = tidak pending dan tidak gagal;
+///   - `failed` (reject server: rules/auth/error lain) via [failures] —
+///     di-surfacekan ke UI (snackbar + badge), bukan log senyap.
+///   - korelasi per-attempt: ack/reject HANYA berlaku untuk operasi tulis
+///     TERBARU activity tersebut; hasil operasi yang sudah digantikan
+///     diabaikan — mencegah reject lama menimpa `synced` baru, dan ack
+///     lama membersihkan `failed` terbaru (race ack out-of-order, temuan
+///     QC Hermes 2026-10-18). Implementasi di [_trackAck].
+/// - Batas API (jujur): FlutterFire TIDAK menyediakan Future "queued lokal"
+///   yang terpisah dari ack server. Satu-satunya sinyal local-queue adalah
+///   metadata `hasPendingWrites`. Karena itu "queued" di sini berarti
+///   "tulis sudah diserahkan ke SDK" (lalu diverifikasi lewat metadata),
+///   bukan klaim ack lokal palsu.
+/// - Retry policy: transient/offline ditangani otomatis oleh antrean SDK
+///   (mutation bertahan sampai ack, termasuk lintas force-stop); reject
+///   permanen (rules/auth) TIDAK di-retry otomatis — user melihat status
+///   failed + alasan, dan menyimpan ulang akan mengirim ulang. Reject yang
+///   terjadi saat app mati tidak bisa direkonstruksi SDK → rekonsiliasi
+///   penuh = S2 (belum ada).
 /// - Mirror TIDAK pernah dipakai untuk baca dan tidak di-refresh oleh baca.
-/// - Offline: SDK Firestore (persistence Android default aktif) mengantre
-///   tulis ke cache lokal dan resolve; mirror mengikuti setelah resolve,
-///   sinkron ke server saat reconnect — verifikasi offline nyata tetap
-///   manual di device (README §13).
 ///
 /// Catatan:
 /// - Hanya dipakai bila `MigrationFlags.cloudFirstActivities` aktif; default
@@ -39,15 +64,28 @@ class CloudFirstActivityRepository implements ActivityRepository {
     required CloudActivitiesBackend backend,
     required CloudAuthState authState,
     ActivityRepository? mirror,
+    ActivitySyncFailures? failures,
   }) : _backend = backend,
        _authState = authState,
-       _mirror = mirror;
+       _mirror = mirror,
+       _failures = failures ?? ActivitySyncFailures();
 
   final CloudActivitiesBackend _backend;
   final CloudAuthState _authState;
 
   /// Mirror lokal (Isar) untuk jalur rollback; null = tanpa mirror.
   final ActivityRepository? _mirror;
+
+  /// Pelacak kegagalan ack server per-activity (dipakai UI via provider).
+  final ActivitySyncFailures _failures;
+
+  /// Nomor urut operasi tulis terakhir per activity — dasar korelasi
+  /// ack/reject dengan operasi terbaru (guard race ack out-of-order).
+  /// Nilai selalu naik dan tidak pernah direset selama repo hidup.
+  final Map<String, int> _writeAttempts = <String, int>{};
+
+  /// Akses pelacak kegagalan (wiring provider/UI).
+  ActivitySyncFailures get failures => _failures;
 
   /// Versi skema dokumen cloud (S0/S1: v2 — tombstone + server timestamp).
   static const int schemaVersion = 2;
@@ -115,7 +153,29 @@ class CloudFirstActivityRepository implements ActivityRepository {
 
   @override
   Stream<List<ActivityModel>> watchAll() {
-    return _backend.watchVisible(_uid).map(_visible);
+    return _backend
+        .watchVisible(_uid)
+        .map(
+          (List<CloudActivityDoc> docs) =>
+              _visible(docs.map((CloudActivityDoc d) => d.data)),
+        );
+  }
+
+  /// Stream id activity yang tulisannya masih menunggu ack server
+  /// (`hasPendingWrites == true` di snapshot Firestore).
+  ///
+  /// Dipakai UI untuk badge pending per-activity; durable lintas
+  /// force-stop/relaunch karena cache + antrean tulis di-persist SDK.
+  Stream<Set<String>> watchPendingIds() {
+    return _backend.watchVisible(_uid).map((List<CloudActivityDoc> docs) {
+      final Set<String> pending = <String>{};
+      for (final CloudActivityDoc doc in docs) {
+        if (doc.hasPendingWrites && doc.data['deleted'] != true) {
+          pending.add(doc.id);
+        }
+      }
+      return pending;
+    });
   }
 
   @override
@@ -133,28 +193,100 @@ class CloudFirstActivityRepository implements ActivityRepository {
     return fromFirestoreMap(data);
   }
 
-  // ---- Tulis: cloud dulu (authoritative), mirror best-effort ----
+  // ---- Tulis: cloud diinisiasi (tanpa menunggu ack), mirror segera ----
 
   @override
   Future<void> upsert(ActivityModel activity) async {
-    try {
-      await _backend.setDoc(_uid, activity.id, toMap(activity, deleted: false));
-    } catch (e) {
-      debugPrint('[cloudfirst-activity] upsert gagal: $e');
-      rethrow;
-    }
+    // _uid melempar StateError (tanpa login) sebelum efek apa pun.
+    final String uid = _uid;
+    final int attempt = _registerWrite(activity.id);
+    _trackAck(
+      _backend.setDoc(uid, activity.id, toMap(activity, deleted: false)),
+      activityId: activity.id,
+      attempt: attempt,
+      operation: ActivitySyncOperation.save,
+    );
+    // Mirror di-await supaya rollback (flag OFF) cepat melihat data —
+    // Isar lokal tidak butuh jaringan, jadi tetap cepat saat offline.
     await _mirrorUpsert(activity);
   }
 
   @override
   Future<void> delete(String id) async {
-    try {
-      await _backend.setDoc(_uid, id, tombstoneMap());
-    } catch (e) {
-      debugPrint('[cloudfirst-activity] tombstone gagal: $e');
-      rethrow;
-    }
+    final String uid = _uid;
+    final int attempt = _registerWrite(id);
+    _trackAck(
+      _backend.setDoc(uid, id, tombstoneMap()),
+      activityId: id,
+      attempt: attempt,
+      operation: ActivitySyncOperation.delete,
+    );
+    // Mirror langsung dihapus (bukan menunggu ack): rollback tidak boleh
+    // memunculkan entri yang sudah dihapus walau tombstone belum di-ack.
     await _mirrorDelete(id);
+  }
+
+  /// Daftarkan operasi tulis baru untuk [activityId]; kembalikan nomor
+  /// urutnya (selalu naik, tidak pernah reset).
+  int _registerWrite(String activityId) {
+    final int next = (_writeAttempts[activityId] ?? 0) + 1;
+    _writeAttempts[activityId] = next;
+    return next;
+  }
+
+  /// Pantau ack/reject server tanpa memblokir pemanggil.
+  ///
+  /// Korelasi per-attempt (temuan QC Hermes 2026-10-18): hasil ack hanya
+  /// diterapkan bila [attempt] masih operasi TERBARU untuk activity ini.
+  /// Ack/reject yang datang telat (out-of-order) setelah operasi berikutnya
+  /// TIDAK boleh menimpa status terbaru — baik itu stale reject yang
+  /// memunculkan `failed` palsu, maupun stale ack yang membersihkan
+  /// `failed` terbaru.
+  ///
+  /// - ack sukses terbaru → clear status failed activity ini (sembuh);
+  /// - reject terbaru → catat di [failures] (snackbar + badge failed) + log;
+  /// - hasil operasi yang sudah digantikan → diabaikan (log debug).
+  void _trackAck(
+    Future<void> ack, {
+    required String activityId,
+    required int attempt,
+    required ActivitySyncOperation operation,
+  }) {
+    unawaited(
+      ack.then(
+        (_) {
+          if (_writeAttempts[activityId] != attempt) {
+            debugPrint(
+              '[cloudfirst-activity] ack STALE diabaikan ${operation.name} '
+              '$activityId (attempt $attempt)',
+            );
+            return;
+          }
+          _failures.clear(activityId);
+          debugPrint(
+            '[cloudfirst-activity] cloud ACK ${operation.name} $activityId',
+          );
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          if (_writeAttempts[activityId] != attempt) {
+            debugPrint(
+              '[cloudfirst-activity] reject STALE diabaikan '
+              '${operation.name} $activityId (attempt $attempt): $error',
+            );
+            return;
+          }
+          _failures.record(
+            activityId: activityId,
+            operation: operation,
+            error: error,
+          );
+          debugPrint(
+            '[cloudfirst-activity] cloud FAIL ${operation.name} '
+            '$activityId: $error',
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _mirrorUpsert(ActivityModel activity) async {

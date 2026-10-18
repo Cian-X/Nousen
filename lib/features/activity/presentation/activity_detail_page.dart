@@ -19,6 +19,7 @@ import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/application/activity_detail_ml_service.dart';
 import 'package:nousen/features/activity/presentation/activity_status_visuals.dart';
+import 'package:nousen/features/activity/presentation/activity_sync_badge.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/stats/domain/stats_models.dart';
 import 'package:nousen/l10n/app_localizations.dart';
@@ -463,16 +464,28 @@ class ActivityDetailPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    activity.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.02,
-                      color: const Color(0xFF0F172A),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          activity.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.02,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: ActivitySyncBadge(activityId: activity.id),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Row(

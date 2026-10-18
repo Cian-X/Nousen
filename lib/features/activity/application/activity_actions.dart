@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:nousen/core/utils/date_utils.dart';
 import 'package:nousen/features/activity/application/activity_notification_copy_service.dart';
 import 'package:nousen/features/activity/application/three_day_rule_service.dart';
@@ -50,7 +53,18 @@ class ActivityActions {
 
   Future<void> deleteActivity(ActivityModel activity) async {
     await _activityRepository.delete(activity.id);
-    await _progressRepository.deleteByActivity(activity.id);
+    // Bersihkan progres TANPA menahan UI: bagian cloud dari
+    // DualWriteProgressRepository menunggu ack server sehingga menggantung
+    // saat offline (masalah pre-existing di luar scope S1 activity). Bagian
+    // lokal (Isar) tetap dieksekusi; error tak terduga hanya di-log supaya
+    // penghapusan activity tidak pernah menggantung/gagal setelah tersimpan.
+    unawaited(
+      _progressRepository.deleteByActivity(activity.id).catchError((
+        Object error,
+      ) {
+        debugPrint('[activity-actions] bersihkan progres gagal: $error');
+      }),
+    );
     await _scheduler.cancelAllForActivity(activity.id);
   }
 

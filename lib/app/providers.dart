@@ -15,6 +15,7 @@ import 'package:nousen/features/activity/application/activity_form_ml_service.da
 import 'package:nousen/features/activity/application/activity_notification_copy_service.dart';
 import 'package:nousen/features/activity/application/ai_feedback_log_service.dart';
 import 'package:nousen/features/activity/application/three_day_rule_service.dart';
+import 'package:nousen/features/activity/data/activity_sync_failures.dart';
 import 'package:nousen/features/activity/data/isar_activity_repository.dart';
 import 'package:nousen/features/activity/data/cloud_activities_backend.dart';
 import 'package:nousen/features/activity/data/cloud_first_activity_repository.dart';
@@ -233,6 +234,7 @@ final activityRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
       backend: ref.watch(cloudActivitiesBackendProvider),
       authState: ref.watch(cloudAuthStateProvider),
       mirror: ref.watch(activityLocalRepositoryProvider),
+      failures: ref.watch(activitySyncFailuresProvider),
     ),
     // Jalur produksi saat ini: Isar primer + dual-write best-effort.
     fallback: () => DualWriteActivityRepository(
@@ -240,6 +242,35 @@ final activityRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
       authState: ref.watch(cloudAuthStateProvider),
     ),
   );
+});
+
+/// Pelacak kegagalan tulis cloud-first per-activity (S1b — reject server
+/// non-silent). Dipakai repository cloud-first + UI (snackbar & badge).
+final activitySyncFailuresProvider = Provider<ActivitySyncFailures>((Ref ref) {
+  final ActivitySyncFailures failures = ActivitySyncFailures();
+  ref.onDispose(failures.dispose);
+  return failures;
+});
+
+/// Akses repository cloud-first untuk status tulis (pending/failed);
+/// null bila flag OFF (jalur produksi lama tanpa status cloud).
+final cloudFirstActivityRepositoryProvider =
+    Provider<CloudFirstActivityRepository?>((Ref ref) {
+      final ActivityRepository repo = ref.watch(activityRepositoryProvider);
+      return repo is CloudFirstActivityRepository ? repo : null;
+    });
+
+/// Id activity dengan tulisan lokal menunggu ack server (`hasPendingWrites`
+/// dari snapshot Firestore). Kosong bila flag OFF. Durable lintas
+/// force-stop karena persistence SDK Firestore.
+final activityPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final CloudFirstActivityRepository? cloudFirst = ref.watch(
+    cloudFirstActivityRepositoryProvider,
+  );
+  if (cloudFirst == null) {
+    return const Stream<Set<String>>.empty();
+  }
+  return cloudFirst.watchPendingIds();
 });
 
 final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((

@@ -314,7 +314,9 @@ mirror Isar** — flag ON hanya menulis Firestore. S1 menambahkan:
      dipakai untuk baca dan tidak di-refresh oleh baca;
    - TULIS/UPSERT: Firestore dulu (di-await; gagal → rethrow, mirror TIDAK
      ditulis), lalu mirror Isar best-effort (gagal → hanya log, operasi
-     yang sudah tersimpan di cloud tidak digagalkan);
+     yang sudah tersimpan di cloud tidak digagalkan); — **(semantik tulis
+     ini digantikan S1b §13.6: operasi tidak lagi menunggu ack server;
+     mirror selalu ditulis)**;
    - DELETE: tombstone cloud dulu (tidak pernah hard delete), lalu
      `mirror.delete` — supaya rollback tidak memunculkan entri yang sudah
      dihapus.
@@ -338,6 +340,16 @@ mirror Isar** — flag ON hanya menulis Firestore. S1 menambahkan:
 | Analyze | `flutter analyze` | 64 temuan **pre-existing** (generated Isar, seeder, dll — file lama); **0 di file S1** |
 | Build APK | §13.3 | §13.3 |
 
+Hasil nyata S1b (dijalankan 2026-10-18, source S1b belum di-commit):
+
+| Verifikasi | Perintah | Hasil |
+| --- | --- | --- |
+| Suite fokus S1b (repo offline/status, wiring, widget badge, messages) | `flutter test test/cloud_first_activity_repository_test.dart test/s1_cloud_first_wiring_test.dart test/activity_sync_badge_widget_test.dart test/activity_sync_messages_test.dart test/migration_flags_test.dart test/dual_write_activity_test.dart --no-pub` | **46/46 PASSED** (42 + 4 tes race ack out-of-order — fix QC Hermes, §13.6) |
+| Suite penuh | `flutter test --no-pub` | **139 PASSED, 2 GAGAL pre-existing** (`typography_guardrails_test.dart` — sudah gagal sebelum S1b; tidak ada pelanggaran baru dari file S1b) |
+| Jalur aktivasi dart-define (S1b) | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true test/migration_flags_test.dart test/s1_cloud_first_wiring_test.dart --no-pub` | **9/9 PASSED** |
+| Analyze (S1b) | `flutter analyze` | **64 temuan — sama persis dengan baseline**; 0 di file S1b |
+| Build APK S1b | §13.3 (tabel S1b) | 2 APK dibangun, hash tercatat |
+
 Cakupan tes S1 (16 tes baru):
 - CRUD: upsert create/update → cloud merge-set skema v2 (`deleted:false`,
   `updatedAt` server timestamp, `clientUpdatedAt` ISO) + mirror ikut;
@@ -349,11 +361,11 @@ Cakupan tes S1 (16 tes baru):
 - Wiring: flag OFF → `DualWriteActivityRepository` (lama); flag ON →
   cloud-first + mirror hidup lewat provider.
 
-Yang **BELUM** diverifikasi (jujur): runtime device — login nyata, Firestore
-produksi nyata, antrean offline SDK nyata, perilaku lintas-device. Yang
-diuji otomatis untuk offline hanyalah kontrak repository (cloud error →
-rethrow tanpa mirror; cloud sukses → mirror ikut). Antrean/reconnect
-Firestore asli wajib diuji manual di device (§13.5).
+Yang **BELUM** diverifikasi (jujur): runtime device app nyata — login
+Firebase produksi, Firestore produksi, dan perilaku lintas-device. Antrean
+offline + durability SDK nyata sudah dibuktikan lewat repro emulator
+terpisah (§13.6), dan kontrak repository offline/reject sudah ditutup tes
+otomatis S1b; E2E app di HP owner tetap wajib manual (§13.5).
 
 ### 13.3 APK uji + instalasi owner
 
@@ -389,6 +401,26 @@ Rollback: pasang `nousen-s1-rollback-debug.apk` di atas build S1 (upgrade,
 tanpa hapus data) → flag OFF → app kembali membaca Isar; data selama S1
 tetap ada di mirror.
 
+#### 13.3b APK S1b v2 (offline UX + fix race ack QC — pasang DI ATAS APK S1)
+
+Dibangun 2026-10-18 dari source S1b **setelah fix race ack out-of-order**
+(temuan QC Hermes, §13.6); signing sama (debug keystore mesin ini) →
+upgrade di atas APK S1 tanpa uninstall:
+
+| Artefak | Flag | Size | SHA256 |
+| --- | --- | --- | --- |
+| `build/s1b-owner-apks/nousen-s1b2-cloudfirst-debug.apk` | S1 ON | 245.343.338 B (~234 MB) | `02345B8CB31EB8CDEF02192EADD13F6312F7333C9491D787A8479FAA7208842D` |
+| `build/s1b-owner-apks/nousen-s1b2-rollback-debug.apk` | OFF (rollback) | 245.343.549 B (~234 MB) | `6C71C05970E2C056AD0A07D2968E576007D989D8F520663C3D4ACB30724F9421` |
+
+**APK v1 (`nousen-s1b-cloudfirst/rollback-debug.apk`) SUPERSEDED — JANGAN
+dipasang**: dibangun sebelum fix race ack; Hermes menahan gate sampai race
+diperbaiki (sudah diperbaiki + diuji, §13.6).
+
+Langkah owner: pasang `nousen-s1b2-cloudfirst-debug.apk` di atas APK S1 →
+jalankan checklist §13.5 (versi baru yang menyertakan uji pending badge +
+force-stop). Bila "signature mismatch": jangan uninstall (data hilang) —
+lapor dulu.
+
 ### 13.4 Perilaku yang harus diekspektasi owner saat S1 ON
 
 - Daftar aktivitas = **isi Firestore** uid login, difilter `deleted == false`
@@ -396,18 +428,143 @@ tetap ada di mirror.
   dokumen lama (dual-write tanpa field `deleted`) belum muncul di daftar;
   entri baru / entri lama yang di-edit ulang lewat app akan muncul.
 - Semua tulis (create/edit/delete) masuk cloud + mirror Isar.
+- Offline (S1b, §13.6): save/edit/delete **selesai cepat** — UI tidak
+  menggantung; entri baru/edit langsung terlihat dari cache lokal.
+  - Badge amber (awan panah) di kartu = tulis masih **pending** (belum
+    di-ack server = local queue, bukan error);
+  - badge hilang = **synced**;
+  - badge merah + snackbar = server **menolak** (rules/auth) — non-silent;
+  - badge/antrean selamat dari force-stop (persistence SDK).
 - Rollback (flag OFF): aplikasi kembali membaca Isar (mirror) — data selama
-  S1 tetap ada; perilaku kembali seperti sebelum S1.
+  S1 tetap ada; entri yang sudah dihapus selama S1 tidak muncul kembali
+  walau tombstone belum di-ack saat app ditutup.
 - Tanpa login Firebase: operasi activity melempar error (tidak ada fallback
   senyap) — sesuai desain cloud-first.
 
 ### 13.5 Checklist manual gate S2 (2 hari, owner)
 
-1. CRUD online: buat/edit/hapus beberapa activity → pastikan tampil benar.
-2. Offline: airplane mode → buat/edit → tutup app → buka lagi (data harus
-   tetap tampil) → internet menyala → tunggu sync → cek konsistensi
-   (device lain / Firebase console bila tersedia).
-3. Rollback drill (disarankan di akhir): pasang APK rollback → pastikan
-   daftar kembali ke Isar dan data S1 masih ada.
-4. Catat setiap error/keanehan (screenshot + waktu) → lapor; jangan klaim
+Ulangi setelah memasang APK S1b (+ build rollback). Langkah:
+
+1. **CRUD online**: buat/edit/hapus beberapa activity → pastikan tampil
+   benar; tidak ada badge tersisa setelah beberapa detik (semua synced).
+2. **Offline create/edit**: airplane mode → buat atau edit activity →
+   tombol simpan harus selesai cepat (tidak menggantung); entri langsung
+   terlihat; badge amber muncul di kartu aktivitas tersebut.
+3. **Force-stop saat pending**: (masih airplane mode) tutup paksa app dari
+   recent apps → buka lagi → entri tetap ada + badge amber tetap muncul.
+4. **Reconnect**: nyalakan internet → tunggu beberapa detik → badge amber
+   hilang (synced) → cek konsistensi (device lain / Firebase console bila
+   tersedia). Tidak ada data hilang.
+5. **Offline delete**: airplane mode → hapus satu activity (menu ⋮ →
+   Hapus) → konfirmasi cepat, entri langsung hilang (tidak menggantung) →
+   reconnect → tetap hilang di console.
+6. **Reject server (kalau terjadi)**: bila muncul snackbar "Gagal
+   ... ke cloud: ..." + badge merah, catat pesannya (screenshot) — itu
+   reject rules/auth yang memang di-surfacekan; jangan diabaikan.
+7. **Rollback drill** (akhir): pasang APK rollback → daftar kembali ke
+   Isar; entri yang dihapus selama S1 TIDAK muncul kembali; data S1 masih
+   ada.
+8. Catat setiap error/keanehan (screenshot + waktu) → lapor; jangan klaim
    gate lulus sebelum 2 hari tanpa insiden.
+
+### 13.6 S1b — perbaikan offline UX (Opsi A versi Hermes, 2026-10-18)
+
+Status: **diimplementasikan + tes otomatis hijau (termasuk fix race ack
+out-of-order dari QC Hermes); APK v2 dibangun; belum diuji manual di device
+owner (checklist §13.5).** Belum di-commit/di-push saat dokumen ini ditulis.
+
+**Akar masalah (investigasi hari-1, terbukti).** Laporan owner "spinner
+save menggantung saat airplane mode" berasal dari semantik SDK Firestore:
+Future tulis (`set`/`delete`) hanya resolve **setelah ack server**
+(`Tasks.await(setTask)` → `SyncEngine.writeMutations` → resolve di
+`handleSuccessfulWrite`/`handleRejectedWrite`). S1 meng-`await` penuh
+sebelum mirror, sehingga operasi menggantung offline dan mirror Isar
+tertunda sampai reconnect. Bukti runtime di emulator (Firestore emulator
+`demo-repro`, proyek lokal — bukan produksi): online resolve 1,19 s;
+offline PENDING ≥20 s sambil cache sudah `exists=true pending=true
+fromCache=true`; resolve +117 ms setelah reconnect; delete serupa (~98 ms
+setelah reconnect). Run-2: antrean offline selamat `am force-stop` →
+restart → auto-sync; data tidak hilang (hanya UX + keterlambatan mirror).
+
+**Perubahan S1b (hanya jalur flag ON).**
+
+1. `CloudFirstActivityRepository.upsert/delete`: Firestore **diinisiasi**
+   tetapi operasi **tidak menunggu ack**; mirror Isar langsung di-await
+   (Isar lokal tidak butuh jaringan) → UI tidak pernah menggantung; sync
+   berlanjut di antrean SDK saat online.
+2. Status tulis per-activity:
+   - `pending` (local queue) → metadata snapshot `hasPendingWrites`
+     (seam `CloudActivityDoc` + `watchPendingIds()`) — badge amber di
+     kartu aktivitas + header detail; durable lintas force-stop/relaunch
+     karena persistence SDK;
+   - `synced` → tidak pending & tidak gagal (badge hilang — indikator
+     normal, tanpa ikon);
+   - `failed` (reject server: rules/auth/error saat ack) →
+     `ActivitySyncFailures` — snackbar + badge merah dengan pesan; BUKAN
+     `catchError` + log senyap.
+3. Delete: tombstone cloud non-blocking + `mirror.delete` langsung →
+   rollback (flag OFF) tidak resurrect baris yang sudah dihapus, walau
+   tombstone belum di-ack. State lokal yang dipertahankan: baris Isar
+   dihapus + cloud tombstone `deleted:true` (tidak ada hard delete).
+4. `ActivityActions.deleteActivity`: pembersihan progres (jalur
+   dual-write, pre-existing await ack) tidak lagi menahan UI — bagian
+   lokal tetap dieksekusi, bagian cloud lanjut di background.
+
+**Batas API & kebijakan (jujur).**
+
+- FlutterFire **tidak** menyediakan Future "queued lokal" yang terpisah
+  dari ack server; satu-satunya sinyal local-queue adalah
+  `hasPendingWrites`. "Queued/pending" di UI berarti "tulis sudah
+  diserahkan ke SDK" (diverifikasi lewat metadata) — bukan klaim ack
+  lokal palsu, dan TIDAK pernah diklaim "server-confirmed" sebelum ack.
+- Retry: transient/offline ditangani otomatis oleh antrean SDK (mutation
+  bertahan sampai ack, termasuk lintas force-stop). Reject permanen
+  (rules/auth) TIDAK di-retry otomatis — user melihat failed + alasan;
+  menyimpan ulang = mengirim ulang. Reject yang diputuskan server saat
+  proses app sudah mati tidak bisa direkonstruksi SDK saat app hidup
+  kembali (mutation sudah dibuang) → rekonsiliasi penuh = kandidat S2
+  (belum dirancang).
+- Tradeoff yang diterima: mirror tetap ditulis walau cloud reject
+  (local-first). Konsekuensinya rollback sesaat bisa menampilkan entri
+  yang cloud tolak — tercatat sebagai keterbatasan gate, bukan sembunyi.
+
+**QC ronde Hermes (2026-10-18) — blocker race ack out-of-order (SUDAH DI-FIX).**
+
+Hermes menahan approval dengan satu temuan yang menyentuh status data:
+`_trackAck` memproses tiap ack secara terpisah, sementara status failure
+disimpan satu per activity id → **reject lama dari operasi yang sudah
+digantikan bisa menampilkan `failed` padahal versi terbaru sudah synced**;
+sebaliknya, ack sukses lama bisa membersihkan `failed` milik operasi
+terbaru (save/save maupun save/delete). Arah risiko: badge/snackbar yang
+menyesatkan (status cloud tidak sesuai kenyataan), bukan korupsi data.
+
+Fix: korelasi per-attempt di `CloudFirstActivityRepository` —
+`_writeAttempts[activityId]` naik monoton di tiap operasi tulis
+(upsert/delete); ack/reject hanya diterapkan bila attempt-nya masih yang
+TERBARU untuk activity itu; hasil stale diabaikan (log debug). Empat tes
+out-of-order baru di `cloud_first_activity_repository_test.dart` (fake
+backend dengan gate per-set):
+
+1. reject lama TIDAK menimpa ack sukses operasi terbaru;
+2. ack sukses lama TIDAK membersihkan reject operasi terbaru;
+3. reject edit lama tidak muncul setelah delete terbaru;
+4. reject delete terbaru tetap tercatat walau ack edit lama telat sukses.
+
+Bukti: sebelum fix 4/4 GAGAL (repro race nyata di fake backend yang
+mengontrol urutan ack); sesudah fix 4/4 lulus; suite fokus **46/46**;
+suite penuh **139 lulus** (2 gagal pre-existing); analyze **64 = baseline**
+(`cacheExtent` di `home_shell_page.dart` juga ada di baseline pra-S1).
+APK dibangun ulang (v2 — tabel §13.3b). Commit/push tetap ditahan.
+
+**File S1b.** `cloud_first_activity_repository.dart` (inti),
+`cloud_activities_backend.dart` (+`CloudActivityDoc`),
+`activity_sync_failures.dart` (baru), `activity_sync_badge.dart` (baru),
+`activity_sync_messages.dart` (baru), `providers.dart`,
+`activity_actions.dart`, `home_shell_page.dart`, `activity_detail_page.dart`.
+
+**Tes S1b.** `cloud_first_activity_repository_test.dart` (offline ack
+menggantung → selesai cepat + mirror segera; reject → failed + event;
+ack sukses → sembuh; delete pending → mirror langsung terhapus/rollback
+tidak resurrect), `s1_cloud_first_wiring_test.dart` (pending ids +
+failures terhubung provider; flag OFF tidak aktif), widget badge,
+messages. Lihat §13.2 tabel untuk hasil perintah nyata saat build S1b.
