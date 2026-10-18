@@ -6,7 +6,6 @@ import 'package:nousen/app/providers.dart';
 import 'package:nousen/features/activity/data/dual_write_activity_repository.dart';
 import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
 import 'package:nousen/services/firebase/firebase_auth_service.dart';
-import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 
 /// Layar login Google. Ditampilkan hanya bila Firebase terkonfigurasi
 /// dan belum ada sesi. Tanpa Firebase: app langsung masuk (mode lokal).
@@ -182,7 +181,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (!FirebaseBootstrap.isAvailable) {
+    if (!ref.watch(firebaseAvailabilityProvider)) {
       return widget.child;
     }
     final AsyncValue<User?> session = ref.watch(firebaseAuthStateProvider);

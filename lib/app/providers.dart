@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:nousen/core/constants/ai_demo_config.dart';
 import 'package:nousen/core/constants/app_constants.dart';
+import 'package:nousen/core/migration/migration_flags.dart';
 import 'package:nousen/core/utils/date_utils.dart';
 import 'package:nousen/features/activity/application/activity_actions.dart';
 import 'package:nousen/features/activity/application/activity_detail_ml_service.dart';
@@ -13,7 +15,10 @@ import 'package:nousen/features/activity/application/activity_form_ml_service.da
 import 'package:nousen/features/activity/application/activity_notification_copy_service.dart';
 import 'package:nousen/features/activity/application/ai_feedback_log_service.dart';
 import 'package:nousen/features/activity/application/three_day_rule_service.dart';
+import 'package:nousen/features/activity/data/activity_sync_failures.dart';
 import 'package:nousen/features/activity/data/isar_activity_repository.dart';
+import 'package:nousen/features/activity/data/cloud_activities_backend.dart';
+import 'package:nousen/features/activity/data/cloud_first_activity_repository.dart';
 import 'package:nousen/features/activity/data/dual_write_activity_repository.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/domain/activity_repository.dart';
@@ -24,6 +29,9 @@ import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 import 'package:nousen/features/progress/data/isar_progress_repository.dart';
 import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
+import 'package:nousen/features/progress/data/cloud_first_progress_repository.dart';
+import 'package:nousen/features/progress/data/cloud_progress_backend.dart';
+import 'package:nousen/features/progress/data/progress_sync_failures.dart';
 import 'package:nousen/services/firebase/firebase_auth_state.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/progress/domain/progress_repository.dart';
@@ -38,6 +46,7 @@ import 'package:nousen/features/stats/domain/stats_models.dart';
 import 'package:nousen/services/device_health_service.dart';
 import 'package:nousen/services/gemini_activity_service.dart';
 import 'package:nousen/services/firebase/firebase_auth_service.dart';
+import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 import 'package:nousen/services/image_storage_service.dart';
 import 'package:nousen/services/ml/ml_model_encoder_service.dart';
 import 'package:nousen/services/ml/ml_model_schema_service.dart';
@@ -87,6 +96,13 @@ final firebaseAuthStateProvider = StreamProvider<User?>((Ref ref) {
     return Stream<User?>.value(null);
   }
 });
+
+/// Ketersediaan Firebase (hasil bootstrap). Seam tes untuk AuthGate:
+/// produksi membaca [FirebaseBootstrap.isAvailable] (static, tidak bisa
+/// di-override langsung); tes meng-override provider ini.
+final firebaseAvailabilityProvider = Provider<bool>(
+  (Ref ref) => FirebaseBootstrap.isAvailable,
+);
 
 final onnxModelServiceProvider = Provider<OnnxModelService>(
   (Ref ref) => OnnxModelService(),
@@ -191,11 +207,164 @@ final notificationHealthProvider = FutureProvider<NotificationHealthState>((
   );
 });
 
+/// Flag migrasi cloud-first. Default = [MigrationFlags.fromEnvironment]:
+/// tanpa `--dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true` semua flag mati
+/// (perilaku produksi tetap jalur lama Isar/dual-write). APK uji device
+/// owner dibangun dengan define tersebut (S1 — lihat README migrasi §13).
+final migrationFlagsProvider = Provider<MigrationFlags>(
+  (Ref ref) => MigrationFlags.fromEnvironment,
+);
+
+/// Sumber lokal activities (Isar).
+/// Dipakai jalur produksi (dual-write, primer) dan sebagai mirror
+/// cloud-first supaya rollback (flag OFF) tetap melihat data terbaru.
+final activityLocalRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
+  return IsarActivityRepository(ref.watch(isarProvider));
+});
+
+/// Backend dokumen cloud activities (skema v2). Seam tes: bisa diganti
+/// fake backend tanpa Firebase asli.
+final cloudActivitiesBackendProvider = Provider<CloudActivitiesBackend>((
+  Ref ref,
+) {
+  return FirestoreCloudActivitiesBackend(FirebaseFirestore.instance);
+});
+
+/// Status login Firebase — seam tes bersama untuk kedua jalur activity.
+final cloudAuthStateProvider = Provider<CloudAuthState>(
+  (Ref ref) => FirebaseCloudAuthState(),
+);
+
 final activityRepositoryProvider = Provider<ActivityRepository>((Ref ref) {
-  return DualWriteActivityRepository(
-    local: IsarActivityRepository(ref.watch(isarProvider)),
-    authState: FirebaseCloudAuthState(),
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<ActivityRepository>(
+    cloudFirst: flags.cloudFirstActivities,
+    // Jalur cloud-first (S1): Firestore primer + mirror Isar best-effort.
+    // Mirror hanya untuk rollback; baca TIDAK pernah dari mirror.
+    cloud: () => CloudFirstActivityRepository(
+      backend: ref.watch(cloudActivitiesBackendProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(activityLocalRepositoryProvider),
+      failures: ref.watch(activitySyncFailuresProvider),
+    ),
+    // Jalur produksi saat ini: Isar primer + dual-write best-effort.
+    fallback: () => DualWriteActivityRepository(
+      local: ref.watch(activityLocalRepositoryProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+    ),
   );
+});
+
+/// Pelacak kegagalan tulis cloud-first per-activity (S1b — reject server
+/// non-silent). Dipakai repository cloud-first + UI (snackbar & badge).
+final activitySyncFailuresProvider = Provider<ActivitySyncFailures>((Ref ref) {
+  final ActivitySyncFailures failures = ActivitySyncFailures();
+  ref.onDispose(failures.dispose);
+  return failures;
+});
+
+/// Akses repository cloud-first untuk status tulis (pending/failed);
+/// null bila flag OFF (jalur produksi lama tanpa status cloud).
+final cloudFirstActivityRepositoryProvider =
+    Provider<CloudFirstActivityRepository?>((Ref ref) {
+      final ActivityRepository repo = ref.watch(activityRepositoryProvider);
+      return repo is CloudFirstActivityRepository ? repo : null;
+    });
+
+/// Grace badge pending (keputusan owner, uji device 2026-10-18): badge amber
+/// baru tampil kalau tulisan belum di-ACK server LEBIH LAMA dari ini.
+/// Online normal ACK ~0,1–0,5 dtk → badge tidak sempat tampil (tidak kedip);
+/// offline/lambat → badge muncul dan bertahan sampai ACK (tanda "belum
+/// sampai cloud"). Setel satu nilai di sini bila perlu.
+const Duration pendingBadgeGrace = Duration(seconds: 2);
+
+/// Saring stream id-pending (`hasPendingWrites` per snapshot): hanya id yang
+/// pending terus-menerus lebih lama dari [grace] yang lolos ke UI.
+///
+/// Kenapa duration, bukan deteksi sinyal jaringan langsung: "tidak ada
+/// network" tidak reliable dideteksi (WiFi tanpa internet tetap terlihat
+/// "online"); `hasPendingWrites` yang bertahan adalah sinyal nyata
+/// "tulisan belum sampai cloud".
+Stream<Set<String>> pendingIdsWithGrace(
+  Stream<Set<String>> source, {
+  Duration grace = pendingBadgeGrace,
+}) {
+  late final StreamController<Set<String>> controller;
+  StreamSubscription<Set<String>>? sub;
+  final Map<String, Timer> timers = <String, Timer>{};
+  final Set<String> armed = <String>{};
+  final Set<String> visible = <String>{};
+  Set<String> latest = <String>{};
+
+  void publish() => controller.add(Set<String>.unmodifiable(visible));
+
+  controller = StreamController<Set<String>>(
+    onListen: () {
+      sub = source.listen(
+        (Set<String> ids) {
+          latest = ids;
+          var changed = false;
+          // Id hilang dari set (ACK / doc terhapus) → batalkan grace.
+          for (final String id in armed.toList()) {
+            if (!ids.contains(id)) {
+              timers.remove(id)?.cancel();
+              armed.remove(id);
+            }
+          }
+          // Badge yang sudah tampil tapi tulisannya sudah di-ACK → sembunyikan.
+          for (final String id in visible.toList()) {
+            if (!ids.contains(id)) {
+              visible.remove(id);
+              changed = true;
+            }
+          }
+          // Id baru pending → mulai grace sekali saja.
+          for (final String id in ids) {
+            if (armed.contains(id) || visible.contains(id)) {
+              continue;
+            }
+            armed.add(id);
+            timers[id] = Timer(grace, () {
+              timers.remove(id);
+              armed.remove(id);
+              if (latest.contains(id)) {
+                visible.add(id);
+                publish();
+              }
+            });
+          }
+          if (changed) {
+            publish();
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) =>
+            controller.addError(error, stackTrace),
+      );
+    },
+    onCancel: () async {
+      await sub?.cancel();
+      for (final Timer timer in timers.values) {
+        timer.cancel();
+      }
+      timers.clear();
+    },
+  );
+  return controller.stream;
+}
+
+/// Id activity dengan tulisan lokal menunggu ack server (`hasPendingWrites`
+/// dari snapshot Firestore) — sudah disaring grace [pendingBadgeGrace]:
+/// hanya yang "belum sampai cloud" lebih lama dari itu yang tampil di badge.
+/// Kosong bila flag OFF. Durable lintas force-stop karena persistence SDK
+/// Firestore.
+final activityPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final CloudFirstActivityRepository? cloudFirst = ref.watch(
+    cloudFirstActivityRepositoryProvider,
+  );
+  if (cloudFirst == null) {
+    return const Stream<Set<String>>.empty();
+  }
+  return pendingIdsWithGrace(cloudFirst.watchPendingIds());
 });
 
 final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
@@ -204,18 +373,78 @@ final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
   return IsarOneTimeReminderRepository(ref.watch(isarProvider));
 });
 
+/// Sumber lokal progress (Isar).
+/// Dipakai jalur produksi (dual-write, primer) dan sebagai mirror
+/// cloud-first (S2) supaya rollback (flag OFF) tetap melihat data terbaru.
+final progressLocalRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
+  return IsarProgressRepository(ref.watch(isarProvider));
+});
+
+/// Backend dokumen cloud progress (skema v1). Seam tes: bisa diganti fake
+/// backend tanpa Firebase asli.
+final cloudProgressBackendProvider = Provider<CloudProgressBackend>((Ref ref) {
+  return FirestoreCloudProgressBackend(FirebaseFirestore.instance);
+});
+
+/// Pelacak kegagalan tulis cloud-first per-entry progress (S2 — reject
+/// server non-silent). Dipakai repository cloud-first + UI (snackbar & badge).
+final progressSyncFailuresProvider = Provider<ProgressSyncFailures>((Ref ref) {
+  final ProgressSyncFailures failures = ProgressSyncFailures();
+  ref.onDispose(failures.dispose);
+  return failures;
+});
+
 final progressRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
-  // Pilot dual-write: Isar tetap primer untuk baca; tulis diteruskan ke
-  // Firestore bila login. Tanpa login/cloud: perilaku identik Isar murni.
-  return DualWriteProgressRepository(
-    local: IsarProgressRepository(ref.watch(isarProvider)),
-    authState: FirebaseCloudAuthState(),
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<ProgressRepository>(
+    cloudFirst: flags.cloudFirstProgress,
+    // Jalur cloud-first (S2): Firestore primer + mirror Isar best-effort.
+    // Mirror hanya untuk rollback; baca TIDAK pernah dari mirror.
+    cloud: () => CloudFirstProgressRepository(
+      backend: ref.watch(cloudProgressBackendProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(progressLocalRepositoryProvider),
+      failures: ref.watch(progressSyncFailuresProvider),
+    ),
+    // Jalur produksi saat ini: Isar primer + dual-write best-effort.
+    fallback: () => DualWriteProgressRepository(
+      local: ref.watch(progressLocalRepositoryProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+    ),
   );
 });
 
+/// Akses repository cloud-first progress untuk status tulis
+/// (pending/failed); null bila flag OFF (jalur produksi lama tanpa status
+/// cloud).
+final cloudFirstProgressRepositoryProvider =
+    Provider<CloudFirstProgressRepository?>((Ref ref) {
+      final ProgressRepository repo = ref.watch(progressRepositoryProvider);
+      return repo is CloudFirstProgressRepository ? repo : null;
+    });
+
+/// Id entry progress dengan tulisan lokal menunggu ack server
+/// (`hasPendingWrites` dari snapshot Firestore) — sudah disaring grace
+/// [pendingBadgeGrace]: hanya yang "belum sampai cloud" lebih lama dari itu
+/// yang tampil di badge. Kosong bila flag OFF. Durable lintas force-stop
+/// karena persistence SDK Firestore.
+final progressPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final CloudFirstProgressRepository? cloudFirst = ref.watch(
+    cloudFirstProgressRepositoryProvider,
+  );
+  if (cloudFirst == null) {
+    return const Stream<Set<String>>.empty();
+  }
+  return pendingIdsWithGrace(cloudFirst.watchPendingIds());
+});
+
 /// Akses [DualWriteProgressRepository.syncState] untuk UI sync indicator.
-final cloudSyncStateProvider =
-    Provider<ValueNotifier<CloudSyncState>>((Ref ref) {
+/// Flag cloud-first progress ON (S2) → indikator global tidak relevan;
+/// widget [CloudSyncIndicator] menyembunyikan diri dan status ditampilkan
+/// per-entry lewat `ProgressSyncBadge`.
+final cloudSyncStateProvider = Provider<ValueNotifier<CloudSyncState>>((
+  Ref ref,
+) {
   final repo = ref.watch(progressRepositoryProvider);
   if (repo is DualWriteProgressRepository) {
     return repo.syncState;
@@ -273,9 +502,9 @@ final agendaNotesStreamProvider =
       Ref ref,
       String reminderId,
     ) {
-      return ref.watch(oneTimeReminderRepositoryProvider).watchNotes(
-            reminderId,
-          );
+      return ref
+          .watch(oneTimeReminderRepositoryProvider)
+          .watchNotes(reminderId);
     });
 
 final allProgressStreamProvider = StreamProvider<List<ProgressEntryModel>>((

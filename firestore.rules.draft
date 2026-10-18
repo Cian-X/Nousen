@@ -1,0 +1,88 @@
+rules_version = '2';
+
+// ============================================================================
+// DRAFT S0 — JANGAN DEPLOY sebelum:
+//   1. review Muse/Hermes selesai, DAN
+//   2. emulator test `firestore/rules_tests` lulus, khususnya cek
+//      `updatedAt == request.time` saat klien memakai
+//      FieldValue.serverTimestamp().
+//
+// Kontrak tulis klien cloud-first (skema dokumen v2):
+//   - Setiap create/update WAJIB membawa `updatedAt` = server timestamp
+//     (FieldValue.serverTimestamp()). Timestamp jam device DITOLAK —
+//     LWW memakai jam server, bukan jam device.
+//   - Hard delete DILARANG. Hapus = tombstone:
+//     { deleted: true, deletedAt: serverTimestamp(), updatedAt: serverTimestamp() }.
+//   - Dokumen baru wajib `deleted: false` dan field `id` == doc id
+//     (khusus settings: doc id selalu 'app').
+//
+// PERINGATAN SEQUENCING DEPLOY:
+// Klien lama (jalur dual-write) menulis `updatedAt` sebagai string ISO —
+// TERTOLAK oleh rules ini. Deploy rules HANYA setelah klien cloud-first
+// benar-benar aktif di semua device (S2/S3), bukan sebelum.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // updatedAt harus berisi resolusi server timestamp request ini.
+    function writesServerUpdatedAt() {
+      return request.resource.data.updatedAt == request.time;
+    }
+
+    // Field `id` dokumen harus konsisten dengan doc id path.
+    function keepsDocId(docId) {
+      return request.resource.data.id == docId;
+    }
+
+    // Dokumen baru tidak boleh lahir dalam keadaan tombstone.
+    function isAlive() {
+      return request.resource.data.deleted == false;
+    }
+
+    match /users/{uid}/activities/{docId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt() && isAlive();
+      allow update: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/progress/{docId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt() && isAlive();
+      allow update: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/reminders/{docId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt() && isAlive();
+      allow update: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/agendaNotes/{docId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt() && isAlive();
+      allow update: if isOwner(uid) && keepsDocId(docId) && writesServerUpdatedAt();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/settings/{docId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && docId == 'app' && keepsDocId(docId) && writesServerUpdatedAt() && isAlive();
+      allow update: if isOwner(uid) && docId == 'app' && keepsDocId(docId) && writesServerUpdatedAt();
+      allow delete: if false;
+    }
+
+    // Default deny: semua path lain (termasuk dashboard admin, profil
+    // induk users/{uid}, dan koleksi eksperimen) tertutup.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
