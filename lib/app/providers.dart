@@ -29,6 +29,9 @@ import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
 import 'package:nousen/features/progress/data/isar_progress_repository.dart';
 import 'package:nousen/features/progress/data/dual_write_progress_repository.dart';
+import 'package:nousen/features/progress/data/cloud_first_progress_repository.dart';
+import 'package:nousen/features/progress/data/cloud_progress_backend.dart';
+import 'package:nousen/features/progress/data/progress_sync_failures.dart';
 import 'package:nousen/services/firebase/firebase_auth_state.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/progress/domain/progress_repository.dart';
@@ -43,6 +46,7 @@ import 'package:nousen/features/stats/domain/stats_models.dart';
 import 'package:nousen/services/device_health_service.dart';
 import 'package:nousen/services/gemini_activity_service.dart';
 import 'package:nousen/services/firebase/firebase_auth_service.dart';
+import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 import 'package:nousen/services/image_storage_service.dart';
 import 'package:nousen/services/ml/ml_model_encoder_service.dart';
 import 'package:nousen/services/ml/ml_model_schema_service.dart';
@@ -92,6 +96,13 @@ final firebaseAuthStateProvider = StreamProvider<User?>((Ref ref) {
     return Stream<User?>.value(null);
   }
 });
+
+/// Ketersediaan Firebase (hasil bootstrap). Seam tes untuk AuthGate:
+/// produksi membaca [FirebaseBootstrap.isAvailable] (static, tidak bisa
+/// di-override langsung); tes meng-override provider ini.
+final firebaseAvailabilityProvider = Provider<bool>(
+  (Ref ref) => FirebaseBootstrap.isAvailable,
+);
 
 final onnxModelServiceProvider = Provider<OnnxModelService>(
   (Ref ref) => OnnxModelService(),
@@ -279,16 +290,73 @@ final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
   return IsarOneTimeReminderRepository(ref.watch(isarProvider));
 });
 
+/// Sumber lokal progress (Isar).
+/// Dipakai jalur produksi (dual-write, primer) dan sebagai mirror
+/// cloud-first (S2) supaya rollback (flag OFF) tetap melihat data terbaru.
+final progressLocalRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
+  return IsarProgressRepository(ref.watch(isarProvider));
+});
+
+/// Backend dokumen cloud progress (skema v1). Seam tes: bisa diganti fake
+/// backend tanpa Firebase asli.
+final cloudProgressBackendProvider = Provider<CloudProgressBackend>((Ref ref) {
+  return FirestoreCloudProgressBackend(FirebaseFirestore.instance);
+});
+
+/// Pelacak kegagalan tulis cloud-first per-entry progress (S2 — reject
+/// server non-silent). Dipakai repository cloud-first + UI (snackbar & badge).
+final progressSyncFailuresProvider = Provider<ProgressSyncFailures>((Ref ref) {
+  final ProgressSyncFailures failures = ProgressSyncFailures();
+  ref.onDispose(failures.dispose);
+  return failures;
+});
+
 final progressRepositoryProvider = Provider<ProgressRepository>((Ref ref) {
-  // Pilot dual-write: Isar tetap primer untuk baca; tulis diteruskan ke
-  // Firestore bila login. Tanpa login/cloud: perilaku identik Isar murni.
-  return DualWriteProgressRepository(
-    local: IsarProgressRepository(ref.watch(isarProvider)),
-    authState: FirebaseCloudAuthState(),
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<ProgressRepository>(
+    cloudFirst: flags.cloudFirstProgress,
+    // Jalur cloud-first (S2): Firestore primer + mirror Isar best-effort.
+    // Mirror hanya untuk rollback; baca TIDAK pernah dari mirror.
+    cloud: () => CloudFirstProgressRepository(
+      backend: ref.watch(cloudProgressBackendProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(progressLocalRepositoryProvider),
+      failures: ref.watch(progressSyncFailuresProvider),
+    ),
+    // Jalur produksi saat ini: Isar primer + dual-write best-effort.
+    fallback: () => DualWriteProgressRepository(
+      local: ref.watch(progressLocalRepositoryProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+    ),
   );
 });
 
+/// Akses repository cloud-first progress untuk status tulis
+/// (pending/failed); null bila flag OFF (jalur produksi lama tanpa status
+/// cloud).
+final cloudFirstProgressRepositoryProvider =
+    Provider<CloudFirstProgressRepository?>((Ref ref) {
+      final ProgressRepository repo = ref.watch(progressRepositoryProvider);
+      return repo is CloudFirstProgressRepository ? repo : null;
+    });
+
+/// Id entry progress dengan tulisan lokal menunggu ack server
+/// (`hasPendingWrites` dari snapshot Firestore). Kosong bila flag OFF.
+/// Durable lintas force-stop karena persistence SDK Firestore.
+final progressPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final CloudFirstProgressRepository? cloudFirst = ref.watch(
+    cloudFirstProgressRepositoryProvider,
+  );
+  if (cloudFirst == null) {
+    return const Stream<Set<String>>.empty();
+  }
+  return cloudFirst.watchPendingIds();
+});
+
 /// Akses [DualWriteProgressRepository.syncState] untuk UI sync indicator.
+/// Flag cloud-first progress ON (S2) → indikator global tidak relevan;
+/// widget [CloudSyncIndicator] menyembunyikan diri dan status ditampilkan
+/// per-entry lewat `ProgressSyncBadge`.
 final cloudSyncStateProvider = Provider<ValueNotifier<CloudSyncState>>((
   Ref ref,
 ) {

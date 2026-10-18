@@ -6,9 +6,11 @@ void main() {
     test('default semua flag mati → perilaku produksi tidak berubah', () {
       const MigrationFlags flags = MigrationFlags();
       expect(flags.cloudFirstActivities, isFalse);
+      expect(flags.cloudFirstProgress, isFalse);
       expect(flags.anyEnabled, isFalse);
 
       expect(MigrationFlags.disabled.cloudFirstActivities, isFalse);
+      expect(MigrationFlags.disabled.cloudFirstProgress, isFalse);
       expect(MigrationFlags.disabled.anyEnabled, isFalse);
     });
 
@@ -42,13 +44,17 @@ void main() {
     });
   });
 
-  group('MigrationFlags (S1 — aktivasi build device owner)', () {
-    // Dibaca dari `--dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=...`:
+  group('MigrationFlags (S1/S2 — aktivasi build device owner)', () {
+    // Dibaca dari dart-define build:
+    // - `NOUSEN_CLOUD_FIRST_ACTIVITIES` (S1), `NOUSEN_CLOUD_FIRST_PROGRESS` (S2);
     // - run biasa (tanpa define) → false → membuktikan default produksi mati;
     // - run verifikasi dengan define `=true` → true → membuktikan jalur
     //   aktivasi APK owner benar-benar menyalakan flag.
     const bool activatedInBuild = bool.fromEnvironment(
       'NOUSEN_CLOUD_FIRST_ACTIVITIES',
+    );
+    const bool progressActivatedInBuild = bool.fromEnvironment(
+      'NOUSEN_CLOUD_FIRST_PROGRESS',
     );
 
     test('fromEnvironment mengikuti dart-define build', () {
@@ -56,7 +62,14 @@ void main() {
         MigrationFlags.fromEnvironment.cloudFirstActivities,
         activatedInBuild,
       );
-      expect(MigrationFlags.fromEnvironment.anyEnabled, activatedInBuild);
+      expect(
+        MigrationFlags.fromEnvironment.cloudFirstProgress,
+        progressActivatedInBuild,
+      );
+      expect(
+        MigrationFlags.fromEnvironment.anyEnabled,
+        activatedInBuild || progressActivatedInBuild,
+      );
     });
   });
 }

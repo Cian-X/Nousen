@@ -568,3 +568,166 @@ ack sukses → sembuh; delete pending → mirror langsung terhapus/rollback
 tidak resurrect), `s1_cloud_first_wiring_test.dart` (pending ids +
 failures terhubung provider; flag OFF tidak aktif), widget badge,
 messages. Lihat §13.2 tabel untuk hasil perintah nyata saat build S1b.
+
+---
+
+## 14. S2 — progress cloud-first + tombol logout (2026-10-18)
+
+Status: **diimplementasikan + 34 tes baru hijau (termasuk fix gap
+delete-reject activity-scoped dari QC Hermes); analyze 64 = baseline;
+belum di-commit/di-push; APK belum dibangun (tidak diminta brief);
+verifikasi runtime device = checklist §14.5.**
+
+### 14.1 Perubahan S2 (hanya jalur flag progress ON + tile logout)
+
+1. `CloudFirstProgressRepository` (baru) — progress cloud-first saat
+   `NOUSEN_CLOUD_FIRST_PROGRESS=true`, simetris S1b:
+   - BACA: selalu Firestore (authoritative) via seam `CloudProgressBackend`;
+     `watchByActivity`/`watchByDate`/`watchByDateRange`/`getAll` = filter
+     client-side dari satu stream `watchAll(uid)`; pending ids dibaca dari
+     metadata snapshot (`hasPendingWrites`).
+   - UPSERT: `backend.setDoc` **diinisiasi tanpa menunggu ack server** →
+     mirror Isar `upsert` langsung di-await → operasi offline selesai
+     instan (tidak menahan UI), sync berlanjut di antrean SDK.
+   - DELETE `deleteByActivity`: batch **hard delete** v1 yang sama dengan
+     jalur dual-write existing (keputusan audit: tanpa tombstone; tanpa
+     perubahan skema/backfill/rules/index) — SDK diinisiasi tanpa await
+     ack, mirror `deleteByActivity` langsung.
+   - Status tulis: `pending` (metadata) / `synced` (tidak pending) /
+     `failed` (reject) — snackbar via `ProgressSyncFailures` (BUKAN log
+     senyap) dengan dua cakupan badge: `upsert` → per-entry
+     (`ProgressSyncBadge` di baris/header entri); `deleteByActivity` →
+     activity-scoped (`ProgressDeleteBadge` di kartu aktivitas + header
+     detail — tetap terlihat setelah baris progres lokal terhapus).
+   - Korelasi attempt (race ack out-of-order): guard key per entry
+     (`entry.id` untuk upsert, `delete-by-activity:<activityId>` untuk
+     delete) — ack/reject lama yang bukan attempt terbaru diabaikan.
+2. Flag baru `MigrationFlags.cloudFirstProgress` +
+   `--dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true`; flag OFF = jalur
+   `DualWriteProgressRepository` persis seperti sebelumnya (rollback build).
+3. Tombol logout: `SettingsLogoutTile` di section "Pengguna" — memanggil
+   `FirebaseAuthService.signOut()` existing dengan spinner + error
+   non-silent (snackbar, tombol bisa dicoba lagi); sukses → AuthGate
+   (stream sesi memancarkan null) kembali ke halaman login. Tanpa
+   redesign auth.
+4. `CloudSyncIndicator` disembunyikan bila repo progress bukan dual-write
+   (flag ON) — indikator global last-write digantikan badge per-entry +
+   badge activity-scoped untuk kegagalan delete.
+5. AuthGate: jalur restore/syncUp tetap hanya untuk repo dual-write
+   (perilaku S1b). Seam tes baru: `cloudProgressBackendProvider`,
+   `progressLocalRepositoryProvider`, `progressSyncFailuresProvider`,
+   `cloudFirstProgressRepositoryProvider`, `progressPendingIdsProvider`,
+   `firebaseAvailabilityProvider` (AuthGate testable tanpa Firebase statis).
+
+### 14.2 Batasan (jujur)
+
+- Skema progress tetap **v1** (reuse `FirestoreProgressRepository.toMap/
+  fromMap`): tanpa `deleted`/tombstone untuk progress. Dokumen hasil
+  dual-write existing sudah kompatibel → tidak ada backfill.
+- `deleteByActivity` offline hanya menghapus dokumen yang sudah dikenal
+  cache SDK saat batch dijalankan; dokumen yang belum pernah di-fetch di
+  device bisa tertinggal di Firestore (perilaku batch = jalur dual-write;
+  rekonsiliasi penuh kandidat tahap berikutnya).
+- Reject yang diputuskan server saat proses app sudah mati tidak bisa
+  direkonstruksi SDK saat app hidup kembali (mutation sudah dibuang) —
+  batas sama dengan S1b §13.6.
+- Flag ON membaca dari cloud: entri Isar lokal yang belum pernah masuk
+  cloud tidak tampil; tidak ada push/backfill otomatis di S2.
+- Kegagalan `upsert` terlihat per-entry (badge di baris/header entri);
+  kegagalan `deleteByActivity` terlihat activity-scoped
+  (`ProgressSyncFailures.byActivity` → badge merah di kartu aktivitas +
+  header detail) — tetap terlihat setelah baris progres lokal terhapus.
+  Batas jujur: `deleteByActivity` hanya dipanggil dari alur hapus
+  aktivitas, jadi badge itu tampil bila baris aktivitasnya masih ada
+  (mis. tombstone aktivitas ikut ditolak sehingga barisnya muncul lagi);
+  pada kasus jarang "aktivitas sudah terhapus tapi batch progres ditolak",
+  kanal yang tersisa = snackbar + pelacak in-session (tidak ada baris
+  yang bisa ditempeli badge).
+- Mirror tetap ditulis walau cloud reject (local-first, konsisten S1b).
+
+### 14.3 Hasil verifikasi (dijalankan 2026-10-18, source belum di-commit)
+
+| Verifikasi | Perintah | Hasil |
+| --- | --- | --- |
+| Suite fokus S2 + regresi S1b/dual-write (11 file) | `flutter test test/cloud_first_progress_repository_test.dart test/cloud_first_progress_wiring_test.dart test/progress_sync_badge_widget_test.dart test/progress_sync_messages_test.dart test/settings_logout_test.dart test/migration_flags_test.dart test/dual_write_progress_test.dart test/s1_cloud_first_wiring_test.dart test/cloud_first_activity_repository_test.dart test/activity_sync_badge_widget_test.dart test/activity_sync_messages_test.dart` | **82/82 PASSED** |
+| Jalur aktivasi dart-define progress | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true test/migration_flags_test.dart test/cloud_first_progress_wiring_test.dart` | **9/9 PASSED** — flag true; provider default (tanpa override) memilih `CloudFirstProgressRepository` |
+| Kedua flag (S1b + S2) | `flutter test --dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true --dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true test/migration_flags_test.dart test/s1_cloud_first_wiring_test.dart test/cloud_first_progress_wiring_test.dart` | **14/14 PASSED** |
+| Suite penuh | `flutter test` | **173 PASSED, 2 GAGAL pre-existing** (`typography_guardrails_test.dart` — sama seperti baseline S1b) |
+| Analyze | `flutter analyze` | **64 temuan — sama persis dengan baseline**; 0 di file S2 |
+| Whitespace | `git diff --check` | bersih |
+| APK | — | belum dibangun (di luar kebutuhan brief; bisa dibangun dari working tree bila owner minta) |
+
+Cakupan 34 tes baru S2:
+
+- `cloud_first_progress_repository_test.dart` (18): upsert non-blocking +
+  mirror langsung walau ack menggantung (offline); reject save → failed
+  per-entry + event; ack sukses → sembuh; race save/save tidak saling
+  menimpa (guard key); delete non-blocking + mirror langsung terhapus;
+  reject delete → failure activity-scoped TETAP tercatat setelah baris
+  mirror terhapus (byEntry tidak tercampur) + event; retry delete sukses →
+  status dibersihkan; race delete/delete dua arah (reject lama diabaikan,
+  ack lama tidak membersihkan reject terbaru); pending ids dari metadata;
+  watch terfilter (activity/date/range); getAll; getByActivityAndDate;
+  tanpa login → `StateError`; mirror gagal tidak melempar.
+- `cloud_first_progress_wiring_test.dart` (5): default build mengikuti
+  dart-define; flag ON → repo cloud-first + tulis cloud & mirror lewat
+  provider; flag OFF → dual-write lokal-only, repo cloud-first null,
+  pending ids tidak aktif.
+- `progress_sync_badge_widget_test.dart` (5): badge entri — pending milik
+  entry → ikon awan-upload; entry lain/null → tanpa ikon; reject → ikon
+  merah + tooltip pesan; failed menang atas pending, clear → kembali
+  pending, synced → tanpa ikon. Badge delete activity-scoped — reject
+  delete terlihat tanpa baris entri (activity lain bersih), `clearActivity`
+  → badge hilang.
+- `progress_sync_messages_test.dart` (3): snackbar save/delete id+en,
+  tooltip pending/failed.
+- `settings_logout_test.dart` (3): tile logout — spinner saat proses,
+  error non-silent + retry; alur AuthGate — sesi login → child, signOut
+  sukses → kembali ke `LoginPage`.
+
+### 14.4 File S2
+
+Baru: `cloud_first_progress_repository.dart`, `cloud_progress_backend.dart`,
+`progress_sync_failures.dart`, `progress_sync_badge.dart`,
+`progress_sync_messages.dart`, `settings_logout_tile.dart` + 5 file tes
+(§14.3). Diubah: `providers.dart`, `migration_flags.dart`,
+`home_shell_page.dart`, `activity_detail_page.dart`,
+`cloud_sync_indicator.dart`, `login_page.dart`, `settings_page.dart`,
+`migration_flags_test.dart`.
+
+### 14.5 Checklist verifikasi manual owner (device)
+
+1. Bangun APK uji dari working tree:
+   `flutter build apk --debug --dart-define=NOUSEN_CLOUD_FIRST_PROGRESS=true`
+   (opsional tambah `--dart-define=NOUSEN_CLOUD_FIRST_ACTIVITIES=true`;
+   tanpa define = build rollback).
+2. Airplane mode → ubah progress entri (status/sub/notes/foto): simpan
+   selesai instan (tidak menggantung); badge awan-upload (pending) muncul
+   di kartu/header detail.
+3. Force-stop app lalu buka lagi (masih offline): badge pending masih ada
+   (antrean SDK durable lintas restart); data tampil dari cache cloud.
+4. Online → badge pending hilang sendiri setelah ack (synced, tanpa aksi).
+5. Cek console Firestore: `users/{uid}/progress/{entryId}` berisi field
+   v1 (status/subCompleted/completedSubActivities/updatedAt/dll.).
+6. Race: ubah entri dua kali cepat (offline → online) → setelah sync,
+   status yang tampil = versi TERBARU, bukan reject/ack lama.
+7. Hapus aktivitas berprogress saat offline → UI tidak menggantung;
+   setelah online, dokumen progress ikut terhapus di Firestore (dokumen
+   yang dikenal cache). Bila batch delete ditolak server (mis. rules/auth)
+   → snackbar error + badge merah (awan silang) di kartu/header aktivitas
+   yang tampil kembali; hapus ulang setelah penyebabnya beres → badge
+   hilang (retry sukses membersihkan status).
+8. Logout: Settings → Pengguna → "Keluar" → spinner singkat → halaman
+   login; login Google ulang berhasil. Gagal → snackbar error terlihat +
+   bisa dicoba lagi.
+9. Rollback: pasang build tanpa define → `CloudSyncIndicator` global
+   kembali tampil dan perilaku dual-write lama utuh.
+
+### 14.6 Rollback S2
+
+- Build flag OFF (tanpa define) → `progressRepositoryProvider` kembali ke
+  `DualWriteProgressRepository` (jalur produksi lama); tidak ada
+  perubahan skema/rules/data → tanpa undo.
+- Tombol logout tidak bergantung flag (tampil bila Firebase tersedia);
+  rollback logout = revert `settings_logout_tile.dart` + `settings_page.dart`
+  + blok AuthGate di `login_page.dart`.

@@ -14,6 +14,8 @@ import 'package:nousen/l10n/app_localizations.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 import 'package:nousen/features/settings/presentation/initial_setup_onboarding_page.dart';
+import 'package:nousen/features/settings/presentation/settings_logout_tile.dart';
+import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const String _kFeedbackUrl = 'https://www.instagram.com/muzaky7_/';
@@ -177,6 +179,11 @@ class SettingsPage extends ConsumerWidget {
                           );
                         },
                       ),
+                      // S2: logout memakai FirebaseAuthService.signOut()
+                      // yang sudah ada; hanya tampil bila Firebase aktif
+                      // (tanpa Firebase tidak ada sesi untuk diakhiri).
+                      if (FirebaseBootstrap.isAvailable)
+                        const SettingsLogoutTile(),
                     ],
                   ),
                   if (!forceUserSetup) ...<Widget>[

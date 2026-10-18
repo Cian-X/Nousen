@@ -13,6 +13,12 @@ class CloudSyncIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Flag cloud-first progress ON (S2) → status ditampilkan per-entry
+    // (ProgressSyncBadge); indikator global last-write dual-write disembunyikan.
+    final Object repo = ref.watch(progressRepositoryProvider);
+    if (repo is! DualWriteProgressRepository) {
+      return const SizedBox.shrink();
+    }
     final notifier = ref.watch(cloudSyncStateProvider);
     return ValueListenableBuilder<CloudSyncState>(
       valueListenable: notifier,

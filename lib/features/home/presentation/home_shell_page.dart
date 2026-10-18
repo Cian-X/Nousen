@@ -23,7 +23,10 @@ import 'package:nousen/features/activity/presentation/activity_status_visuals.da
 import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/home/application/home_ai_brief_engine.dart';
+import 'package:nousen/features/progress/data/progress_sync_failures.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/progress/presentation/progress_sync_badge.dart';
+import 'package:nousen/features/progress/presentation/progress_sync_messages.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/presentation/settings_page.dart';
 import 'package:nousen/l10n/app_localizations.dart';
@@ -44,6 +47,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
   Timer? _countdownTimer;
   StreamSubscription<ActivitySyncFailure>? _activitySyncFailureSub;
+  StreamSubscription<ProgressSyncFailure>? _progressSyncFailureSub;
 
   @override
   void initState() {
@@ -53,12 +57,17 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         .read(activitySyncFailuresProvider)
         .events
         .listen(_onActivitySyncFailure);
+    _progressSyncFailureSub = ref
+        .read(progressSyncFailuresProvider)
+        .events
+        .listen(_onProgressSyncFailure);
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
     _activitySyncFailureSub?.cancel();
+    _progressSyncFailureSub?.cancel();
     super.dispose();
   }
 
@@ -72,6 +81,22 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       SnackBar(
         content: Text(
           activitySyncFailureSnackMessage(isId: isId, failure: failure),
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
+  /// Reject server dari tulis progress cloud-first (S2) — non-silent.
+  void _onProgressSyncFailure(ProgressSyncFailure failure) {
+    if (!mounted) {
+      return;
+    }
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          progressSyncFailureSnackMessage(isId: isId, failure: failure),
         ),
         duration: const Duration(seconds: 6),
       ),
@@ -1489,6 +1514,10 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                 ),
                                 const SizedBox(width: 6),
                                 ActivitySyncBadge(activityId: activity.id),
+                                ProgressSyncBadge(entryId: entry?.id),
+                                // Kegagalan deleteByActivity (S2): tetap
+                                // terlihat setelah baris progres terhapus.
+                                ProgressDeleteBadge(activityId: activity.id),
                               ],
                             ),
                             const SizedBox(height: 4),
