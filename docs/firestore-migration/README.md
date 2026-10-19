@@ -804,6 +804,21 @@ Suite: tes ganti-sesi 3/3 (yang sebelumnya gagal di `asyncExpand`), suite
 fokus 2 file 43/43, suite penuh 176 PASS (2 gagal pre-existing
 `typography_guardrails_test`), analyze 64 = baseline.
 
+#### 14.6.5 Badge pending: grace 2 detik (umpan balik owner, build `2E880477…`)
+
+Owner: badge amber muncul-hilang sekejap saat online — secara data benar
+(in-flight ACK ~0,1–0,2 dtk) tapi membingungkan; ekspektasi owner: badge =
+penanda "belum sampai cloud" (offline/lambat). Fix UX: `pendingIdsWithGrace`
+(`providers.dart`) — badge hanya tampil bila `hasPendingWrites` bertahan
+LEBIH LAMA dari `pendingBadgeGrace` (2 dtk). Online normal → 0 kedip;
+offline/lambat → tampil dan bertahan sampai ACK. Memakai durasi, bukan
+deteksi sinyal jaringan langsung (WiFi tanpa internet tetap terlihat
+"online"; `hasPendingWrites` yang bertahan adalah sinyal nyata).
+Tes: `test/pending_ids_grace_test.dart` (5 kasus: ACK cepat tidak tampil,
+pending > grace tampil, ACK setelah tampil langsung hilang, per-id, error).
+Suite penuh 181 PASS (2 gagal pre-existing), analyze 64 = baseline.
+Owner setelah uji di HP: "udah aman".
+
 ### 14.7 Rollback S2
 
 - Build flag OFF (tanpa define) → `progressRepositoryProvider` kembali ke
