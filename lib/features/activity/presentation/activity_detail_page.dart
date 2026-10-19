@@ -18,10 +18,9 @@ import 'package:nousen/features/activity/domain/activity_daily_progress_status.d
 import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/application/activity_detail_ml_service.dart';
+import 'package:nousen/features/activity/presentation/activity_card_sync_badge.dart';
 import 'package:nousen/features/activity/presentation/activity_status_visuals.dart';
-import 'package:nousen/features/activity/presentation/activity_sync_badge.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
-import 'package:nousen/features/progress/presentation/progress_sync_badge.dart';
 import 'package:nousen/features/stats/domain/stats_models.dart';
 import 'package:nousen/l10n/app_localizations.dart';
 import 'package:photo_view/photo_view.dart';
@@ -484,16 +483,9 @@ class ActivityDetailPage extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            ActivitySyncBadge(activityId: activity.id),
-                            const SizedBox(width: 4),
-                            ProgressSyncBadge(entryId: headerEntry?.id),
-                            // Kegagalan deleteByActivity (S2): tetap
-                            // terlihat setelah baris progres terhapus.
-                            ProgressDeleteBadge(activityId: activity.id),
-                          ],
+                        child: ActivityCardSyncBadge(
+                          activityId: activity.id,
+                          entryId: headerEntry?.id,
                         ),
                       ),
                     ],

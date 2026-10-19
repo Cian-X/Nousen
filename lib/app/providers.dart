@@ -23,7 +23,11 @@ import 'package:nousen/features/activity/data/dual_write_activity_repository.dar
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/activity/domain/activity_repository.dart';
 import 'package:nousen/features/one_time_reminder/application/one_time_reminder_actions.dart';
+import 'package:nousen/features/one_time_reminder/data/cloud_agenda_notes_backend.dart';
+import 'package:nousen/features/one_time_reminder/data/cloud_first_one_time_reminder_repository.dart';
+import 'package:nousen/features/one_time_reminder/data/cloud_reminders_backend.dart';
 import 'package:nousen/features/one_time_reminder/data/isar_one_time_reminder_repository.dart';
+import 'package:nousen/features/one_time_reminder/data/one_time_reminder_sync_failures.dart';
 import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_repository.dart';
@@ -37,7 +41,10 @@ import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/progress/domain/progress_repository.dart';
 import 'package:nousen/features/home/application/home_ml_service.dart';
 import 'package:nousen/features/settings/application/data_backup_service.dart';
+import 'package:nousen/features/settings/data/cloud_first_settings_repository.dart';
+import 'package:nousen/features/settings/data/cloud_settings_backend.dart';
 import 'package:nousen/features/settings/data/isar_settings_repository.dart';
+import 'package:nousen/features/settings/data/settings_sync_failures.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/domain/settings_repository.dart';
 import 'package:nousen/features/stats/application/stats_service.dart';
@@ -367,10 +374,103 @@ final activityPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
   return pendingIdsWithGrace(cloudFirst.watchPendingIds());
 });
 
+/// Sumber lokal reminder + catatan agenda (Isar).
+/// Dipakai jalur produksi dan sebagai mirror cloud-first S3 supaya rollback
+/// (flag OFF) melihat data terbaru + foto lokal tetap tersedia.
+final oneTimeReminderLocalRepositoryProvider =
+    Provider<OneTimeReminderRepository>((Ref ref) {
+      return IsarOneTimeReminderRepository(ref.watch(isarProvider));
+    });
+
+/// Backend dokumen cloud reminders (skema v2). Seam tes: bisa diganti fake
+/// backend tanpa Firebase asli.
+final cloudRemindersBackendProvider = Provider<CloudRemindersBackend>((
+  Ref ref,
+) {
+  return FirestoreCloudRemindersBackend(FirebaseFirestore.instance);
+});
+
+/// Backend dokumen cloud catatan agenda (skema v2).
+final cloudAgendaNotesBackendProvider = Provider<CloudAgendaNotesBackend>((
+  Ref ref,
+) {
+  return FirestoreCloudAgendaNotesBackend(FirebaseFirestore.instance);
+});
+
+/// Pelacak kegagalan tulis cloud-first reminder/note (S3 — reject server
+/// non-silent). Dipakai repository cloud-first + UI (snackbar & badge).
+final oneTimeReminderSyncFailuresProvider =
+    Provider<OneTimeReminderSyncFailures>((Ref ref) {
+      final OneTimeReminderSyncFailures failures =
+          OneTimeReminderSyncFailures();
+      ref.onDispose(failures.dispose);
+      return failures;
+    });
+
 final oneTimeReminderRepositoryProvider = Provider<OneTimeReminderRepository>((
   Ref ref,
 ) {
-  return IsarOneTimeReminderRepository(ref.watch(isarProvider));
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<OneTimeReminderRepository>(
+    // Kedua flag dibutuhkan karena satu interface menaungi dua koleksi.
+    cloudFirst: flags.cloudFirstReminders || flags.cloudFirstNotes,
+    cloud: () => CloudFirstOneTimeReminderRepository(
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(oneTimeReminderLocalRepositoryProvider),
+      remindersBackend: flags.cloudFirstReminders
+          ? ref.watch(cloudRemindersBackendProvider)
+          : null,
+      notesBackend: flags.cloudFirstNotes
+          ? ref.watch(cloudAgendaNotesBackendProvider)
+          : null,
+      failures: ref.watch(oneTimeReminderSyncFailuresProvider),
+    ),
+    fallback: () => ref.watch(oneTimeReminderLocalRepositoryProvider),
+  );
+});
+
+/// Akses repository cloud-first reminder untuk status tulis (pending/failed);
+/// null bila kedua flag S3 reminder/notes OFF.
+final cloudFirstOneTimeReminderRepositoryProvider =
+    Provider<CloudFirstOneTimeReminderRepository?>((Ref ref) {
+      final OneTimeReminderRepository repo = ref.watch(
+        oneTimeReminderRepositoryProvider,
+      );
+      return repo is CloudFirstOneTimeReminderRepository ? repo : null;
+    });
+
+/// Id reminder dengan tulisan menunggu ack server — disaring grace
+/// [pendingBadgeGrace]. Kosong bila flag reminder OFF.
+final reminderPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  // Flag OFF → tidak ada badge pending; jangan sentuh repository/Isar sama
+  // sekali (widget test lama yang hanya meng-override stream tetap aman).
+  if (!flags.cloudFirstReminders) {
+    return const Stream<Set<String>>.empty();
+  }
+  final CloudFirstOneTimeReminderRepository? cloudFirst = ref.watch(
+    cloudFirstOneTimeReminderRepositoryProvider,
+  );
+  if (cloudFirst == null || !cloudFirst.remindersCloudEnabled) {
+    return const Stream<Set<String>>.empty();
+  }
+  return pendingIdsWithGrace(cloudFirst.watchReminderPendingIds());
+});
+
+/// Id catatan agenda dengan tulisan menunggu ack server — disaring grace
+/// [pendingBadgeGrace]. Kosong bila flag notes OFF.
+final notePendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  if (!flags.cloudFirstNotes) {
+    return const Stream<Set<String>>.empty();
+  }
+  final CloudFirstOneTimeReminderRepository? cloudFirst = ref.watch(
+    cloudFirstOneTimeReminderRepositoryProvider,
+  );
+  if (cloudFirst == null || !cloudFirst.notesCloudEnabled) {
+    return const Stream<Set<String>>.empty();
+  }
+  return pendingIdsWithGrace(cloudFirst.watchNotePendingIds());
 });
 
 /// Sumber lokal progress (Isar).
@@ -455,8 +555,61 @@ final cloudSyncStateProvider = Provider<ValueNotifier<CloudSyncState>>((
   );
 });
 
-final settingsRepositoryProvider = Provider<SettingsRepository>((Ref ref) {
+/// Sumber lokal settings (Isar) — jalur produksi + mirror cloud-first S3.
+final settingsLocalRepositoryProvider = Provider<SettingsRepository>((Ref ref) {
   return IsarSettingsRepository(ref.watch(isarProvider));
+});
+
+/// Backend dokumen cloud settings (`users/{uid}/settings/app`, skema v2).
+final cloudSettingsBackendProvider = Provider<CloudSettingsBackend>((Ref ref) {
+  return FirestoreCloudSettingsBackend(FirebaseFirestore.instance);
+});
+
+/// Pelacak kegagalan tulis cloud-first settings (S3).
+final settingsSyncFailuresProvider = Provider<SettingsSyncFailures>((Ref ref) {
+  final SettingsSyncFailures failures = SettingsSyncFailures();
+  ref.onDispose(failures.dispose);
+  return failures;
+});
+
+final settingsRepositoryProvider = Provider<SettingsRepository>((Ref ref) {
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  return pickCloudFirst<SettingsRepository>(
+    cloudFirst: flags.cloudFirstSettings,
+    // Settings tetap bisa dibaca sebelum login (bootstrap pra-AuthGate);
+    // repository cloud-first fallback ke mirror Isar saat uid null.
+    cloud: () => CloudFirstSettingsRepository(
+      backend: ref.watch(cloudSettingsBackendProvider),
+      authState: ref.watch(cloudAuthStateProvider),
+      mirror: ref.watch(settingsLocalRepositoryProvider),
+      failures: ref.watch(settingsSyncFailuresProvider),
+    ),
+    fallback: () => ref.watch(settingsLocalRepositoryProvider),
+  );
+});
+
+/// Akses repository cloud-first settings untuk status tulis; null bila flag
+/// OFF.
+final cloudFirstSettingsRepositoryProvider =
+    Provider<CloudFirstSettingsRepository?>((Ref ref) {
+      final SettingsRepository repo = ref.watch(settingsRepositoryProvider);
+      return repo is CloudFirstSettingsRepository ? repo : null;
+    });
+
+/// Id settings pending (selalu `{'app'}`) — disaring grace
+/// [pendingBadgeGrace]. Kosong bila flag settings OFF.
+final settingsPendingIdsProvider = StreamProvider<Set<String>>((Ref ref) {
+  final MigrationFlags flags = ref.watch(migrationFlagsProvider);
+  if (!flags.cloudFirstSettings) {
+    return const Stream<Set<String>>.empty();
+  }
+  final CloudFirstSettingsRepository? cloudFirst = ref.watch(
+    cloudFirstSettingsRepositoryProvider,
+  );
+  if (cloudFirst == null) {
+    return const Stream<Set<String>>.empty();
+  }
+  return pendingIdsWithGrace(cloudFirst.watchPendingIds());
 });
 
 final threeDayRuleServiceProvider = Provider<ThreeDayRuleService>((Ref ref) {

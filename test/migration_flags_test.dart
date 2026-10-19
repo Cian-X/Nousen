@@ -7,10 +7,16 @@ void main() {
       const MigrationFlags flags = MigrationFlags();
       expect(flags.cloudFirstActivities, isFalse);
       expect(flags.cloudFirstProgress, isFalse);
+      expect(flags.cloudFirstReminders, isFalse);
+      expect(flags.cloudFirstNotes, isFalse);
+      expect(flags.cloudFirstSettings, isFalse);
       expect(flags.anyEnabled, isFalse);
 
       expect(MigrationFlags.disabled.cloudFirstActivities, isFalse);
       expect(MigrationFlags.disabled.cloudFirstProgress, isFalse);
+      expect(MigrationFlags.disabled.cloudFirstReminders, isFalse);
+      expect(MigrationFlags.disabled.cloudFirstNotes, isFalse);
+      expect(MigrationFlags.disabled.cloudFirstSettings, isFalse);
       expect(MigrationFlags.disabled.anyEnabled, isFalse);
     });
 
@@ -44,9 +50,10 @@ void main() {
     });
   });
 
-  group('MigrationFlags (S1/S2 — aktivasi build device owner)', () {
+  group('MigrationFlags (S1/S2/S3 — aktivasi build device owner)', () {
     // Dibaca dari dart-define build:
     // - `NOUSEN_CLOUD_FIRST_ACTIVITIES` (S1), `NOUSEN_CLOUD_FIRST_PROGRESS` (S2);
+    // - `NOUSEN_CLOUD_FIRST_REMINDERS|NOTES|SETTINGS` (S3);
     // - run biasa (tanpa define) → false → membuktikan default produksi mati;
     // - run verifikasi dengan define `=true` → true → membuktikan jalur
     //   aktivasi APK owner benar-benar menyalakan flag.
@@ -55,6 +62,15 @@ void main() {
     );
     const bool progressActivatedInBuild = bool.fromEnvironment(
       'NOUSEN_CLOUD_FIRST_PROGRESS',
+    );
+    const bool remindersActivatedInBuild = bool.fromEnvironment(
+      'NOUSEN_CLOUD_FIRST_REMINDERS',
+    );
+    const bool notesActivatedInBuild = bool.fromEnvironment(
+      'NOUSEN_CLOUD_FIRST_NOTES',
+    );
+    const bool settingsActivatedInBuild = bool.fromEnvironment(
+      'NOUSEN_CLOUD_FIRST_SETTINGS',
     );
 
     test('fromEnvironment mengikuti dart-define build', () {
@@ -67,8 +83,24 @@ void main() {
         progressActivatedInBuild,
       );
       expect(
+        MigrationFlags.fromEnvironment.cloudFirstReminders,
+        remindersActivatedInBuild,
+      );
+      expect(
+        MigrationFlags.fromEnvironment.cloudFirstNotes,
+        notesActivatedInBuild,
+      );
+      expect(
+        MigrationFlags.fromEnvironment.cloudFirstSettings,
+        settingsActivatedInBuild,
+      );
+      expect(
         MigrationFlags.fromEnvironment.anyEnabled,
-        activatedInBuild || progressActivatedInBuild,
+        activatedInBuild ||
+            progressActivatedInBuild ||
+            remindersActivatedInBuild ||
+            notesActivatedInBuild ||
+            settingsActivatedInBuild,
       );
     });
   });

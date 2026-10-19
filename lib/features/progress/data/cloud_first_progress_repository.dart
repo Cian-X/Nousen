@@ -18,7 +18,12 @@ import 'package:nousen/services/firebase/firebase_auth_state.dart';
 /// dual-write (rollback / restore).
 ///
 /// Semantik baca/tulis (S2):
-/// - BACA selalu dari Firestore (authoritative, cloud-first).
+/// - BACA selalu dari Firestore (authoritative, cloud-first). Khusus
+///   `photoPaths`/`photoPath` (path file perangkat — tidak pernah ada di
+///   cloud, README §7), nilai lokal di-restore dari mirror Isar lewat
+///   overlay saat baca: tanpa itu foto tidak tampil di UI dan bisa ikut
+///   terhapus dari mirror saat aksi tulis berikutnya mem-merge dari hasil
+///   baca (temuan device 2026-10-19).
 /// - TULIS: Firestore DIINISIASI lebih dulu, tetapi penyelesaian operasi
 ///   TIDAK menunggu ack server — SDK Firestore hanya resolve/error setelah
 ///   server menjawab, sehingga `await` penuh menggantung saat offline.
@@ -53,7 +58,8 @@ import 'package:nousen/services/firebase/firebase_auth_state.dart';
 ///   failed + alasan, dan menyimpan ulang akan mengirim ulang. Reject yang
 ///   terjadi saat app mati tidak bisa direkonstruksi SDK → rekonsiliasi
 ///   penuh belum ada.
-/// - Mirror TIDAK pernah dipakai untuk baca dan tidak di-refresh oleh baca.
+/// - Mirror tidak di-refresh oleh baca; dibaca HANYA untuk overlay
+///   `photoPaths`/`photoPath` lokal — sumber data domain tetap Firestore.
 ///
 /// Catatan:
 /// - Hanya dipakai bila `MigrationFlags.cloudFirstProgress` aktif; default
@@ -130,6 +136,65 @@ class CloudFirstProgressRepository implements ProgressRepository {
       docs.map((CloudProgressDoc d) => d.data),
       compare: compare,
     );
+  }
+
+  /// Terapkan overlay path foto lokal dari mirror Isar pada [models].
+  ///
+  /// Cloud tidak pernah menyimpan `photoPaths`/`photoPath` (path file
+  /// perangkat, README §7) sehingga hasil baca murni cloud kehilangan foto
+  /// yang tersimpan lokal: foto tidak tampil di UI dan bisa ikut terhapus
+  /// saat aksi tulis berikutnya mem-merge dari hasil baca. Overlay ini
+  /// mengisi HANYA field path foto; seluruh data domain lain tetap milik
+  /// cloud. Gagal baca mirror = model cloud dikembalikan apa adanya
+  /// (baca tidak boleh menggagalkan UI).
+  Future<List<ProgressEntryModel>> _withLocalPhotos(
+    List<ProgressEntryModel> models, {
+    required String debugTag,
+  }) async {
+    final ProgressRepository? mirror = _mirror;
+    if (mirror == null || models.isEmpty) {
+      return models;
+    }
+    try {
+      final Set<String> ids = <String>{
+        for (final ProgressEntryModel model in models) model.id,
+      };
+      final List<ProgressEntryModel> local = await mirror.getAll();
+      final Map<String, List<String>> localPhotos = <String, List<String>>{};
+      for (final ProgressEntryModel entry in local) {
+        if (!ids.contains(entry.id)) {
+          continue;
+        }
+        final String? legacyPath = entry.photoPath;
+        final List<String> paths = entry.photoPaths.isNotEmpty
+            ? entry.photoPaths
+            : <String>[
+                if (legacyPath != null && legacyPath.trim().isNotEmpty)
+                  legacyPath.trim(),
+              ];
+        if (paths.isNotEmpty) {
+          localPhotos[entry.id] = paths;
+        }
+      }
+      if (localPhotos.isEmpty) {
+        return models;
+      }
+      return models
+          .map(
+            (ProgressEntryModel model) => localPhotos.containsKey(model.id)
+                ? model.copyWith(
+                    photoPaths: localPhotos[model.id],
+                    photoPath: localPhotos[model.id]!.first,
+                  )
+                : model,
+          )
+          .toList();
+    } catch (error) {
+      debugPrint(
+        '[cloudfirst-progress] overlay foto lokal gagal ($debugTag): $error',
+      );
+      return models;
+    }
   }
 
   // ---- Baca: selalu cloud, reaktif terhadap sesi ----
@@ -249,10 +314,13 @@ class CloudFirstProgressRepository implements ProgressRepository {
     bool Function(CloudProgressDoc doc)? where,
   }) {
     return _sessionStream(
-      (String uid) => _backend.watchAll(uid).map(
-            (List<CloudProgressDoc> docs) => _visibleFrom(
-              (where == null ? docs : docs.where(where)).toList(),
-              compare: compare,
+      (String uid) => _backend.watchAll(uid).asyncMap(
+            (List<CloudProgressDoc> docs) => _withLocalPhotos(
+              _visibleFrom(
+                (where == null ? docs : docs.where(where)).toList(),
+                compare: compare,
+              ),
+              debugTag: debugTag,
             ),
           ),
       whenLoggedOut: () => const <ProgressEntryModel>[],
@@ -325,7 +393,10 @@ class CloudFirstProgressRepository implements ProgressRepository {
   @override
   Future<List<ProgressEntryModel>> getAll() async {
     final List<Map<String, dynamic>> docs = await _backend.queryAll(_uid);
-    return _models(docs, compare: _byDateKeyDesc);
+    return _withLocalPhotos(
+      _models(docs, compare: _byDateKeyDesc),
+      debugTag: 'getAll',
+    );
   }
 
   @override
@@ -341,7 +412,11 @@ class CloudFirstProgressRepository implements ProgressRepository {
     if (data == null) {
       return null;
     }
-    return FirestoreProgressRepository.fromMap(data);
+    final List<ProgressEntryModel> overlaid = await _withLocalPhotos(
+      <ProgressEntryModel>[FirestoreProgressRepository.fromMap(data)],
+      debugTag: 'getByActivityAndDate',
+    );
+    return overlaid.first;
   }
 
   // ---- Tulis: cloud diinisiasi (tanpa menunggu ack), mirror segera ----

@@ -10,6 +10,7 @@ import 'package:nousen/core/widgets/optimized_file_image.dart';
 import 'package:nousen/features/one_time_reminder/domain/agenda_note_model.dart';
 import 'package:nousen/features/one_time_reminder/domain/agenda_visual_state.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/presentation/one_time_reminder_sync_badge.dart';
 import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:nousen/l10n/app_localizations.dart';
 import 'package:nousen/services/photo_access_service.dart';
@@ -1319,6 +1320,10 @@ class _AgendaNoteCard extends ConsumerWidget {
                           ),
                         ],
                       ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: AgendaNoteSyncBadge(noteId: note.id),
                     ),
                     PopupMenuButton<String>(
                       tooltip: isId ? 'Opsi log' : 'Log options',

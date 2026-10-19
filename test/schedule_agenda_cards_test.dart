@@ -57,6 +57,11 @@ void main() {
           oneTimeRemindersStreamProvider.overrideWith(
             (Ref ref) => Stream<List<OneTimeReminderModel>>.value(items),
           ),
+          // Badge S3 tidak relevan untuk tes warna kartu; override agar tes
+          // tidak menyentuh Isar/backend saat flag build ON.
+          reminderPendingIdsProvider.overrideWith(
+            (Ref ref) => const Stream<Set<String>>.empty(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
