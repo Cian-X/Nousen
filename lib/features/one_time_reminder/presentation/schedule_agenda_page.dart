@@ -8,6 +8,7 @@ import 'package:nousen/core/utils/time_utils.dart';
 import 'package:nousen/core/utils/weekday_utils.dart';
 import 'package:nousen/features/one_time_reminder/domain/agenda_visual_state.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/presentation/one_time_reminder_sync_badge.dart';
 import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/widgets/nousen_nav_icon.dart';
@@ -1026,6 +1027,10 @@ class _AgendaCardState extends ConsumerState<_AgendaCard> {
                     localeCode: localeCode,
                     onOpenDetail: widget.onOpenDetail,
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ReminderSyncBadge(reminderId: item.id),
                 ),
                 if (hasSubs)
                   InkWell(

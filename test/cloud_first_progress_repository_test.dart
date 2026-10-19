@@ -167,6 +167,9 @@ class _FakeBackend implements CloudProgressBackend {
 class _FakeMirrorRepo implements ProgressRepository {
   final Map<String, ProgressEntryModel> store = <String, ProgressEntryModel>{};
   bool failWrites = false;
+
+  /// Simulasi Isar gagal dibaca (overlay foto harus degrade senyap).
+  bool failReads = false;
   int upsertCalls = 0;
   int deleteByActivityCalls = 0;
   int readCalls = 0;
@@ -209,6 +212,7 @@ class _FakeMirrorRepo implements ProgressRepository {
   @override
   Future<List<ProgressEntryModel>> getAll() async {
     readCalls++;
+    if (failReads) throw StateError('isar read down');
     return store.values.toList();
   }
 
@@ -249,6 +253,8 @@ ProgressEntryModel _entry({
   String dateKey = '2026-10-18',
   ActivityDayStatus status = ActivityDayStatus.notDone,
   List<String> completedSub = const <String>[],
+  List<String> photoPaths = const <String>[],
+  String? photoPath,
 }) {
   final DateTime now = DateTime(2026, 10, 18, 10);
   return ProgressEntryModel(
@@ -259,8 +265,8 @@ ProgressEntryModel _entry({
     subCompleted: completedSub.length,
     subTotal: 2,
     completedSubActivities: completedSub,
-    photoPaths: const <String>[],
-    photoPath: null,
+    photoPaths: photoPaths,
+    photoPath: photoPath,
     photoNote: null,
     notes: null,
     completionTime: null,
@@ -313,7 +319,7 @@ void main() {
 
       expect(mirror.upsertCalls, 1);
       expect(mirror.store['p1']?.status, ActivityDayStatus.done);
-      // Mirror tidak pernah dipakai untuk baca.
+      // Tulis tidak membaca mirror (overlay foto hanya di jalur baca).
       expect(mirror.readCalls, 0);
     });
 
@@ -540,8 +546,9 @@ void main() {
       expect(pending, <String>{'p1', 'p3'});
     });
 
-    test('watchAll/watchByActivity/watchByDate/watchByDateRange: dari cloud, '
-        'terfilter dan terurut, mirror tidak disentuh', () async {
+    test('watchAll/watchByActivity/watchByDate/watchByDateRange: data dari '
+        'cloud, terfilter dan terurut; mirror dibaca HANYA untuk overlay foto',
+        () async {
       backend.watchDocs = <CloudProgressDoc>[
         _cloudDoc(_entry(id: 'p1', activityId: 'a1', dateKey: '2026-10-18')),
         _cloudDoc(_entry(id: 'p2', activityId: 'a1', dateKey: '2026-10-17')),
@@ -572,7 +579,13 @@ void main() {
           .first;
       expect(byRange.map((ProgressEntryModel e) => e.id), <String>['p2', 'p1', 'p3']);
 
-      expect(mirror.readCalls, 0);
+      // Satu baca mirror per emisi — hanya overlay path foto lokal, bukan
+      // sumber data. Karena mirror kosong, hasil tetap murni cloud.
+      expect(mirror.readCalls, 4);
+      expect(
+        all.every((ProgressEntryModel e) => e.photoPaths.isEmpty),
+        isTrue,
+      );
     });
 
     test('ganti sesi (logout→login): watchAll re-subscribe ke uid baru — '
@@ -656,8 +669,8 @@ void main() {
       expect(backend.watchUids, <String>['u1', 'u2']);
     });
 
-    test('getAll: baca dari cloud (queryAll), urut dateKey desc, mirror tidak '
-        'disentuh', () async {
+    test('getAll: baca dari cloud (queryAll), urut dateKey desc; satu baca '
+        'mirror hanya untuk overlay foto', () async {
       backend.queryResults = <Map<String, dynamic>>[
         FirestoreProgressRepository.toMap(
           _entry(id: 'p2', dateKey: '2026-10-17'),
@@ -670,12 +683,13 @@ void main() {
       final List<ProgressEntryModel> all = await repo.getAll();
 
       expect(all.map((ProgressEntryModel e) => e.id), <String>['p1', 'p2']);
-      expect(mirror.readCalls, 0);
+      expect(mirror.readCalls, 1);
       expect(mirror.upsertCalls, 0);
       expect(mirror.deleteByActivityCalls, 0);
     });
 
-    test('getByActivityAndDate: dari cloud; null bila tidak ada', () async {
+    test('getByActivityAndDate: dari cloud (overlay foto bila ada); null '
+        'bila tidak ada', () async {
       backend.docs['p1'] = FirestoreProgressRepository.toMap(_entry());
 
       final ProgressEntryModel? found = await repo.getByActivityAndDate(
@@ -689,7 +703,8 @@ void main() {
         dateKey: '2026-09-01',
       );
       expect(missing, isNull);
-      expect(mirror.readCalls, 0);
+      // Hanya pembacaan yang menghasilkan entri yang overlay ke mirror.
+      expect(mirror.readCalls, 1);
     });
 
     test('tanpa login → StateError sebelum efek apa pun (upsert & '
@@ -715,6 +730,122 @@ void main() {
       expect(backend.setCalls, hasLength(1));
       expect(mirror.upsertCalls, 1);
       expect(repo.failures.byEntry.value, isEmpty);
+    });
+  });
+
+  group('Overlay foto lokal dari mirror (fix temuan device 2026-10-19: foto '
+      'tidak muncul di kartu/timeline karena baca murni cloud)', () {
+    test('watchAll/watchByActivity: photoPaths/photoPath lokal di-overlay; '
+        'field lain tetap dari cloud', () async {
+      backend.watchDocs = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p1')),
+        _cloudDoc(_entry(id: 'p2', dateKey: '2026-10-17')),
+      ];
+      mirror.store['p1'] = _entry(
+        id: 'p1',
+        status: ActivityDayStatus.done,
+        photoPaths: <String>['/lokal/a.jpg', '/lokal/b.jpg'],
+      );
+      mirror.store['p2'] = _entry(id: 'p2', dateKey: '2026-10-17');
+
+      final List<ProgressEntryModel> all = await repo.watchAll().first;
+      final ProgressEntryModel p1 = all.firstWhere(
+        (ProgressEntryModel e) => e.id == 'p1',
+      );
+      final ProgressEntryModel p2 = all.firstWhere(
+        (ProgressEntryModel e) => e.id == 'p2',
+      );
+      expect(p1.photoPaths, <String>['/lokal/a.jpg', '/lokal/b.jpg']);
+      expect(p1.photoPath, '/lokal/a.jpg');
+      expect(
+        p1.status,
+        ActivityDayStatus.notDone,
+        reason: 'data domain lain tetap milik cloud, bukan mirror',
+      );
+      expect(p2.photoPaths, isEmpty);
+
+      final List<ProgressEntryModel> byActivity =
+          await repo.watchByActivity('a1').first;
+      final ProgressEntryModel p1Activity = byActivity.firstWhere(
+        (ProgressEntryModel e) => e.id == 'p1',
+      );
+      expect(p1Activity.photoPaths, <String>['/lokal/a.jpg', '/lokal/b.jpg']);
+    });
+
+    test('photoPath legacy (field tunggal lama) juga di-overlay ke '
+        'photoPaths', () async {
+      backend.watchDocs = <CloudProgressDoc>[_cloudDoc(_entry(id: 'p1'))];
+      mirror.store['p1'] = _entry(id: 'p1', photoPath: '/lokal/legacy.jpg');
+
+      final List<ProgressEntryModel> all = await repo.watchAll().first;
+
+      expect(all.single.photoPaths, <String>['/lokal/legacy.jpg']);
+      expect(all.single.photoPath, '/lokal/legacy.jpg');
+    });
+
+    test('getAll: overlay per id — entri mirror di luar hasil cloud tidak '
+        'bocor', () async {
+      backend.queryResults = <Map<String, dynamic>>[
+        FirestoreProgressRepository.toMap(_entry(id: 'p1')),
+      ];
+      mirror.store['p1'] = _entry(
+        id: 'p1',
+        photoPaths: <String>['/lokal/p1.jpg'],
+      );
+      mirror.store['p9'] = _entry(
+        id: 'p9',
+        dateKey: '2026-10-01',
+        photoPaths: <String>['/lokal/p9.jpg'],
+      );
+
+      final List<ProgressEntryModel> all = await repo.getAll();
+
+      expect(all.map((ProgressEntryModel e) => e.id), <String>['p1']);
+      expect(all.single.photoPaths, <String>['/lokal/p1.jpg']);
+      expect(mirror.readCalls, 1);
+    });
+
+    test('edit setelah baca (pola upsertNoteForDate: merge dari hasil baca) '
+        'tidak menghapus foto lokal di mirror', () async {
+      backend.docs['p1'] = FirestoreProgressRepository.toMap(_entry());
+      mirror.store['p1'] = _entry(photoPaths: <String>['/lokal/a.jpg']);
+
+      final ProgressEntryModel? found = await repo.getByActivityAndDate(
+        activityId: 'a1',
+        dateKey: '2026-10-18',
+      );
+      expect(found?.photoPaths, <String>['/lokal/a.jpg']);
+
+      await repo.upsert(found!.copyWith(notes: 'cek'));
+
+      expect(mirror.store['p1']!.photoPaths, <String>['/lokal/a.jpg']);
+      expect(mirror.store['p1']!.photoPath, '/lokal/a.jpg');
+      expect(mirror.store['p1']!.notes, 'cek');
+      // Path perangkat tidak pernah ikut ke cloud (README §7).
+      expect(backend.setCalls.single.data.containsKey('photoPaths'), isFalse);
+      expect(backend.setCalls.single.data.containsKey('photoPath'), isFalse);
+    });
+
+    test('tanpa mirror: baca tetap jalan tanpa overlay (photoPaths kosong)',
+        () async {
+      final CloudFirstProgressRepository noMirror =
+          CloudFirstProgressRepository(backend: backend, authState: auth);
+      backend.watchDocs = <CloudProgressDoc>[_cloudDoc(_entry(id: 'p1'))];
+
+      final List<ProgressEntryModel> all = await noMirror.watchAll().first;
+
+      expect(all.single.photoPaths, isEmpty);
+    });
+
+    test('mirror gagal dibaca: model cloud tetap keluar (baca tidak boleh '
+        'gagal karena mirror)', () async {
+      mirror.failReads = true;
+      backend.watchDocs = <CloudProgressDoc>[_cloudDoc(_entry(id: 'p1'))];
+
+      final List<ProgressEntryModel> all = await repo.watchAll().first;
+
+      expect(all.single.photoPaths, isEmpty);
+      expect(mirror.readCalls, 1);
     });
   });
 }

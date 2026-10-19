@@ -15,6 +15,7 @@ import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 import 'package:nousen/features/settings/presentation/initial_setup_onboarding_page.dart';
 import 'package:nousen/features/settings/presentation/settings_logout_tile.dart';
+import 'package:nousen/features/settings/presentation/settings_sync_badge.dart';
 import 'package:nousen/services/firebase/firebase_bootstrap.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -127,6 +128,10 @@ class SettingsPage extends ConsumerWidget {
             : null,
         title: Text(isId ? 'Pengaturan' : 'Settings'),
         actions: <Widget>[
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: SettingsSyncBadge(),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: CloudSyncIndicator(),

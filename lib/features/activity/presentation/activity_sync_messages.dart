@@ -15,6 +15,25 @@ String activitySyncFailureTooltip({
       : 'Cloud sync failed: $reason';
 }
 
+/// Tooltip badge GABUNGAN kartu/header aktivitas (aktivitas + progres).
+///
+/// Domain disebut eksplisit ("aktivitas" / "progres") karena satu ikon
+/// mewakili dua domain sekaligus — tooltip tidak boleh ambigu.
+String activityCardSyncPendingTooltip({required bool isId}) {
+  return isId
+      ? 'Aktivitas menunggu sinkronisasi ke cloud'
+      : 'Activity waiting to sync to cloud';
+}
+
+String activityCardSyncFailureTooltip({
+  required bool isId,
+  required String reason,
+}) {
+  return isId
+      ? 'Gagal sinkron aktivitas ke cloud: $reason'
+      : 'Activity cloud sync failed: $reason';
+}
+
 /// Pesan snackbar saat server menolak tulis activity (non-silent).
 String activitySyncFailureSnackMessage({
   required bool isId,

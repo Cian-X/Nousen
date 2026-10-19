@@ -829,3 +829,208 @@ Owner setelah uji di HP: "udah aman".
   + blok AuthGate di `login_page.dart`.
 - Fix §14.6 hanya menyentuh repo cloud-first (aktif saat flag ON); tidak
   perlu undo terpisah — build flag OFF tidak memakai kode itu.
+
+## 15. S3 — cloud-first reminder, catatan agenda, settings
+
+Status: implementasi + QC lokal selesai di branch `feat/firestore-s3`
+(belum commit/deploy/backfill). S3 dibangun di atas pola S1b/S2: seam
+backend tipis, repository cloud-first, mirror Isar, flag default OFF.
+
+### 15.1 Flag terpisah (default OFF)
+
+| Flag | Domain |
+| --- | --- |
+| `NOUSEN_CLOUD_FIRST_REMINDERS` | dokumen `/users/{uid}/reminders/{id}` |
+| `NOUSEN_CLOUD_FIRST_NOTES` | dokumen `/users/{uid}/agendaNotes/{id}` |
+| `NOUSEN_CLOUD_FIRST_SETTINGS` | dokumen `/users/{uid}/settings/app` |
+
+Tanpa `--dart-define` ketiganya `false` -> perilaku Isar lama utuh.
+Flag reminder dan notes terpisah walau satu interface
+(`OneTimeReminderRepository`): repository cloud-first menerima dua backend
+opsional; backend yang null berarti sub-domain itu tetap lewat Isar.
+`cloudFirstReminders || cloudFirstNotes` memilih repository cloud-first;
+masing-masing `remindersCloudEnabled`/`notesCloudEnabled` mengatur jalur.
+
+### 15.2 Skema dokumen (v2, sama dengan backfill S0)
+
+Field mengikuti `backfill_mappers.dart` + `firestore.rules.draft`:
+
+- reminder: `id`, `title`, `iconKey`, `scheduledAt`, `scheduledEndAt`,
+  `categoryId`, `description`, `subActivities`,
+  `completedSubActivities`, `preReminderMinutes`,
+  `isNotificationEnabled`, `isCompleted`, `isSkipped`, `createdAt`,
+  `clientUpdatedAt`, `updatedAt`, `deleted`, `deletedAt`,
+  `schemaVersion: 2`.
+- catatan agenda: `id`, `reminderId`, `text`, `createdAt`,
+  `clientUpdatedAt`, `updatedAt`, `deleted`, `deletedAt`,
+  `schemaVersion: 2`.
+- settings: `id: 'app'`, `morningReminderMinutes`,
+  `endOfDayReminderMinutes`, `localeCode`, `notificationsEnabled`,
+  `profileName`, `weeklyRoutineJson`, `wakeUpMinutes`, `sleepMinutes`,
+  `usualBreakStartMinutes`, `usualBreakEndMinutes`, `clientUpdatedAt`,
+  `updatedAt`, `deleted`, `deletedAt`, `schemaVersion: 2`.
+
+Aturan tulis: `updatedAt` SELALU `FieldValue.serverTimestamp()`
+(LWW memakai jam server; `clientUpdatedAt` hanya audit), create/update
+memakai merge-set, dan hapus = tombstone
+`{deleted: true, deletedAt: serverTimestamp()}` (hard delete dilarang
+rules). `id` selalu sama dengan doc id; `settings` selalu doc `app`.
+Field di luar daftar ini (terutama path media) tidak ditulis.
+
+### 15.3 Field lokal (tidak ikut cloud)
+
+- `AgendaNoteModel.photoPaths` — path file perangkat; upload Storage
+  belum ada. Saat baca di perangkat yang sama, repository meng-overlay
+  `photoPaths` dari mirror Isar per note id, jadi foto yang sudah
+  dilampirkan tetap tampil tanpa upload.
+- `AppSettingsModel.profileAvatarPath` — path file perangkat.
+- Model tidak menyimpan token FCM/device id, jadi tidak ada field
+  perangkat lain yang perlu dikecualikan. Preferensi notifikasi
+  (`notificationsEnabled`, `notificationVibration` di dalam
+  `weeklyRoutineJson`) tetap tersinkron karena bagian dari preferensi
+  pengguna.
+
+Nilai yang tidak ada di cloud diisi dari mirror (fallback), sehingga
+decode toleran terhadap dokumen lama/parsial.
+
+### 15.4 Semantik baca/tulis
+
+Baca:
+
+- Reminder/notes: Firestore authoritative. `watchAll`/`watchNotes` memakai
+  satu query kanonik per uid (`deleted == false`,
+  `includeMetadataChanges: true`), filter `reminderId` di klien untuk
+  notes, urut sama dengan Isar (`scheduledAt` / `createdAt`).
+- Tanpa login: reminder/notes cloud melempar `StateError` (kontrak S1b/S2);
+  sub-domain yang flag-nya OFF tetap memakai mirror.
+- Settings: Firestore authoritative saat login, TAPI harus hidup sebelum
+  AuthGate. Tanpa login `get()`/`watch()` memakai Isar. `watch()` saat
+  login menggabungkan snapshot cloud (preferensi) dengan mirror
+  (field perangkat). `get()` cloud memakai timeout 4 detik lalu fallback
+  lokal, supaya bootstrap offline pertama kali tidak menggantung.
+- Sesi: switch manual pada `uidChanges().distinct()` (bukan
+  `asyncExpand`), listen Firestore dibuat ulang tiap login; logout
+  memancarkan nilai kosong/lokal, bukan error permanen.
+
+Tulis (non-blocking):
+
+- Firestore diinisiasi lebih dulu, tetapi pemanggil TIDAK menunggu ack
+  server. Mirror Isar di-await segera supaya rollback flag OFF melihat
+  data terbaru.
+- `pending` = metadata `hasPendingWrites` (durable lintas force-stop),
+  ditampilkan setelah grace 2 detik (`pendingIdsWithGrace`) agar ACK
+  cepat tidak berkedip.
+- `failed` = reject server (rules/auth/error lain), dicatat per item:
+  reminder (`byReminder`), note (`byNote`), settings (`byApp`). Event
+  stream memicu snackbar di home shell; badge merah di kartu/header.
+- Guard per-attempt: ack/reject hanya berlaku untuk operasi terbaru id
+  yang sama (reminder dan note punya namespace guard terpisah).
+- Settings yang disimpan saat logout hanya menulis mirror; tidak ada
+  antrean cloud lintas akun.
+
+### 15.5 UI
+
+- Kartu agenda: `ReminderSyncBadge` (kiri tombol expand).
+- Kartu catatan di detail agenda: `AgendaNoteSyncBadge` (kiri menu).
+- App bar settings: `SettingsSyncBadge` (kiri indikator cloud lama).
+- Home shell mendengarkan event kegagalan S3 dan menampilkan snackbar
+  bilingual (`isId`), sama seperti activity/progress.
+- Status normal (synced) tidak menampilkan ikon; flag OFF selalu normal.
+
+### 15.6 QC
+
+Fokus S3 + regresi S1b/S2 (17 file): **138 tes PASS**. Variasi flag
+semua ON (`ACTIVITIES/PROGRESS/REMINDERS/NOTES/SETTINGS=true`):
+**138 tes PASS**. Suite penuh (tanpa define): **221 PASS**, dengan
+**2 kegagalan pre-existing** `typography_guardrails_test` (sama dengan
+baseline S2; bukan dari S3). Analyzer file tersentuh: **0 error/warning
+baru** — hanya 1 info deprecated `cacheExtent` yang sudah ada di
+`home_shell_page.dart`. Cakupan S3 baru:
+
+- `cloud_first_one_time_reminder_repository_test.dart` — skema v2,
+  tombstone, tulis non-blocking, reject + retry, baca cloud/urutan/filter,
+  pending ids, switch sesi, tanpa login, flag OFF, overlay foto lokal,
+  catatan per-reminder.
+- `cloud_first_settings_repository_test.dart` — dokumen `settings/app`
+  tanpa avatar, encode/decode payload, tulis non-blocking, reject +
+  retry, baca cloud + overlay lokal, logout, timeout bootstrap, watch
+  gabungan, pending ids, save pra-login.
+- `cloud_first_s3_wiring_test.dart` — routing flag per domain (termasuk
+  reminder/notes terpisah), fallback Isar, failures provider bersama,
+  accessor null + pending kosong saat OFF.
+- `s3_sync_badge_widget_test.dart` — badge pending/failed reminder, note,
+  settings + teks snackbar.
+- `migration_flags_test.dart` — default OFF + `fromEnvironment` untuk
+  kelima flag.
+
+Batas: tes memakai fake backend/auth (bukan emulator/device), belum ada
+uji device S3, dan S3 belum di-deploy. Badge failed in-memory per sesi
+app (sama dengan S1b/S2), sedangkan pending durable lewat SDK.
+
+### 15.7 Rollback
+
+Build tanpa define S3 -> provider kembali ke `IsarOneTimeReminderRepository`
+dan `IsarSettingsRepository`; tidak ada perubahan skema Isar, rules, atau
+data. Tulisan cloud yang sudah terlanjur ada tidak dibatalkan otomatis
+(rollback kode bukan rollback data); restore memakai jalur S0/S1b/S2 yang
+sudah ada. Jangan hapus mirror Isar saat flag ON: mirror adalah sumber
+overlay media lokal dan jalur rollback.
+
+### 15.8 Urutan deploy (peringatan)
+
+Sama seperti S1b/S2: jangan deploy `firestore.rules` S3 sebelum semua
+device memakai klien cloud-first. Klien lama menulis `updatedAt` ISO
+string dan akan ditolak aturan `updatedAt == request.time`. Backfill S0
+juga harus selesai/diulang sesuai prosedur sebelum flag S3 dinyalakan di
+device owner. S3 ini belum melakukan deploy, build, install, atau
+backfill.
+
+### 15.9 Fix temuan uji device owner (2026-10-19, build semua flag ON)
+
+Dua temuan saat uji device — keduanya BUKAN dari kode S3 (akar masalahnya
+di kode S1b/S2 yang sudah jalan) tetapi diperbaiki sekarang supaya uji
+device S3 bisa lanjut:
+
+1. Foto catatan progress hilang dari kartu/timeline. Akar masalah: path
+   foto memang tidak pernah diunggah (README §7), tetapi baca
+   `CloudFirstProgressRepository` murni cloud sehingga `photoPaths`/
+   `photoPath` selalu kosong — foto hanya terlihat dari draft in-memory;
+   aksi tulis berikutnya yang mem-merge dari hasil baca (mis.
+   `upsertNoteForDate` di `activity_actions.dart`) berpotensi ikut
+   mengosongkan path foto di mirror Isar.
+2. Dua badge amber identik di kartu aktivitas (activity + progress — dua
+   domain berbeda yang terlihat seperti duplikat). Statusnya benar; memang
+   tiga badge terpisah dipasang berdampingan.
+
+Perbaikan (working tree, di atas commit S3, belum di-commit):
+
+- `cloud_first_progress_repository.dart`: overlay `photoPaths`/`photoPath`
+  dari mirror Isar di SEMUA jalur baca (`watchAll`, `watchByActivity`,
+  `watchByDate`, `watchByDateRange`, `getAll`, `getByActivityAndDate`).
+  Cloud tetap satu-satunya sumber data domain; mirror dibaca HANYA untuk
+  path foto lokal. Gagal baca mirror = model cloud dikembalikan apa adanya
+  (baca tidak boleh gagal karena mirror); `photoPath` tunggal legacy ikut
+  dinormalisasi ke `photoPaths`. Edit lanjutan yang mem-merge dari hasil
+  baca kini melihat path foto dan tidak menghapusnya dari mirror.
+- `activity_card_sync_badge.dart` (baru): badge GABUNGAN per kartu/header
+  aktivitas — merah (`cloud_off`) bila ada kegagalan ack (tulis aktivitas,
+  tulis entri progress, atau pembersihan progress `deleteByActivity`),
+  amber (`cloud_upload`) bila menunggu sinkron, tanpa ikon bila synced.
+  Prioritas: failed > pending. Tooltip memuat domain tiap baris
+  ("aktivitas"/"progres") lewat fungsi baru `activityCardSync*` di
+  `activity_sync_messages.dart`. Mengganti pemasangan `ActivitySyncBadge`
+  + `ProgressSyncBadge` + `ProgressDeleteBadge` di kartu home dan header
+  detail; kelas badge lama tetap ada (dipakai tes regresinya).
+- Regresi baru: 6 tes overlay foto di
+  `cloud_first_progress_repository_test.dart` (overlay per jalur baca,
+  legacy path, edit merge tidak menghapus foto, tanpa mirror, mirror
+  gagal) + 10 widget test `activity_card_sync_badge_widget_test.dart`
+  (pending satu/dua domain, tetap satu ikon, prioritas merah, delete
+  failure, entryId null, listenable hidup).
+
+QC ulang (2026-10-19): dua file test yang diubah/ditambah **36 PASS**;
+suite penuh **237 PASS** + 2 kegagalan pre-existing
+`typography_guardrails_test` (daftar pelanggaran sama seperti baseline,
+tidak ada file fix yang masuk daftar); analyzer 7 file tersentuh: 0
+error/warning baru (hanya info `cacheExtent` lama); `git diff --check`
+bersih. Build/install ulang device + commit menunggu persetujuan owner.

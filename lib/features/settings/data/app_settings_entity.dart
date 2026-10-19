@@ -27,7 +27,7 @@ class AppSettingsEntity {
 
 extension AppSettingsEntityMapper on AppSettingsEntity {
   AppSettingsModel toDomain() {
-    final _DecodedSettingsPayload payload = _decodeSettingsPayload(
+    final DecodedSettingsPayload payload = decodeSettingsPayload(
       weeklyRoutineJson,
     );
     return AppSettingsModel(
@@ -58,7 +58,7 @@ AppSettingsEntity settingsEntityFromDomain(AppSettingsModel model) {
     ..notificationsEnabled = model.notificationsEnabled
     ..profileName = model.profileName
     ..profileAvatarPath = model.profileAvatarPath
-    ..weeklyRoutineJson = _encodeSettingsPayload(
+    ..weeklyRoutineJson = encodeSettingsPayload(
       model.weeklyRoutine,
       model.extraActivitiesNote,
       model.hasSeededData,
@@ -80,7 +80,9 @@ AppSettingsModel defaultSettingsModel() {
   );
 }
 
-String? _encodeSettingsPayload(
+/// Encode payload JSON `weeklyRoutineJson` (dipakai Isar dan dokumen cloud
+/// S3 agar kontrak skema tetap satu sumber).
+String? encodeSettingsPayload(
   List<WeeklyRoutineDayProfile> routine,
   String? extraActivitiesNote,
   bool hasSeededData,
@@ -104,9 +106,11 @@ String? _encodeSettingsPayload(
   });
 }
 
-_DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
+/// Decode payload JSON `weeklyRoutineJson` (mendukung format map baru,
+/// list lama, dan nilai kosong/rusak).
+DecodedSettingsPayload decodeSettingsPayload(String? raw) {
   if (raw == null || raw.trim().isEmpty) {
-    return const _DecodedSettingsPayload(
+    return const DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
@@ -117,7 +121,7 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
   try {
     final Object? decoded = jsonDecode(raw);
     if (decoded is List) {
-      return _DecodedSettingsPayload(
+      return DecodedSettingsPayload(
         routine: _decodeWeeklyRoutineEntries(decoded),
         extraActivitiesNote: null,
         hasSeededData: false,
@@ -129,7 +133,7 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
       final Object? rawExtraActivitiesNote = decoded['extraActivitiesNote'];
       final Object? rawHasSeededData = decoded['hasSeededData'];
       final Object? rawNotificationVibration = decoded['notificationVibration'];
-      return _DecodedSettingsPayload(
+      return DecodedSettingsPayload(
         routine: _decodeWeeklyRoutineEntries(rawRoutine),
         extraActivitiesNote: _normalizeNullableString(
           rawExtraActivitiesNote?.toString(),
@@ -138,14 +142,14 @@ _DecodedSettingsPayload _decodeSettingsPayload(String? raw) {
         notificationVibration: rawNotificationVibration is bool ? rawNotificationVibration : true,
       );
     }
-    return const _DecodedSettingsPayload(
+    return const DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
       notificationVibration: true,
     );
   } catch (_) {
-    return const _DecodedSettingsPayload(
+    return const DecodedSettingsPayload(
       routine: kDefaultWeeklyRoutine,
       extraActivitiesNote: null,
       hasSeededData: false,
@@ -178,8 +182,9 @@ String? _normalizeNullableString(String? raw) {
   return trimmed.isEmpty ? null : trimmed;
 }
 
-class _DecodedSettingsPayload {
-  const _DecodedSettingsPayload({
+/// Hasil decode [decodeSettingsPayload].
+class DecodedSettingsPayload {
+  const DecodedSettingsPayload({
     required this.routine,
     required this.extraActivitiesNote,
     required this.hasSeededData,

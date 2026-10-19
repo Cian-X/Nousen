@@ -17,17 +17,20 @@ import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 import 'package:nousen/features/activity/domain/activity_daily_progress_status.dart';
 import 'package:nousen/features/activity/data/activity_sync_failures.dart';
-import 'package:nousen/features/activity/presentation/activity_sync_badge.dart';
+import 'package:nousen/features/activity/presentation/activity_card_sync_badge.dart';
 import 'package:nousen/features/activity/presentation/activity_sync_messages.dart';
 import 'package:nousen/features/activity/presentation/activity_status_visuals.dart';
 import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/home/application/home_ai_brief_engine.dart';
+import 'package:nousen/features/one_time_reminder/data/one_time_reminder_sync_failures.dart';
+import 'package:nousen/features/one_time_reminder/presentation/one_time_reminder_sync_messages.dart';
 import 'package:nousen/features/progress/data/progress_sync_failures.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
-import 'package:nousen/features/progress/presentation/progress_sync_badge.dart';
 import 'package:nousen/features/progress/presentation/progress_sync_messages.dart';
+import 'package:nousen/features/settings/data/settings_sync_failures.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
+import 'package:nousen/features/settings/presentation/settings_sync_messages.dart';
 import 'package:nousen/features/settings/presentation/settings_page.dart';
 import 'package:nousen/l10n/app_localizations.dart';
 
@@ -48,6 +51,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   Timer? _countdownTimer;
   StreamSubscription<ActivitySyncFailure>? _activitySyncFailureSub;
   StreamSubscription<ProgressSyncFailure>? _progressSyncFailureSub;
+  StreamSubscription<OneTimeReminderSyncFailure>? _reminderSyncFailureSub;
+  StreamSubscription<SettingsSyncFailure>? _settingsSyncFailureSub;
 
   @override
   void initState() {
@@ -61,6 +66,14 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
         .read(progressSyncFailuresProvider)
         .events
         .listen(_onProgressSyncFailure);
+    _reminderSyncFailureSub = ref
+        .read(oneTimeReminderSyncFailuresProvider)
+        .events
+        .listen(_onOneTimeReminderSyncFailure);
+    _settingsSyncFailureSub = ref
+        .read(settingsSyncFailuresProvider)
+        .events
+        .listen(_onSettingsSyncFailure);
   }
 
   @override
@@ -68,6 +81,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     _countdownTimer?.cancel();
     _activitySyncFailureSub?.cancel();
     _progressSyncFailureSub?.cancel();
+    _reminderSyncFailureSub?.cancel();
+    _settingsSyncFailureSub?.cancel();
     super.dispose();
   }
 
@@ -97,6 +112,41 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       SnackBar(
         content: Text(
           progressSyncFailureSnackMessage(isId: isId, failure: failure),
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
+  /// Reject server dari tulis reminder/note cloud-first (S3) — non-silent.
+  void _onOneTimeReminderSyncFailure(OneTimeReminderSyncFailure failure) {
+    if (!mounted) {
+      return;
+    }
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          oneTimeReminderSyncFailureSnackMessage(
+            isId: isId,
+            failure: failure,
+          ),
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
+  /// Reject server dari tulis settings cloud-first (S3) — non-silent.
+  void _onSettingsSyncFailure(SettingsSyncFailure failure) {
+    if (!mounted) {
+      return;
+    }
+    final bool isId = Localizations.localeOf(context).languageCode == 'id';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          settingsSyncFailureSnackMessage(isId: isId, failure: failure),
         ),
         duration: const Duration(seconds: 6),
       ),
@@ -1513,11 +1563,10 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                ActivitySyncBadge(activityId: activity.id),
-                                ProgressSyncBadge(entryId: entry?.id),
-                                // Kegagalan deleteByActivity (S2): tetap
-                                // terlihat setelah baris progres terhapus.
-                                ProgressDeleteBadge(activityId: activity.id),
+                                ActivityCardSyncBadge(
+                                  activityId: activity.id,
+                                  entryId: entry?.id,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 4),
