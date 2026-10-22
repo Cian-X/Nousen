@@ -1105,3 +1105,151 @@ warning/info pre-existing (generated Isar experimental + info style lama).
 Status: build + QC + uji manual PASS. Perubahan working tree
 (`build.gradle.kts`, `AndroidManifest.xml`, README ini) belum di-commit;
 commit menunggu persetujuan owner.
+
+## 17. S6.0 — archive JSON penuh, backfill login-first, pull-merge dry-run (2026-10-22)
+
+Status: **implementasi + tes saja**. Tidak ada archive/backfill/pull-merge
+yang dijalankan terhadap data live, tidak ada deploy rules/index, tidak ada
+perubahan flag mirror, dan belum di-commit/push (menunggu persetujuan owner).
+Base: `main@953bdae`.
+
+### 17.1 File S6.0
+
+| File | Isi |
+| --- | --- |
+| `lib/features/migration/domain/isar_archive.dart` | Model `IsarArchive` + parse JSON ketat (`schemaVersion` 1, semua koleksi wajib, `isarId` unik). |
+| `lib/features/migration/data/isar_archive_source.dart` | Abstraksi sumber archive + `IsarScratchArchiveSource` (hanya DB berprefix `nousen_s6_scratch`). |
+| `lib/features/migration/application/isar_archive_service.dart` | Capture semua koleksi; guard `isSynthetic`; tanpa tulis file/Isar/Firestore. |
+| `lib/features/migration/domain/backfill_completion.dart` | Marker `BackfillCompletion` per uid + versi logika. |
+| `lib/features/migration/data/backfill_completion_store.dart` | Store marker JSON di `<appDocuments>/migration/backfill_completion.json`. |
+| `lib/features/migration/application/login_backfill_coordinator.dart` | Orkestrasi login-first: single-flight per uid, idempoten, resumable. |
+| `lib/features/migration/domain/pull_merge_models.dart` | Model rencana pull-merge (cloud/local/entry/plan). |
+| `lib/features/migration/application/pull_merge_planner.dart` | Planner dry-run cloud -> Isar (LWW, tombstone, media lokal, notifikasi). |
+| `test/isar_archive_test.dart` | 6 tes archive. |
+| `test/login_backfill_coordinator_test.dart` | 12 tes coordinator + file store. |
+| `test/pull_merge_planner_test.dart` | 8 tes planner. |
+
+Tidak ada perubahan pada `lib/main.dart`, `lib/app/providers.dart`,
+`lib/core/migration/migration_flags.dart`, rules, indexes, atau wiring
+produksi apa pun.
+
+### 17.2 Kontrak yang diimplementasikan
+
+**Archive JSON penuh.** `IsarArchiveService.capture()` membaca lima koleksi
+(settings, activities, reminders, agendaNotes, progress), menghasilkan
+`IsarArchive` (JSON-serializable) berisi seluruh field entitas — termasuk
+`isarId`, path foto lokal, `profileAvatarPath`, dan `hasSeededData` — plus
+metadata audit `sourceLabel`/`databaseName`, lalu `encode()` menghasilkan
+JSON deterministik (koleksi urut enum, dokumen urut `isarId`). Archive tidak
+menulis file; pemanggil yang menyimpan.
+
+Guard synthetic/scratch:
+
+- `IsarArchiveService` menolak (`StateError`) sumber dengan
+  `isSynthetic == false` **sebelum** membaca satu baris pun.
+- `IsarScratchArchiveSource` menolak (`ArgumentError`) database yang tidak
+  berprefix `nousen_s6_scratch` — database produksi
+  `reminder_schedule_v2` tidak bisa dibaca lewat jalur ini.
+- Pembuatan DB scratch dan pengisian data synthetic di luar S6.0.
+
+**Backfill login-first.** `LoginBackfillCoordinator.onLogin(uid)`:
+
+1. uid null/kosong -> `skippedNoAuth`, store tidak disentuh;
+2. marker uid + versi logika valid -> `skippedCompleted` (tanpa run);
+3. panggilan bersamaan uid sama -> satu Future (single-flight);
+4. run selesai penuh (`allDone`, uid cocok, tidak `abortedNoAuth`) -> marker
+   disimpan (`completed`);
+5. gagal / tidak selesai / uid berubah -> `failed`, marker TIDAK disimpan;
+   login berikutnya full rescan (aman karena sink create-if-absent).
+
+Marker berisi uid, `completedAt` UTC, dan `version`. File rusak/versi asing
+diperlakukan sebagai "belum ada marker" sehingga backfill berjalan ulang.
+
+**Pull-merge dry-run.** `PullMergePlanner.plan(...)` hanya menghasilkan
+`PullMergePlan` (tidak ada tulis Isar/Firestore):
+
+- cloud live + lokal tidak ada -> `pullCloud` (buat);
+- cloud live + lokal ada -> `pullCloud` (cloud menang);
+- field media lokal dipertahankan saat cloud menang: `photoPaths` +
+  `photoPath` (progress), `photoPaths` (catatan agenda), `profileAvatarPath`
+  (settings);
+- cloud tombstone + lokal ada -> `keepLocalTombstone` (data lokal TIDAK
+  dihapus, masuk `requiresReview`);
+- hanya lokal -> `keepLocal`;
+- jam device lokal tampak lebih baru dari `updatedAt` server di luar
+  toleransi (default 2 menit) -> `conflictReview` (tidak memilih pemenang);
+- `reminderIdsToReschedule` dihitung dari state gabungan, unik + urut,
+  deterministik/idempoten untuk rekonsiliasi notifikasi.
+
+### 17.3 Bukti tidak menyentuh data live
+
+- Baseline diperiksa: branch `main`, HEAD `953bdae`, working tree bersih
+  sebelum perubahan.
+- Semua tes memakai fake in-memory / temporary directory; tidak ada
+  `Isar.open`, `FirebaseFirestore`, atau device yang disentuh.
+- Tidak ada perubahan wiring: coordinator dan archive belum dipanggil dari
+  `main.dart`/provider mana pun.
+- Tidak ada `firebase deploy` (rules/indexes), tidak ada backfill ke
+  Firestore, tidak ada archive DB produksi, tidak ada perubahan flag.
+- Perintah yang dijalankan (2026-10-22):
+
+```bash
+flutter test test/isar_archive_test.dart \
+  test/login_backfill_coordinator_test.dart \
+  test/pull_merge_planner_test.dart
+# 26 tests, all passed
+
+dart analyze lib/features/migration \
+  test/isar_archive_test.dart \
+  test/login_backfill_coordinator_test.dart \
+  test/pull_merge_planner_test.dart
+# No issues found!
+
+flutter test
+# 263 PASS + 2 kegagalan pre-existing typography_guardrails_test
+# (identik dengan baseline S5; bukan dari S6.0)
+
+dart analyze lib test
+# 64 issue pre-existing (0 error), sama dengan baseline S5;
+# file S6.0 di atas bersih
+```
+
+### 17.4 Gate owner-device (untuk LIVE RUN nanti — belum dijalankan)
+
+Live run S6.0 hanya boleh dilakukan setelah SEMUA syarat berikut:
+
+1. **Device owner**: HP prod (`com.nousen.app`, flavor `prod`) + varian
+   `s5a` dan `s5b` terpasang berdampingan; owner memegang device.
+2. **Cloud-first**: semua device sudah memakai klien cloud-first dan
+   rules/indexes sudah di-deploy sesuai §10 (S6.0 tidak men-deploy apa pun).
+3. **Backup**: export/backup Isar prod + salinan
+   `migration/backfill_checkpoint.json` dan
+   `migration/backfill_completion.json` (bila ada) disimpan di luar device.
+4. **Persetujuan eksplisit** owner untuk satu langkah live pada satu waktu.
+5. **Berhenti** bila muncul `conflictReview`/`keepLocalTombstone` tak
+   terduga, jumlah dokumen cloud != lokal, uid berubah di tengah run, atau
+   rules menolak.
+
+Urutan yang direncanakan (BELUM dieksekusi):
+
+1. Login di prod -> coordinator menjalankan backfill sekali per uid.
+2. Bandingkan jumlah dokumen per koleksi di console Firebase vs Isar lokal;
+   verifikasi dokumen lama tidak tertimpa (skip/create-if-absent).
+3. Jalankan pull-merge **dry-run** pada data scratch/synthetic dulu; review
+   `requiresReview` dan `reminderIdsToReschedule` sebelum apply.
+4. Apply pull-merge, archive restore, upload foto, dan deploy lanjutan
+   memerlukan brief + persetujuan terpisah (di luar S6.0).
+
+### 17.5 Batasan (jujur)
+
+- Archive: capture/encode saja — belum ada restore/import, belum ada UI,
+  belum ada penulisan file; integrasi Isar asli hanya untuk DB scratch dan
+  belum diuji di Windows (library native tidak tersedia di unit test).
+- Backfill: coordinator belum di-wire ke auth gate; hook point dan urutan
+  login-first masih manual untuk live run. Marker tidak terenkripsi (hanya
+  uid + timestamp) dan penulisan file belum atomic — aman karena backfill
+  idempoten, tetapi bukan jaminan crash-consistency.
+- Pull-merge: dry-run saja; perbandingan waktu lokal vs server hanyalah
+  heuristik clock skew; belum ada apply, upload foto Storage, atau
+  rekonsiliasi notifikasi aktual (hanya daftar id).
+- Tidak ada perubahan perilaku aplikasi pada S6.0.
