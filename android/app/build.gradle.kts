@@ -30,6 +30,30 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] = "NOUSEN"
+    }
+
+    // Dimensi varian S5: produksi (tanpa suffix) + dua build uji berdampingan.
+    // applicationId produksi TIDAK berubah: `com.nousen.app`.
+    flavorDimensions += "stage"
+
+    productFlavors {
+        create("prod") {
+            dimension = "stage"
+            manifestPlaceholders["appLabel"] = "NOUSEN"
+        }
+        create("s5a") {
+            dimension = "stage"
+            applicationIdSuffix = ".s5a"
+            versionNameSuffix = "-s5a"
+            manifestPlaceholders["appLabel"] = "NOUSEN S5A"
+        }
+        create("s5b") {
+            dimension = "stage"
+            applicationIdSuffix = ".s5b"
+            versionNameSuffix = "-s5b"
+            manifestPlaceholders["appLabel"] = "NOUSEN S5B"
+        }
     }
 
     buildTypes {

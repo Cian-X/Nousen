@@ -1034,3 +1034,74 @@ suite penuh **237 PASS** + 2 kegagalan pre-existing
 tidak ada file fix yang masuk daftar); analyzer 7 file tersentuh: 0
 error/warning baru (hanya info `cacheExtent` lama); `git diff --check`
 bersih. Build/install ulang device + commit menunggu persetujuan owner.
+
+## 16. S5 — dua varian uji berdampingan `s5a`/`s5b` (2026-10-22)
+
+Tujuan: menguji seluruh jalur cloud-first (activities, progress, reminder,
+catatan, settings) dengan DUA instalasi terisolasi di satu device, tanpa
+mengubah applicationId produksi `com.nousen.app`.
+
+**Config Firebase.** Hanya `google-services_5b` yang dipakai: berisi
+client `com.nousen.app`, `com.nousen.app.s5a`, `com.nousen.app.s5b`,
+project `nousen-747fb`, dan certificate hash cocok dengan SHA-1 debug
+keystore. File `5a` ditolak karena tidak memuat client `.s5b`. Config
+terpasang di `android/app/google-services.json` (gitignored, tidak ikut
+repo); isi config tidak pernah dicetak.
+
+**Varian Gradle** (`android/app/build.gradle.kts`):
+
+- `prod` — tanpa suffix, applicationId tetap `com.nousen.app`;
+- `s5a` — suffix `.s5a`, versionName `1.0.0-s5a`, label "NOUSEN S5A";
+- `s5b` — suffix `.s5b`, versionName `1.0.0-s5b`, label "NOUSEN S5B".
+
+Label memakai manifest placeholder `${appLabel}`
+(`android/app/src/main/AndroidManifest.xml`).
+
+**Build.** Kedua varian dibangun dengan lima define ON:
+`NOUSEN_CLOUD_FIRST_ACTIVITIES`, `NOUSEN_CLOUD_FIRST_PROGRESS`,
+`NOUSEN_CLOUD_FIRST_REMINDERS`, `NOUSEN_CLOUD_FIRST_NOTES`, dan
+`NOUSEN_CLOUD_FIRST_SETTINGS` (semua `true`).
+`flutter build apk --debug --flavor s5a|s5b` -> `assembleS5aDebug` dan
+`assembleS5bDebug` sukses. Hanya warning deprecation pre-existing
+(Gradle 8.14.0, AGP 8.11.1, Kotlin 2.2.20).
+
+**Artefak** (debug, signing debug keystore):
+
+| varian | APK | package | ukuran | SHA-256 |
+| --- | --- | --- | --- | --- |
+| s5a | `build/app/outputs/flutter-apk/app-s5a-debug.apk` | `com.nousen.app.s5a` | 223.298.370 B | `290DFE426300ACDE5804E9F7A38087502303164230E3110CE6929534C5385658` |
+| s5b | `build/app/outputs/flutter-apk/app-s5b-debug.apk` | `com.nousen.app.s5b` | 223.298.370 B | `55CD09DB267F670626458FC169CD188D352BB0238A3C8D47D9FF2EFA4298E93D` |
+
+Signer kedua APK: SHA-1
+`4A:A3:1B:BB:05:8D:D2:DC:3E:49:6E:73:E9:07:16:60:BD:29:79:A7` (cocok
+dengan debug keystore). Resource `google_app_id` hasil generate per
+varian cocok dengan client Firebase masing-masing; kedua APK punya
+path/package/hash berbeda sehingga tidak saling menimpa dan bisa
+terpasang berdampingan.
+
+**QC otomatis (2026-10-22).** `flutter test`: 237 PASS + 2 kegagalan
+pre-existing `typography_guardrails_test` (bukan dari perubahan S5; tidak
+ada kode Dart yang diubah). `dart analyze lib test`: 0 error, 64
+warning/info pre-existing (generated Isar experimental + info style lama).
+
+**Uji manual owner (2026-10-22, device).** Semua skenario PASS:
+
+1. Sumber data cloud: data S5A muncul di S5B yang baru dipasang; logout
+   di kedua app tidak menimbulkan masalah.
+2. Activities: create/edit/checklist/hapus tersinkron dua arah; catatan
+   dan foto tampil di S5A dan bertahan setelah edit + restart. Di S5B
+   catatan ikut, foto tidak (path foto memang device-local — expected).
+3. Progress: ceklis/unceklis dan catatan tersinkron; edit hampir
+   bersamaan tidak bermasalah.
+4. Reminder, catatan, settings: edit/hapus di S5A diikuti S5B.
+5. Offline: create/edit/hapus + badge amber bertahan setelah app ditutup;
+   reconnect -> badge hilang, data konsisten, tanpa duplikat; hapus
+   offline tetap hilang setelah restart.
+6. Badge gabungan: satu ikon per kartu/header, amber pending, merah
+   failed, hilang saat synced.
+7. Isolasi akun: login akun Google berbeda di S5B -> tidak ada kebocoran
+   data antar akun.
+
+Status: build + QC + uji manual PASS. Perubahan working tree
+(`build.gradle.kts`, `AndroidManifest.xml`, README ini) belum di-commit;
+commit menunggu persetujuan owner.
