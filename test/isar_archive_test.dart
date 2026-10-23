@@ -164,6 +164,9 @@ void main() {
       expect(restored.sourceLabel, archive.sourceLabel);
       expect(restored.databaseName, archive.databaseName);
       expect(restored.totalDocuments, archive.totalDocuments);
+      expect(restored.counts, archive.counts);
+      expect(restored.checksum, archive.checksum);
+      expect(restored.checksum.length, 64);
       expect(
         restored.collections[IsarArchiveCollection.activities]!.single['id'],
         'a3',
@@ -178,17 +181,13 @@ void main() {
     });
 
     test('fromJson ketat: versi, koleksi wajib, dan isarId duplikat', () {
-      final Map<String, Object?> base = <String, Object?>{
-        'schemaVersion': IsarArchive.schemaVersion,
-        'capturedAt': '2026-10-22T00:00:00.000Z',
-        'sourceLabel': 'unit-test',
-        'databaseName': 'nousen_s6_scratch_unit',
-        'collections': <String, Object?>{
-          for (final IsarArchiveCollection collection
-              in IsarArchiveCollection.values)
-            collection.key: <Object?>[],
-        },
-      };
+      final Map<String, Object?> base = IsarArchive(
+        capturedAtUtc: DateTime.utc(2026, 10, 22),
+        sourceLabel: 'unit-test',
+        databaseName: 'nousen_s6_scratch_unit',
+        collections:
+            const <IsarArchiveCollection, List<Map<String, Object?>>>{},
+      ).toJson();
 
       expect(
         () => IsarArchive.fromJson(<String, Object?>{
@@ -238,6 +237,55 @@ void main() {
       };
       expect(
         () => IsarArchive.fromJson(duplicate),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('fromJson menolak counts/checksum hilang atau diubah', () {
+      final IsarArchive archive = IsarArchive(
+        capturedAtUtc: DateTime.utc(2026, 10, 22),
+        sourceLabel: 'unit-test',
+        databaseName: 'nousen_s6_scratch_unit',
+        collections: <IsarArchiveCollection, List<Map<String, Object?>>>{
+          IsarArchiveCollection.activities: <Map<String, Object?>>[
+            <String, Object?>{'isarId': 1, 'id': 'a1'},
+          ],
+        },
+      );
+      final Map<String, Object?> json = archive.toJson();
+      expect(json['checksum'], archive.checksum);
+      expect(archive.checksum.length, 64);
+
+      final Map<String, Object?> missingChecksum = Map<String, Object?>.from(
+        json,
+      )..remove('checksum');
+      expect(
+        () => IsarArchive.fromJson(missingChecksum),
+        throwsA(isA<FormatException>()),
+      );
+
+      final Map<String, Object?> badChecksum = <String, Object?>{
+        ...json,
+        'checksum': List<String>.filled(64, '0').join(),
+      };
+      expect(
+        () => IsarArchive.fromJson(badChecksum),
+        throwsA(isA<FormatException>()),
+      );
+
+      final Map<String, Object?> badCounts = <String, Object?>{
+        ...json,
+        'counts': <String, int>{...archive.counts, 'activities': 2},
+      };
+      expect(
+        () => IsarArchive.fromJson(badCounts),
+        throwsA(isA<FormatException>()),
+      );
+
+      final Map<String, Object?> missingCounts = Map<String, Object?>.from(json)
+        ..remove('counts');
+      expect(
+        () => IsarArchive.fromJson(missingCounts),
         throwsA(isA<FormatException>()),
       );
     });

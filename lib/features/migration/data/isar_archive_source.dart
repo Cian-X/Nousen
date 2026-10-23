@@ -133,9 +133,9 @@ class IsarScratchArchiveSource implements IsarArchiveSource {
             'enableEndOfDayReminder': e.enableEndOfDayReminder,
             'enablePhotoProgress': e.enablePhotoProgress,
             'lastThreeDayRuleNotifiedDate': e.lastThreeDayRuleNotifiedDate,
-            'createdAt': e.createdAt.toIso8601String(),
-            'updatedAt': e.updatedAt.toIso8601String(),
-            'scheduleUpdatedAt': e.scheduleUpdatedAt?.toIso8601String(),
+            'createdAt': e.createdAt.toUtc().toIso8601String(),
+            'updatedAt': e.updatedAt.toUtc().toIso8601String(),
+            'scheduleUpdatedAt': e.scheduleUpdatedAt?.toUtc().toIso8601String(),
           },
         )
         .toList(growable: false);
@@ -153,8 +153,8 @@ class IsarScratchArchiveSource implements IsarArchiveSource {
             'id': e.id,
             'title': e.title,
             'iconKey': e.iconKey,
-            'scheduledAt': e.scheduledAt.toIso8601String(),
-            'scheduledEndAt': e.scheduledEndAt?.toIso8601String(),
+            'scheduledAt': e.scheduledAt.toUtc().toIso8601String(),
+            'scheduledEndAt': e.scheduledEndAt?.toUtc().toIso8601String(),
             'categoryId': e.categoryId,
             'description': e.description,
             'subActivities': e.subActivities?.toList(growable: false),
@@ -165,8 +165,8 @@ class IsarScratchArchiveSource implements IsarArchiveSource {
             'isNotificationEnabled': e.isNotificationEnabled,
             'isCompleted': e.isCompleted,
             'isSkipped': e.isSkipped,
-            'createdAt': e.createdAt.toIso8601String(),
-            'updatedAt': e.updatedAt.toIso8601String(),
+            'createdAt': e.createdAt.toUtc().toIso8601String(),
+            'updatedAt': e.updatedAt.toUtc().toIso8601String(),
           },
         )
         .toList(growable: false);
@@ -184,8 +184,8 @@ class IsarScratchArchiveSource implements IsarArchiveSource {
             'reminderId': e.reminderId,
             'text': e.text,
             'photoPaths': e.photoPaths?.toList(growable: false),
-            'createdAt': e.createdAt.toIso8601String(),
-            'updatedAt': e.updatedAt.toIso8601String(),
+            'createdAt': e.createdAt.toUtc().toIso8601String(),
+            'updatedAt': e.updatedAt.toUtc().toIso8601String(),
           },
         )
         .toList(growable: false);
@@ -213,9 +213,9 @@ class IsarScratchArchiveSource implements IsarArchiveSource {
             'photoPath': e.photoPath,
             'photoNote': e.photoNote,
             'notes': e.notes,
-            'completedAt': e.completedAt?.toIso8601String(),
-            'createdAt': e.createdAt.toIso8601String(),
-            'updatedAt': e.updatedAt.toIso8601String(),
+            'completedAt': e.completedAt?.toUtc().toIso8601String(),
+            'createdAt': e.createdAt.toUtc().toIso8601String(),
+            'updatedAt': e.updatedAt.toUtc().toIso8601String(),
           },
         )
         .toList(growable: false);

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 /// Koleksi Isar yang ikut archive JSON penuh S6.0.
 ///
 /// Urutan deklarasi = urutan capture (deterministik).
@@ -55,7 +57,9 @@ class IsarArchive {
            );
 
   /// Versi format archive JSON (bukan versi skema data aplikasi).
-  static const int schemaVersion = 1;
+  ///
+  /// v2 menambahkan `counts` dan `checksum` (SHA-256) untuk integritas.
+  static const int schemaVersion = 2;
 
   final DateTime capturedAtUtc;
 
@@ -75,18 +79,37 @@ class IsarArchive {
     (int sum, IsarArchiveCollection collection) => sum + countOf(collection),
   );
 
-  Map<String, Object?> toJson() {
+  /// Jumlah dokumen per koleksi. Ikut ditulis ke JSON dan divalidasi ketat
+  /// saat parse (harus sama dengan panjang array koleksi).
+  Map<String, int> get counts => <String, int>{
+    for (final IsarArchiveCollection collection in IsarArchiveCollection.values)
+      collection.key: countOf(collection),
+  };
+
+  /// SHA-256 dari payload archive kanonik (tanpa field `checksum` itu sendiri).
+  ///
+  /// Map diurutkan berdasarkan key sebelum di-hash agar checksum stabil
+  /// terhadap urutan field. Checksum mendeteksi archive terpotong, field
+  /// berubah, atau metadata yang diubah tanpa recompute.
+  String get checksum => _sha256(_canonicalJson(_checksumPayload()));
+
+  Map<String, Object?> _checksumPayload() {
     return <String, Object?>{
       'schemaVersion': schemaVersion,
       'capturedAt': capturedAtUtc.toIso8601String(),
       'sourceLabel': sourceLabel,
       'databaseName': databaseName,
+      'counts': counts,
       'collections': <String, Object?>{
         for (final IsarArchiveCollection collection
             in IsarArchiveCollection.values)
           collection.key: collections[collection],
       },
     };
+  }
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{..._checksumPayload(), 'checksum': checksum};
   }
 
   String encode({bool pretty = false}) {
@@ -96,8 +119,31 @@ class IsarArchive {
     return jsonEncode(toJson());
   }
 
+  /// Parse archive dari string JSON. Lihat [IsarArchive.fromJson].
+  factory IsarArchive.decode(String encoded) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(encoded);
+    } on FormatException catch (error) {
+      throw FormatException('JSON archive tidak valid: ${error.message}');
+    }
+    if (decoded is! Map) {
+      throw const FormatException('archive harus berupa object');
+    }
+    final Map<String, Object?> json = <String, Object?>{};
+    for (final MapEntry<Object?, Object?> entry in decoded.entries) {
+      final Object? key = entry.key;
+      if (key is! String) {
+        throw const FormatException('key archive harus string');
+      }
+      json[key] = entry.value;
+    }
+    return IsarArchive.fromJson(json);
+  }
+
   /// Parse archive dari JSON. Ketat: versi skema, semua koleksi wajib ada,
-  /// tiap dokumen wajib punya `isarId` int unik dalam koleksinya.
+  /// tiap dokumen wajib punya `isarId` int unik dalam koleksinya, `counts`
+  /// harus cocok dengan panjang koleksi, dan `checksum` harus cocok.
   factory IsarArchive.fromJson(Map<String, Object?> json) {
     final Object? rawVersion = json['schemaVersion'];
     if (rawVersion is! int || rawVersion != schemaVersion) {
@@ -179,11 +225,87 @@ class IsarArchive {
       }
     }
 
-    return IsarArchive(
+    final Map<String, int> actualCounts = <String, int>{
+      for (final IsarArchiveCollection collection
+          in IsarArchiveCollection.values)
+        collection.key: parsed[collection]!.length,
+    };
+    final Map<String, int> providedCounts = _parseCounts(json['counts']);
+    if (!_intMapsEqual(providedCounts, actualCounts)) {
+      throw FormatException(
+        'counts tidak cocok dengan isi koleksi: '
+        '$providedCounts != $actualCounts',
+      );
+    }
+
+    final IsarArchive archive = IsarArchive(
       capturedAtUtc: capturedAt,
       sourceLabel: rawSourceLabel,
       databaseName: rawDatabaseName,
       collections: parsed,
     );
+
+    final Object? rawChecksum = json['checksum'];
+    if (rawChecksum is! String || rawChecksum.trim().isEmpty) {
+      throw const FormatException('checksum tidak valid');
+    }
+    if (archive.checksum != rawChecksum) {
+      throw const FormatException('checksum tidak cocok dengan isi archive');
+    }
+    return archive;
   }
 }
+
+Map<String, int> _parseCounts(Object? rawCounts) {
+  if (rawCounts is! Map) {
+    throw const FormatException('counts harus berupa object');
+  }
+  final Map<String, int> counts = <String, int>{};
+  for (final MapEntry<Object?, Object?> entry in rawCounts.entries) {
+    final Object? key = entry.key;
+    final Object? value = entry.value;
+    if (key is! String || value is! int || value < 0) {
+      throw const FormatException('counts harus map string -> int >= 0');
+    }
+    counts[key] = value;
+  }
+  return counts;
+}
+
+bool _intMapsEqual(Map<String, int> a, Map<String, int> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (final MapEntry<String, int> entry in a.entries) {
+    if (b[entry.key] != entry.value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Object? _canonicalJson(Object? value) {
+  if (value is Map) {
+    final List<String> keys = <String>[];
+    for (final Object? key in value.keys) {
+      if (key is! String) {
+        throw const FormatException('checksum: key map harus string');
+      }
+      keys.add(key);
+    }
+    keys.sort();
+    return <String, Object?>{
+      for (final String key in keys) key: _canonicalJson(value[key]),
+    };
+  }
+  if (value is List) {
+    return value.map(_canonicalJson).toList(growable: false);
+  }
+  if (value == null || value is String || value is num || value is bool) {
+    return value;
+  }
+  throw FormatException('checksum: tipe tidak didukung ${value.runtimeType}');
+}
+
+String _sha256(Object? canonicalPayload) =>
+    sha256.convert(utf8.encode(jsonEncode(canonicalPayload))).toString();

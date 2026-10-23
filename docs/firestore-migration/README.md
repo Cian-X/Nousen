@@ -1110,24 +1110,32 @@ commit menunggu persetujuan owner.
 
 Status: **implementasi + tes saja**. Tidak ada archive/backfill/pull-merge
 yang dijalankan terhadap data live, tidak ada deploy rules/index, tidak ada
-perubahan flag mirror, dan belum di-commit/push (menunggu persetujuan owner).
-Base: `main@953bdae`.
+perubahan flag mirror, dan belum di-push. Commit lokal `18bc762` (S6.0 awal)
+belum di-push; perubahan gap restore archive berada di working tree dan belum
+di-commit (menunggu persetujuan owner).
+Base: `main@953bdae`; HEAD `18bc762`.
 
 ### 17.1 File S6.0
 
 | File | Isi |
 | --- | --- |
-| `lib/features/migration/domain/isar_archive.dart` | Model `IsarArchive` + parse JSON ketat (`schemaVersion` 1, semua koleksi wajib, `isarId` unik). |
-| `lib/features/migration/data/isar_archive_source.dart` | Abstraksi sumber archive + `IsarScratchArchiveSource` (hanya DB berprefix `nousen_s6_scratch`). |
+| `lib/features/migration/domain/isar_archive.dart` | Model `IsarArchive` + parse/encode JSON ketat (`schemaVersion` 2, lima koleksi wajib, `isarId` unik, `counts`, `checksum` SHA-256). |
+| `lib/features/migration/data/isar_archive_source.dart` | Abstraksi sumber archive + `IsarScratchArchiveSource` (hanya DB berprefix `nousen_s6_scratch`; tanggal di-encode UTC). |
 | `lib/features/migration/application/isar_archive_service.dart` | Capture semua koleksi; guard `isSynthetic`; tanpa tulis file/Isar/Firestore. |
+| `lib/features/migration/data/isar_archive_target.dart` | Target restore + `IsarScratchArchiveTarget`: validasi field, target scratch kosong, satu transaksi Isar, rollback total. |
+| `lib/features/migration/application/isar_archive_restore_service.dart` | Restore/import JSON ke target scratch: guard DB, parse ketat, cek kosong, verifikasi count setelah commit. |
 | `lib/features/migration/domain/backfill_completion.dart` | Marker `BackfillCompletion` per uid + versi logika. |
 | `lib/features/migration/data/backfill_completion_store.dart` | Store marker JSON di `<appDocuments>/migration/backfill_completion.json`. |
 | `lib/features/migration/application/login_backfill_coordinator.dart` | Orkestrasi login-first: single-flight per uid, idempoten, resumable. |
 | `lib/features/migration/domain/pull_merge_models.dart` | Model rencana pull-merge (cloud/local/entry/plan). |
 | `lib/features/migration/application/pull_merge_planner.dart` | Planner dry-run cloud -> Isar (LWW, tombstone, media lokal, notifikasi). |
-| `test/isar_archive_test.dart` | 6 tes archive. |
+| `test/isar_archive_test.dart` | 7 tes archive. |
+| `test/isar_archive_restore_test.dart` | 5 tes restore dengan Isar asli di DB scratch. |
 | `test/login_backfill_coordinator_test.dart` | 12 tes coordinator + file store. |
 | `test/pull_merge_planner_test.dart` | 8 tes planner. |
+
+`pubspec.yaml`/`pubspec.lock`: `crypto` menjadi dependency langsung untuk
+checksum SHA-256 archive.
 
 Tidak ada perubahan pada `lib/main.dart`, `lib/app/providers.dart`,
 `lib/core/migration/migration_flags.dart`, rules, indexes, atau wiring
@@ -1151,6 +1159,43 @@ Guard synthetic/scratch:
   berprefix `nousen_s6_scratch` — database produksi
   `reminder_schedule_v2` tidak bisa dibaca lewat jalur ini.
 - Pembuatan DB scratch dan pengisian data synthetic di luar S6.0.
+
+**Integritas archive v2.** JSON archive menyimpan `counts` per koleksi dan
+`checksum` SHA-256 dari payload kanonik (metadata + counts + collections,
+tanpa field `checksum` itu sendiri). `IsarArchive.decode()` menolak:
+
+- JSON terpotong/rusak;
+- `schemaVersion` selain 2;
+- koleksi wajib yang hilang atau koleksi asing;
+- `isarId` duplikat/non-int;
+- `counts` yang tidak sama dengan panjang koleksi;
+- `checksum` yang tidak cocok.
+
+Semua `DateTime` di-encode sebagai UTC ISO-8601, sehingga archive tidak
+bergantung pada timezone mesin sumber. Validasi ini selesai **sebelum** target
+restore dibaca/ditulis.
+
+**Restore/import archive (gap S6.0).**
+`IsarArchiveRestoreService.restoreJson(encoded, target: ...)`:
+
+1. Target wajib `isScratch == true` **dan** `databaseName` berprefix
+   `nousen_s6_scratch`. `reminder_schedule_v2` ditolak sebelum satu koleksi
+   pun dibaca/ditulis (guard ganda: service + konstruktor target).
+2. JSON di-parse dan divalidasi penuh seperti di atas; archive yang mengaku
+   berasal dari DB non-scratch juga ditolak.
+3. Target wajib kosong di kelima koleksi. Restore tidak menimpa/menghapus;
+   restore ulang ke target yang sudah terisi ditolak (`StateError`). Repeat
+   yang aman = restore ke DB scratch baru.
+4. `IsarScratchArchiveTarget.writeAll()` memetakan seluruh dokumen ke entity
+   lebih dulu (tipe field, `isarId > 0`, id string unik, settings id 1,
+   path foto lokal, nilai nullable). Baru setelah itu satu
+   `isar.writeTxn` menulis settings, activities, reminders, agendaNotes,
+   progress; target dicek kosong lagi di dalam transaksi dan jumlah dokumen
+   diverifikasi sebelum commit. Satu dokumen gagal = rollback total.
+5. Setelah commit, service memverifikasi ulang count target terhadap archive.
+
+Tidak ada pembacaan/penulisan Firestore, file archive, atau DB produksi.
+Restore belum di-wire ke UI/aplikasi.
 
 **Backfill login-first.** `LoginBackfillCoordinator.onLogin(uid)`:
 
@@ -1183,35 +1228,41 @@ diperlakukan sebagai "belum ada marker" sehingga backfill berjalan ulang.
 
 ### 17.3 Bukti tidak menyentuh data live
 
-- Baseline diperiksa: branch `main`, HEAD `953bdae`, working tree bersih
+- Baseline diperiksa: branch `main`, HEAD `18bc762`, working tree bersih
   sebelum perubahan.
-- Semua tes memakai fake in-memory / temporary directory; tidak ada
-  `Isar.open`, `FirebaseFirestore`, atau device yang disentuh.
-- Tidak ada perubahan wiring: coordinator dan archive belum dipanggil dari
-  `main.dart`/provider mana pun.
+- Capture/parse diuji dengan fake in-memory. Restore diuji dengan **Isar asli**
+  (DLL `isar_flutter_libs` untuk Windows) hanya pada database sementara
+  bernama `nousen_s6_scratch_*`; tidak ada `Isar.open` ke
+  `reminder_schedule_v2`, Firestore, atau device.
+- Tidak ada perubahan wiring: coordinator dan archive/restore belum dipanggil
+  dari `main.dart`/provider mana pun.
 - Tidak ada `firebase deploy` (rules/indexes), tidak ada backfill ke
   Firestore, tidak ada archive DB produksi, tidak ada perubahan flag.
-- Perintah yang dijalankan (2026-10-22):
+- Perintah yang dijalankan (2026-10-23):
 
 ```bash
-flutter test test/isar_archive_test.dart \
-  test/login_backfill_coordinator_test.dart \
-  test/pull_merge_planner_test.dart
-# 26 tests, all passed
+flutter test test/isar_archive_test.dart test/isar_archive_restore_test.dart
+# 12 tests, all passed
+
+flutter test test/isar_archive_test.dart test/isar_archive_restore_test.dart \
+  test/login_backfill_coordinator_test.dart test/pull_merge_planner_test.dart
+# 32 tests, all passed
 
 dart analyze lib/features/migration \
-  test/isar_archive_test.dart \
-  test/login_backfill_coordinator_test.dart \
-  test/pull_merge_planner_test.dart
+  test/isar_archive_test.dart test/isar_archive_restore_test.dart \
+  test/login_backfill_coordinator_test.dart test/pull_merge_planner_test.dart
 # No issues found!
 
 flutter test
-# 263 PASS + 2 kegagalan pre-existing typography_guardrails_test
+# 269 PASS + 2 kegagalan pre-existing typography_guardrails_test
 # (identik dengan baseline S5; bukan dari S6.0)
 
 dart analyze lib test
 # 64 issue pre-existing (0 error), sama dengan baseline S5;
 # file S6.0 di atas bersih
+
+git diff --check
+# bersih
 ```
 
 ### 17.4 Gate owner-device (untuk LIVE RUN nanti — belum dijalankan)
@@ -1237,14 +1288,21 @@ Urutan yang direncanakan (BELUM dieksekusi):
    verifikasi dokumen lama tidak tertimpa (skip/create-if-absent).
 3. Jalankan pull-merge **dry-run** pada data scratch/synthetic dulu; review
    `requiresReview` dan `reminderIdsToReschedule` sebelum apply.
-4. Apply pull-merge, archive restore, upload foto, dan deploy lanjutan
-   memerlukan brief + persetujuan terpisah (di luar S6.0).
+4. Apply pull-merge, restore archive ke device/DB non-scratch, upload foto,
+   dan deploy lanjutan memerlukan brief + persetujuan terpisah (di luar
+   S6.0). Restore yang diimplementasikan HANYA untuk DB scratch kosong;
+   restore ke device/DB produksi belum diuji dan belum diizinkan.
 
 ### 17.5 Batasan (jujur)
 
-- Archive: capture/encode saja — belum ada restore/import, belum ada UI,
-  belum ada penulisan file; integrasi Isar asli hanya untuk DB scratch dan
-  belum diuji di Windows (library native tidak tersedia di unit test).
+- Archive: capture/encode + restore/import ke DB scratch kosong. Belum ada UI,
+  belum ada pembaca/penulis file archive, belum ada archive off-device, dan
+  belum ada restore ke device/DB produksi. Checksum + counts mendeteksi
+  archive terpotong/berubah, tetapi bukan signature/authenticity dan archive
+  tidak dienkripsi. Restore tidak menimpa data; repeat yang aman = DB scratch
+  baru.
+- Integrasi Isar asli sudah diuji di Windows memakai DLL `isar_flutter_libs`
+  dan temporary DB scratch; belum diuji di Android/device.
 - Backfill: coordinator belum di-wire ke auth gate; hook point dan urutan
   login-first masih manual untuk live run. Marker tidak terenkripsi (hanya
   uid + timestamp) dan penulisan file belum atomic — aman karena backfill
