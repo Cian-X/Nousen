@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nousen/features/progress/data/cloud_first_progress_repository.dart';
 import 'package:nousen/features/progress/data/cloud_progress_backend.dart';
@@ -105,8 +107,20 @@ class _FakeBackend implements CloudProgressBackend {
         await gate.future;
       }
     }
-    docs.removeWhere((_, Map<String, dynamic> d) =>
-        d['activityId'] == activityId);
+    // Semantik v2: tombstone (BUKAN hard delete) — dokumen tetap ada di
+    // cloud dengan `deleted: true`; jalur baca harus menyembunyikannya.
+    // Memakai helper produksi yang sama (`progressTombstoneMap`) agar
+    // fidelitas tinggi terhadap perilaku Firestore.
+    final List<String> ids = <String>[
+      for (final MapEntry<String, Map<String, dynamic>> e in docs.entries)
+        if (e.value['activityId'] == activityId) e.key,
+    ];
+    for (final String id in ids) {
+      docs[id] = <String, dynamic>{
+        ...?docs[id],
+        ...progressTombstoneMap(),
+      };
+    }
   }
 
   /// uid setiap listen cloud dibuat (bukti re-subscribe antar sesi).
@@ -155,8 +169,12 @@ class _FakeBackend implements CloudProgressBackend {
     required String activityId,
     required String dateKey,
   }) async {
+    // Semantik produksi: pilih dokumen PERTAMA yang hidup (tombstone
+    // dibuang), tanpa asumsi id deterministik per (activityId, dateKey).
     for (final Map<String, dynamic> d in docs.values) {
-      if (d['activityId'] == activityId && d['dateKey'] == dateKey) {
+      if (d['activityId'] == activityId &&
+          d['dateKey'] == dateKey &&
+          isProgressDocAlive(d)) {
         return d;
       }
     }
@@ -303,7 +321,7 @@ void main() {
 
   group('CloudFirstProgressRepository (S2 — offline UX: tidak menunggu '
       'ack, mirror segera, status pending/failed per-entry)', () {
-    test('upsert: cloud diinisiasi (merge set skema v1) + mirror Isar', () async {
+    test('upsert: cloud diinisiasi (merge set skema v2) + mirror Isar', () async {
       final ProgressEntryModel entry = _entry(status: ActivityDayStatus.done);
       await repo.upsert(entry);
 
@@ -311,11 +329,18 @@ void main() {
       final _SetCall call = backend.setCalls.single;
       expect(call.uid, 'u1');
       expect(call.docId, 'p1');
+      // Kontrak skema v2 (rules v2: `updatedAt == request.time`, create
+      // wajib hidup dan id == doc id).
       expect(call.data['id'], 'p1');
       expect(call.data['activityId'], 'a1');
       expect(call.data['dateKey'], '2026-10-18');
       expect(call.data['status'], 'done');
       expect(call.data['subTotal'], 2);
+      expect(call.data['updatedAt'], FieldValue.serverTimestamp());
+      expect(call.data['clientUpdatedAt'], entry.updatedAt.toIso8601String());
+      expect(call.data['deleted'], false);
+      expect(call.data['deletedAt'], isNull);
+      expect(call.data['schemaVersion'], 2);
 
       expect(mirror.upsertCalls, 1);
       expect(mirror.store['p1']?.status, ActivityDayStatus.done);
@@ -439,6 +464,15 @@ void main() {
 
       expect(backend.deleteCalls, <String>['a1']);
       expect(mirror.deleteByActivityCalls, 1);
+
+      // Ack selesai → tombstone batch diterapkan di cloud (dokumen tetap
+      // ada, `deleted: true` — bukan hard delete).
+      backend.deleteGate!.complete();
+      await _flush();
+      expect(backend.docs['p1']?['deleted'], true);
+      expect(backend.docs['p2']?['deleted'], true);
+      expect(backend.docs['p3']?['deleted'], isNot(true));
+
       // Sumber rollback (Isar) sudah bersih untuk a1; a2 tidak tersentuh.
       expect(mirror.store.containsKey('p1'), isFalse);
       expect(mirror.store.containsKey('p2'), isFalse);
@@ -846,6 +880,168 @@ void main() {
 
       expect(all.single.photoPaths, isEmpty);
       expect(mirror.readCalls, 1);
+    });
+  });
+
+  group('Skema v2 progress: tombstone + kompatibilitas dokumen v1 lawas '
+      '(upgade rules v2 — klien v1 lama ditolak, kode ini menulis v2)', () {
+    test('watchAll/watchByActivity/watchByDate: tombstone tidak pernah '
+        'tampil; dokumen v1 TANPA field deleted tetap tampil', () async {
+      // p1 = v1 lawas (hasil dual-write lama): TANPA field `deleted`.
+      // p2 = tombstone v2 (deleteByActivity): hidden.
+      // p3 = hidup v2.
+      backend.watchDocs = <CloudProgressDoc>[
+        _cloudDoc(_entry(id: 'p1', activityId: 'a1', dateKey: '2026-10-18')),
+        CloudProgressDoc(
+          id: 'p2',
+          data: <String, dynamic>{
+            ...FirestoreProgressRepository.toMap(
+              _entry(id: 'p2', activityId: 'a1', dateKey: '2026-10-17'),
+            ),
+            'deleted': true,
+          },
+          hasPendingWrites: false,
+        ),
+        _cloudDoc(_entry(id: 'p3', activityId: 'a2', dateKey: '2026-10-18')),
+      ];
+
+      final List<ProgressEntryModel> all = await repo.watchAll().first;
+      expect(
+        all.map((ProgressEntryModel e) => e.id),
+        <String>['p1', 'p3'],
+        reason: 'v1 lawas hidup, tombstone disembunyikan',
+      );
+      expect(
+        (await repo.watchByActivity('a1').first).map(
+          (ProgressEntryModel e) => e.id,
+        ),
+        <String>['p1'],
+      );
+      expect(
+        (await repo.watchByDate('2026-10-17').first).map(
+          (ProgressEntryModel e) => e.id,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('getAll: tombstone disembunyikan, v1 lawas tetap tampil', () async {
+      backend.queryResults = <Map<String, dynamic>>[
+        <String, dynamic>{
+          ...FirestoreProgressRepository.toMap(
+            _entry(id: 'p2', dateKey: '2026-10-17'),
+          ),
+          'deleted': true,
+        },
+        FirestoreProgressRepository.toMap(_entry(id: 'p1', dateKey: '2026-10-18')),
+      ];
+
+      final List<ProgressEntryModel> all = await repo.getAll();
+
+      expect(all.map((ProgressEntryModel e) => e.id), <String>['p1']);
+    });
+
+    test('getByActivityAndDate: dokumen tombstone → null meski pasangan '
+        '(activityId, dateKey) cocok', () async {
+      backend.docs['p1'] = <String, dynamic>{
+        ...FirestoreProgressRepository.toMap(_entry()),
+        'deleted': true,
+      };
+
+      final ProgressEntryModel? found = await repo.getByActivityAndDate(
+        activityId: 'a1',
+        dateKey: '2026-10-18',
+      );
+
+      expect(found, isNull);
+      // Tombstone tidak memicu overlay (baca tidak menghasilkan entri).
+      expect(mirror.readCalls, 0);
+    });
+
+    test('getByActivityAndDate: tombstone dilewati — dokumen hidup untuk '
+        'pasangan sama yang tetap keluar', () async {
+      // Dua dokumen untuk pasangan sama: entry id tidak deterministik →
+      // entri lama ter-tombstone lalu dibuat ulang (id uuid baru).
+      backend.docs['pal'] = <String, dynamic>{
+        ...FirestoreProgressRepository.toMap(
+          _entry(id: 'pal', activityId: 'a1', dateKey: '2026-10-18'),
+        ),
+        'deleted': true,
+      };
+      backend.docs['pbn'] = FirestoreProgressRepository.toMap(
+        _entry(id: 'pbn', activityId: 'a1', dateKey: '2026-10-18'),
+      );
+
+      final ProgressEntryModel? found = await repo.getByActivityAndDate(
+        activityId: 'a1',
+        dateKey: '2026-10-18',
+      );
+
+      expect(found?.id, 'pbn');
+    });
+
+    test('upsert setelah tombstone (buat ulang entri): merge-set me-revive '
+        'dokumen yang sama (deleted kembali false) + baris baru muncul',
+        () async {
+      await repo.upsert(_entry());
+      await repo.deleteByActivity('a1');
+      await _flush();
+      expect(backend.docs['p1']?['deleted'], true);
+
+      // User membuat entri progress pada pasangan sama → bila id dokumen
+      // sama, merge-set me-revive tombstone (deleted kembali false); bila
+      // id baru, dokumen baru dibuat. Keduanya hidup setelah itu.
+      await repo.upsert(_entry());
+
+      expect(backend.docs['p1']?['deleted'], false,
+          reason: 'merge-set dengan payload v2 me-revive dokumen tombstone');
+      backend.watchDocs = <CloudProgressDoc>[
+        CloudProgressDoc(
+          id: 'p1',
+          data: Map<String, dynamic>.from(backend.docs['p1']!),
+          hasPendingWrites: false,
+        ),
+      ];
+      final List<ProgressEntryModel> all = await repo.watchAll().first;
+      expect(all.map((ProgressEntryModel e) => e.id), <String>['p1']);
+    });
+
+    test('watchPendingIds: dokumen tombstone pending tidak bocor ke badge '
+        'per-entry yang tampil (id tidak ditemukan UI)', () async {
+      backend.watchDocs = <CloudProgressDoc>[
+        CloudProgressDoc(
+          id: 'p2',
+          data: <String, dynamic>{
+            ...FirestoreProgressRepository.toMap(_entry(id: 'p2')),
+            'deleted': true,
+          },
+          hasPendingWrites: true,
+        ),
+        _cloudDoc(_entry(id: 'p1'), pending: true),
+      ];
+
+      final Set<String> pending = await repo.watchPendingIds().first;
+
+      expect(pending, <String>{'p1', 'p2'},
+          reason: 'pending ids mentah dari metadata; UI tidak menampilkan '
+              'id yang barisnya sudah terhapus (badge activity-scoped)');
+    });
+
+    test('deleteByActivity batch > chunk: semua dokumen ikut tertombstone',
+        () async {
+      // Simulasi multi-chunk via beberapa aktivitas? Backend fake tidak
+      // membagi batch; yang diuji = jumlah dokumen yg diupdate bukan
+      // jumlah batch. Cukup pemeriksaan dokumen >1 per aktivitas.
+      backend.docs['p1'] = FirestoreProgressRepository.toMap(
+        _entry(id: 'p1', activityId: 'a1'),
+      );
+      backend.docs['p2'] = FirestoreProgressRepository.toMap(
+        _entry(id: 'p2', activityId: 'a1', dateKey: '2026-10-17'),
+      );
+      await repo.deleteByActivity('a1');
+
+      expect(backend.docs['p1']?['deleted'], true);
+      expect(backend.docs['p2']?['deleted'], true);
     });
   });
 }

@@ -163,6 +163,82 @@ async function main() {
   await check('anonim TIDAK bisa WRITE', () =>
     assertFails(setDoc(activityDoc(anon, 'alice', 'a8'), alive('a8'))));
 
+  // --- progress skema v2 (pola persis yang ditulis CloudFirstProgressRepository) ---
+  // Seed doc progress seperti hasil v1 lawas (dual-write) untuk menguji
+  // jalur tombstone/update di atas dokumen yang sudah ada.
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/alice/progress/p0'), {
+      id: 'p0',
+      activityId: 'act1',
+      dateKey: '2026-10-18',
+      status: 'not_done',
+      createdAt: '2026-10-18T02:00:00.000Z',
+      updatedAt: '2026-10-18T02:00:00.000Z', // v1: ISO string
+    });
+  });
+
+  await check(
+    'progress UPDATE merge-set skema v2 penuh (id + serverTimestamp + deleted false) -> DITERIMA',
+    () =>
+      assertSucceeds(
+        setDoc(
+          doc(alice, 'users/alice/progress/p0'),
+          {
+            id: 'p0',
+            activityId: 'act1',
+            dateKey: '2026-10-18',
+            status: 'done',
+            subCompleted: 1,
+            subTotal: 2,
+            completedSubActivities: [],
+            photoNote: null,
+            notes: null,
+            completionTime: null,
+            createdAt: '2026-10-18T02:00:00.000Z',
+            clientUpdatedAt: '2026-10-18T10:00:00.000Z',
+            updatedAt: serverTimestamp(),
+            deleted: false,
+            deletedAt: null,
+            schemaVersion: 2,
+          },
+          { merge: true },
+        ),
+      ),
+  );
+
+  await check(
+    'progress TOMBSTONE merge-set (deleted true + deletedAt + updatedAt serverTimestamp) -> DITERIMA',
+    () =>
+      assertSucceeds(
+        setDoc(
+          doc(alice, 'users/alice/progress/p0'),
+          {
+            deleted: true,
+            deletedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        ),
+      ),
+  );
+
+  await check('progress HARD DELETE -> DITOLAK (tombstone saja)', () =>
+    assertFails(deleteDoc(doc(alice, 'users/alice/progress/p0'))));
+
+  await check(
+    'progress CREATE skema v1 lawas (updatedAt ISO, tanpa deleted) -> DITOLAK',
+    () =>
+      assertFails(
+        setDoc(doc(alice, 'users/alice/progress/p9'), {
+          id: 'p9',
+          activityId: 'act1',
+          dateKey: '2026-10-18',
+          status: 'done',
+          updatedAt: '2026-10-18T10:00:00.000Z',
+        }),
+      ),
+  );
+
   // --- koleksi lain memakai kontrak sama ---
   await check('owner CREATE progress + serverTimestamp() -> DITERIMA', () =>
     assertSucceeds(

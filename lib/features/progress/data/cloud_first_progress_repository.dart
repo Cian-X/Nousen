@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:nousen/features/progress/data/cloud_progress_backend.dart';
-import 'package:nousen/features/progress/data/firestore_progress_repository.dart';
-import 'package:nousen/features/progress/data/progress_sync_failures.dart';
+import 'package:nousen/features/progress/data/firestore_progress_repository.dart';import 'package:nousen/features/progress/data/progress_sync_failures.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/progress/domain/progress_repository.dart';
 import 'package:nousen/services/firebase/firebase_auth_state.dart';
@@ -11,11 +10,20 @@ import 'package:nousen/services/firebase/firebase_auth_state.dart';
 /// Repository progress cloud-first (S2) — pola sama dengan
 /// `CloudFirstActivityRepository` S1b.
 ///
-/// Path: `/users/{uid}/progress/{entryId}` — skema dokumen tetap v1
-/// (identik `FirestoreProgressRepository.toMap/fromMap`): tanpa tombstone
-/// `deleted`, hapus per-activity = batch hard delete. Kontrak skema
-/// disatukan di [FirestoreProgressRepository] agar kompatibel dengan jalur
-/// dual-write (rollback / restore).
+/// Path: `/users/{uid}/progress/{entryId}` — skema dokumen v2
+/// (`progressCloudDocMap`: `updatedAt` server timestamp, `clientUpdatedAt`
+/// audit, `deleted: false`, `schemaVersion: 2`; subset
+/// `backfill_mappers.progressBackfillMap`). Hapus per-activity = batch
+/// TOMBSTONE (bukan hard delete — rules v2 melarang delete;
+/// `progressTombstoneMap`). Jalur dual-write (flag OFF) tetap skema v1
+/// lama dan tidak diubah.
+///
+/// Baca kompatibel dokumen v1 lawas: dokumen TANPA field `deleted`
+/// (termasuk hasil dual-write/backfill lama) dianggap hidup
+/// (`isProgressDocAlive`); dokumen tombstone (`deleted == true`) tidak
+/// pernah keluar dari jalur baca apa pun (watch/`getAll`/
+/// `getByActivityAndDate`). Dengan begitu TIDAK ada migration/backfill
+/// yang diperlukan untuk menampilkan data lama.
 ///
 /// Semantik baca/tulis (S2):
 /// - BACA selalu dari Firestore (authoritative, cloud-first). Khusus
@@ -112,7 +120,10 @@ class CloudFirstProgressRepository implements ProgressRepository {
     Iterable<Map<String, dynamic>> docs, {
     required int Function(ProgressEntryModel a, ProgressEntryModel b) compare,
   }) {
+    // Tombstone (deleted == true) tidak pernah keluar melewati sini —
+    // dokumen tanpa field `deleted` (v1 lawas) dianggap hidup.
     final List<ProgressEntryModel> models = docs
+        .where(isProgressDocAlive)
         .map(FirestoreProgressRepository.fromMap)
         .toList();
     models.sort(compare);
@@ -394,7 +405,7 @@ class CloudFirstProgressRepository implements ProgressRepository {
   Future<List<ProgressEntryModel>> getAll() async {
     final List<Map<String, dynamic>> docs = await _backend.queryAll(_uid);
     return _withLocalPhotos(
-      _models(docs, compare: _byDateKeyDesc),
+      _models(docs.where(isProgressDocAlive).toList(), compare: _byDateKeyDesc),
       debugTag: 'getAll',
     );
   }
@@ -409,7 +420,7 @@ class CloudFirstProgressRepository implements ProgressRepository {
       activityId: activityId,
       dateKey: dateKey,
     );
-    if (data == null) {
+    if (data == null || !isProgressDocAlive(data)) {
       return null;
     }
     final List<ProgressEntryModel> overlaid = await _withLocalPhotos(
@@ -427,7 +438,7 @@ class CloudFirstProgressRepository implements ProgressRepository {
     final String uid = _uid;
     final int attempt = _registerWrite(entry.id);
     _trackAck(
-      _backend.setDoc(uid, entry.id, FirestoreProgressRepository.toMap(entry)),
+      _backend.setDoc(uid, entry.id, progressCloudDocMap(entry)),
       guardKey: entry.id,
       recordId: entry.id,
       attempt: attempt,
@@ -445,6 +456,10 @@ class CloudFirstProgressRepository implements ProgressRepository {
     final String guardKey = '$_deleteByActivityGuardPrefix$activityId';
     final int attempt = _registerWrite(guardKey);
     _trackAck(
+      // Tombstone cloud per doc milik aktivitas (backend), BUKAN hard
+      // delete — riwayat audit tetap ada di cloud dan rules v2 melarang
+      // hard delete. Mirror Isar tetap HARD delete lokal (rollback tidak
+      // memunculkan entri yang sudah dihapus user).
       _backend.deleteByActivity(uid, activityId),
       guardKey: guardKey,
       recordId: activityId,

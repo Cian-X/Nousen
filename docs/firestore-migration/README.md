@@ -1311,3 +1311,66 @@ Urutan yang direncanakan (BELUM dieksekusi):
   heuristik clock skew; belum ada apply, upload foto Storage, atau
   rekonsiliasi notifikasi aktual (hanya daftar id).
 - Tidak ada perubahan perilaku aplikasi pada S6.0.
+
+## 18. Progress naik ke skema v2 (syarat rules v2 — 2026-10-31)
+
+Status: **diimplementasikan + tes hijau; tidak men-deploy apa pun — rules
+aktif di produksi masih rules lawas (owner-only). Kejadian pemicu: deploy
+rules draf v2 pada 2026-10-31 menolak tulis progress (PERMISSION_DENIED
+"Gagal simpan progres ke cloud") karena skema progress masih v1 → rules
+di-rollback ke lawas pada hari yang sama; upgrade skema dikerjakan agar
+rules v2 bisa di-deploy ulang setelah semua uji lulus.**
+
+Akar masalah (rules v2 vs kode progress v1):
+- `CloudFirstProgressRepository` menulis `updatedAt` sebagai string ISO
+  dan tanpa field `deleted` → ditolak `updatedAt == request.time` dan
+  `deleted == false`;
+- `deleteByActivity` batch hard delete → ditolak `allow delete: false`.
+  Activities/reminders/notes/settings memang sudah v2, jadi hanya progress
+  yang gugur.
+
+### 18.1 Perubahan
+
+- `progress_cloud_doc` helper (`cloud_progress_backend.dart`):
+  `progressCloudDocMap` (dasar `toMap` v1 + `clientUpdatedAt` audit +
+  `updatedAt` = `FieldValue.serverTimestamp()` + `deleted: false` +
+  `deletedAt: null` + `schemaVersion: 2`, subset
+  `backfill_mappers.progressBackfillMap`), `progressTombstoneMap`
+  (`deleted: true`, `deletedAt` + `updatedAt` serverTimestamp), dan
+  `isProgressDocAlive` (dokumen tanpa field `deleted` = hidup).
+- `FirestoreCloudProgressBackend.deleteByActivity` → batch TOMBSTONE
+  merge-set per dokumen (chunking ≤450/batch), TANPA hard delete.
+- `getByActivityAndDate` produksi → tanpa `limit(1)`: pasangan
+  (activityId, dateKey) bisa punya beberapa dokumen (id entry uuid, bukan
+  deterministik) — pilih dokumen PERTAMA yang hidup; tombstone dibuang.
+- Repository cloud-first progress: semua jalur baca
+  (`watchAll`/`watchByActivity`/`watchByDate`/`watchByDateRange`/`getAll`/
+  `getByActivityAndDate`) menyembunyikan dokumen tombstone melalui filter
+  `isProgressDocAlive`; dokumen v1 lawas (tanpa field `deleted`) tetap
+  tampil — **tidak ada migration/backfill yang diperlukan**.
+- Merge-set dengan payload v2 pada dokumen tombstone yang sama
+  ME-REVIVE dokumen itu (deleted kembali false).
+  - `upsert` menulis `progressCloudDocMap` (v2) — bukan `toMap` v1.
+- Jalur dual-write (flag OFF) + `DualWriteProgressRepository` +
+  `FirestoreProgressRepository` TIDAK diubah (tetap v1 lama).
+
+### 18.2 Verifikasi (2026-10-31)
+
+| Verifikasi | Hasil |
+| --- | --- |
+| Suite progress v2 (`cloud_first_progress_repository_test.dart` — 9 kasus baru: skema v2 fields, tombstone hidden di semua watch, dokumen v1 lawas tetap tampil, revive merge-set, pending tombstone semantics) | 38/38 PASSED (termasuk wiring test) |
+| Full suite fresh | **276 PASSED, 2 accessing pre-existing** `typography_guardrails_test` (sama dengan baseline S6.0) |
+| `dart analyze lib test` | 64 = baseline (0 error) |
+| Emulator rules (`firestore/rules_tests/firestore.rules.test.cjs`) — 4 cek baru progress v2 (update merge-set penuh v2 diterima; tombstone merge-set diterima; hard delete ditolak; create skema v1 lawas ditolak) | **23/23 PASSED** |
+| `git diff --check` | bersih |
+
+### 18.3 Urutan setelah upgrade (jangan sampai terbalik)
+
+1. Deploy rules lawas yang sedang aktif → app normal (SUDAH terjadi
+   rollback 2026-10-31).
+2. Build + install APK cloud-first dengan progress v2 ini → cek dulu
+   tulis/hapus progress di device.
+3. Setelah device aman → deploy rules draf v2 → uji ulang (tulis +
+   tombstone + tidak ada badge merah). Emulator sudah 23/23.
+4. Setelah itu baru lanjut live run S6.0 (backfill login-first) sesuai
+   gate §17.4.
