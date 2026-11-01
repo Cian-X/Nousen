@@ -752,7 +752,6 @@ class _HomeCalendarSelector extends StatelessWidget {
     final DateTime endDate = twoWeeksDays.last;
     final String rangeLabel =
         '${DateFormat('dd MMM', localeCode).format(startDate)} – ${DateFormat('dd MMM', localeCode).format(endDate)}';
-    final int quarter = ((startDate.month - 1) ~/ 3) + 1;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -774,42 +773,20 @@ class _HomeCalendarSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Header: Calendar Icon + Range + Quarter Badge
+          // Header: Calendar Icon + Range
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.calendar_month_outlined,
-                    size: 20,
-                    color: Color(0xFF3B7BD6),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    rangeLabel,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
+              const Icon(
+                Icons.calendar_month_outlined,
+                size: 20,
+                color: Color(0xFF3B7BD6),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0F2FE),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'Q$quarter',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0284C7),
-                  ),
+              const SizedBox(width: 8),
+              Text(
+                rangeLabel,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
             ],
