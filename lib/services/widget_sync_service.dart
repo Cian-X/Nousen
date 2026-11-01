@@ -76,11 +76,16 @@ class WidgetSyncService {
         final ProgressEntryModel? progress = todayProgress
             .where((ProgressEntryModel p) => p.activityId == a.id)
             .firstOrNull;
-        final bool isDone = progress != null &&
-            (progress.status == ActivityDayStatus.done ||
-                progress.status == ActivityDayStatus.skipped);
         final List<String> completedSubs =
             progress?.completedSubActivities ?? const <String>[];
+        final bool parentDone = progress != null &&
+            (progress.status == ActivityDayStatus.done ||
+                progress.status == ActivityDayStatus.skipped);
+        // Induk dan sub adalah unit terpisah: jadwal baru selesai bila
+        // induk selesai DAN seluruh sub selesai.
+        final bool isDone = parentDone &&
+            (a.subActivities.isEmpty ||
+                a.subActivities.every(completedSubs.contains));
 
         allItems.add(
           _ScheduleItem(
@@ -320,6 +325,8 @@ class WidgetSyncService {
       final int subIndex =
           int.tryParse(uri.queryParameters['subIndex'] ?? '') ?? -1;
 
+      debugPrint('[widget-sync] handleBackgroundAction uri=$uri action=$action type=$type id=$id subIndex=$subIndex');
+
       // Handle refresh (midnight / timezone change)
       if (uri.scheme == 'nousen' && uri.host == 'widget_action') {
         final directory = await getApplicationDocumentsDirectory();
@@ -385,15 +392,9 @@ class WidgetSyncService {
               }
             }
           } else {
+            // Toggle induk saja — JANGAN ubah completedSubActivities.
             final bool nextDone = !reminder.isCompleted;
             reminder.isCompleted = nextDone;
-            if (nextDone) {
-              reminder.completedSubActivities = List<String>.from(
-                reminder.subActivities ?? const <String>[],
-              );
-            } else {
-              reminder.completedSubActivities = const <String>[];
-            }
           }
           reminder.updatedAt = now;
           await isar.writeTxn(() async {
@@ -449,20 +450,15 @@ class WidgetSyncService {
               }
             }
           } else {
+            // Toggle induk saja — JANGAN ubah completedSubActivities.
             final bool isCurrentlyDone =
                 progress.statusKey == ActivityDayStatus.done.storageKey;
             if (isCurrentlyDone) {
               progress.statusKey = ActivityDayStatus.notDone.storageKey;
               progress.isCompleted = false;
-              progress.completedSubActivities = const <String>[];
-              progress.subCompleted = 0;
             } else {
               progress.statusKey = ActivityDayStatus.done.storageKey;
               progress.isCompleted = true;
-              progress.completedSubActivities = List<String>.from(
-                activity.subActivities,
-              );
-              progress.subCompleted = activity.subActivities.length;
             }
           }
           progress.updatedAt = now;

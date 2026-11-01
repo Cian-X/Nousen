@@ -6,12 +6,35 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
-import es.antonborri.home_widget.HomeWidgetBackgroundIntent
+import es.antonborri.home_widget.HomeWidgetBackgroundReceiver
 import es.antonborri.home_widget.HomeWidgetProvider
 
 class NousenAppWidgetProvider : HomeWidgetProvider() {
+
+    companion object {
+        private const val BACKGROUND_ACTION = "es.antonborri.home_widget.action.BACKGROUND"
+
+        /**
+         * Buat PendingIntent dengan requestCode unik.
+         * Library home_widget selalu pakai requestCode=0 + FLAG_UPDATE_CURRENT,
+         * sehingga semua PendingIntent saling timpa. Solusi: buat sendiri
+         * dengan requestCode berbeda per checkbox.
+         */
+        fun getUniqueBroadcast(context: Context, uri: Uri, requestCode: Int): PendingIntent {
+            val intent = Intent(context, HomeWidgetBackgroundReceiver::class.java).apply {
+                data = uri
+                action = BACKGROUND_ACTION
+            }
+            var flags = PendingIntent.FLAG_UPDATE_CURRENT
+            if (Build.VERSION.SDK_INT >= 23) {
+                flags = flags or PendingIntent.FLAG_IMMUTABLE
+            }
+            return PendingIntent.getBroadcast(context, requestCode, intent, flags)
+        }
+    }
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -57,9 +80,10 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                 )
 
                 if (!activeUri.isNullOrEmpty()) {
-                    val togglePendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
+                    val togglePendingIntent = getUniqueBroadcast(
                         context,
-                        Uri.parse(activeUri)
+                        Uri.parse(activeUri),
+                        1000 // requestCode unik: active main
                     )
                     views.setOnClickPendingIntent(R.id.widget_active_main_check, togglePendingIntent)
                 }
@@ -97,9 +121,10 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                         )
 
                         if (!subUri.isNullOrEmpty()) {
-                            val subTogglePendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
+                            val subTogglePendingIntent = getUniqueBroadcast(
                                 context,
-                                Uri.parse(subUri)
+                                Uri.parse(subUri),
+                                1001 + i // requestCode unik: active sub 0/1/2
                             )
                             views.setOnClickPendingIntent(subChecks[i], subTogglePendingIntent)
                         }
@@ -203,9 +228,10 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                         )
 
                         if (!uri.isNullOrEmpty()) {
-                            val togglePendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
+                            val togglePendingIntent = getUniqueBroadcast(
                                 context,
-                                Uri.parse(uri)
+                                Uri.parse(uri),
+                                2000 + i // requestCode unik: idle item 0/1/2/3
                             )
                             views.setOnClickPendingIntent(itemChecks[i], togglePendingIntent)
                         }
@@ -230,9 +256,10 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
             action == "android.intent.action.TIME_SET"
         ) {
             try {
-                val refreshIntent = HomeWidgetBackgroundIntent.getBroadcast(
+                val refreshIntent = getUniqueBroadcast(
                     context,
-                    Uri.parse("nousen://widget_action?action=refresh")
+                    Uri.parse("nousen://widget_action?action=refresh"),
+                    9999 // requestCode unik: midnight refresh
                 )
                 refreshIntent.send()
             } catch (_: Exception) {
