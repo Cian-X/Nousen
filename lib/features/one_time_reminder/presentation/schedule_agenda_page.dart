@@ -1070,7 +1070,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
             ),
             if (hasSubs && _expanded)
               Padding(
-                padding: const EdgeInsets.only(top: 8, left: 16),
+                padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: item.subActivities.map((String sub) {
@@ -1097,7 +1097,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                                 sub,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: stateColor,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: checked
                                       ? FontWeight.w600
                                       : FontWeight.w500,

@@ -50,7 +50,7 @@
         android:orientation="vertical"
         android:visibility="visible">
 
-        <!-- Section Header: Agenda -->
+        <!-- Section Header: Agenda (shown above first agenda item) -->
         <TextView
             android:id="@+id/widget_idle_agenda_header"
             android:layout_width="match_parent"
@@ -62,15 +62,16 @@
             android:paddingBottom="4dp"
             android:visibility="gone" />
 
-        <!-- Section Header: Aktivitas Harian -->
+        <!-- Activity Header before Item 1 (shown when first activity is at slot 0) -->
         <TextView
-            android:id="@+id/widget_idle_activity_header"
+            android:id="@+id/widget_idle_activity_header_0"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Aktivitas Harian (0)"
             android:textColor="#64748B"
             android:textSize="11sp"
             android:textStyle="bold"
+            android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:visibility="gone" />
 
@@ -130,6 +131,19 @@
                 android:contentDescription="Toggle item 1" />
         </LinearLayout>
 
+        <!-- Activity Header before Item 2 -->
+        <TextView
+            android:id="@+id/widget_idle_activity_header_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktivitas Harian (0)"
+            android:textColor="#64748B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
         <!-- Item 2 -->
         <LinearLayout
             android:id="@+id/widget_idle_item_2"
@@ -186,6 +200,19 @@
                 android:contentDescription="Toggle item 2" />
         </LinearLayout>
 
+        <!-- Activity Header before Item 3 -->
+        <TextView
+            android:id="@+id/widget_idle_activity_header_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktivitas Harian (0)"
+            android:textColor="#64748B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
         <!-- Item 3 -->
         <LinearLayout
             android:id="@+id/widget_idle_item_3"
@@ -241,6 +268,19 @@
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Toggle item 3" />
         </LinearLayout>
+
+        <!-- Activity Header before Item 4 -->
+        <TextView
+            android:id="@+id/widget_idle_activity_header_3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktivitas Harian (0)"
+            android:textColor="#64748B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
 
         <!-- Item 4 -->
         <LinearLayout

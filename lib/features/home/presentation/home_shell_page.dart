@@ -1273,7 +1273,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                   // Expandable subtasks checklist
                   if (subTotal > 0 && isExpanded)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 16),
+                      padding: const EdgeInsets.only(top: 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: activity.subActivities.map((
@@ -1332,7 +1332,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                       style: theme.textTheme.bodySmall
                                           ?.copyWith(
                                             fontSize: 13,
-                                            color: subIndicatorColor,
+                                            color: theme.colorScheme.onSurface,
                                             fontWeight: checked
                                                 ? FontWeight.w600
                                                 : FontWeight.w500,

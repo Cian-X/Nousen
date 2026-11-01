@@ -149,7 +149,9 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                 if (itemCount == 0) {
                     views.setViewVisibility(R.id.widget_idle_empty, View.VISIBLE)
                     views.setViewVisibility(R.id.widget_idle_agenda_header, View.GONE)
-                    views.setViewVisibility(R.id.widget_idle_activity_header, View.GONE)
+                    for (hdr in listOf(R.id.widget_idle_activity_header_0, R.id.widget_idle_activity_header_1, R.id.widget_idle_activity_header_2, R.id.widget_idle_activity_header_3)) {
+                        views.setViewVisibility(hdr, View.GONE)
+                    }
                 } else {
                     views.setViewVisibility(R.id.widget_idle_empty, View.GONE)
 
@@ -164,11 +166,22 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                         views.setViewVisibility(R.id.widget_idle_agenda_header, View.GONE)
                     }
 
+                    // Find the first activity slot to place the activity header
+                    val activityHeaders = listOf(R.id.widget_idle_activity_header_0, R.id.widget_idle_activity_header_1, R.id.widget_idle_activity_header_2, R.id.widget_idle_activity_header_3)
+                    // Hide all activity headers first
+                    for (hdr in activityHeaders) {
+                        views.setViewVisibility(hdr, View.GONE)
+                    }
+                    // Show the one before the first activity item
                     if (activityCount > 0) {
-                        views.setViewVisibility(R.id.widget_idle_activity_header, View.VISIBLE)
-                        views.setTextViewText(R.id.widget_idle_activity_header, "Aktivitas Harian ($activityCount)")
-                    } else {
-                        views.setViewVisibility(R.id.widget_idle_activity_header, View.GONE)
+                        for (i in 0 until itemCount) {
+                            val itemType = widgetData.getString("widget_idle_item_${i}_type", "")
+                            if (itemType == "activity") {
+                                views.setViewVisibility(activityHeaders[i], View.VISIBLE)
+                                views.setTextViewText(activityHeaders[i], "Aktivitas Harian ($activityCount)")
+                                break
+                            }
+                        }
                     }
                 }
 

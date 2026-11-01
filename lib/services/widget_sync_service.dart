@@ -221,6 +221,18 @@ class WidgetSyncService {
           activityCount,
         );
 
+        // Sort: agenda first, then activities; within each group sort by time
+        allItems.sort(
+          (_ScheduleItem a, _ScheduleItem b) {
+            // reminder (agenda) before activity
+            final int typeCompare = a.type == b.type
+                ? 0
+                : (a.type == 'reminder' ? -1 : 1);
+            if (typeCompare != 0) return typeCompare;
+            return a.timeMinutes.compareTo(b.timeMinutes);
+          },
+        );
+
         final int itemCount = min(4, allItems.length);
         await HomeWidget.saveWidgetData<int>(
           'widget_idle_item_count',
@@ -253,6 +265,10 @@ class WidgetSyncService {
           await HomeWidget.saveWidgetData<String>(
             'widget_idle_item_${i}_uri',
             'nousen://toggle?type=${item.type}&id=${item.id}&dateKey=$todayDateKey',
+          );
+          await HomeWidget.saveWidgetData<String>(
+            'widget_idle_item_${i}_type',
+            item.type,
           );
         }
       }
