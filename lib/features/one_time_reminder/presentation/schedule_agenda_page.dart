@@ -981,7 +981,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
       borderRadius: BorderRadius.circular(16),
       onTap: () => widget.onOpenDetail(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),

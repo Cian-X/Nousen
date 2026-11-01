@@ -440,7 +440,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                     Padding(
                       key: ValueKey<String>('agenda-${reminder.id}'),
                       padding: EdgeInsets.only(
-                        bottom: 10,
+                        bottom: 8,
                         left: sidePadding,
                         right: sidePadding,
                       ),
@@ -495,7 +495,7 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                         '$selectedDateKey-${item.activity.id}',
                       ),
                       padding: EdgeInsets.only(
-                        top: (i == 0 && dayReminders.isEmpty) ? 0 : 10,
+                        bottom: 8,
                         left: sidePadding,
                         right: sidePadding,
                       ),
@@ -1157,7 +1157,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -1200,8 +1200,8 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.titleMedium
                                         ?.copyWith(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                           color: const Color(0xFF0F172A),
                                           decoration: null,
                                         ),
@@ -1214,7 +1214,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               activity.subActivities.isNotEmpty
                                   ? (localeCode == 'id'
@@ -1226,7 +1226,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: const Color(0xFF64748B),
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1281,7 +1281,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                             color: entry?.isCompleted == true
                                 ? theme.colorScheme.primary
                                 : (canToggleToday
-                                      ? theme.colorScheme.primary
+                                      ? borderColor
                                       : theme.colorScheme.onSurface.withValues(
                                           alpha: 0.3,
                                         )),
