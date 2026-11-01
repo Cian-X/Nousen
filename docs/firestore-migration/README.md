@@ -1322,6 +1322,9 @@ karena skema progress masih v1 → rules di-rollback ke lawas pada hari yang
 sama; upgrade skema dikerjakan lalu rules v2 di-deploy ulang setelah semua
 uji lulus. Commit kode: `92cf199`.
 
+> Log uji perangkat, hash APK, bukti rules aktif, dan daftar bug:
+> [`CHANGELOG.md`](./CHANGELOG.md).
+
 Akar masalah (rules v2 vs kode progress v1):
 - `CloudFirstProgressRepository` menulis `updatedAt` sebagai string ISO
   dan tanpa field `deleted` → ditolak `updatedAt == request.time` dan
