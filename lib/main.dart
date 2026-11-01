@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 import 'package:nousen/app/app.dart';
 import 'package:nousen/app/providers.dart';
@@ -16,6 +17,7 @@ import 'package:nousen/features/settings/data/app_settings_entity.dart';
 import 'package:nousen/services/notification_action.dart';
 import 'package:nousen/services/notification_scheduler.dart';
 import 'package:nousen/services/firebase/firebase_bootstrap.dart';
+import 'package:nousen/services/widget_sync_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {
@@ -50,6 +52,7 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  HomeWidget.registerInteractivityCallback(homeWidgetBackgroundCallback);
   await SmartActivityAdvisor.initializeProfiles();
 
   // Firebase opsional: tanpa google-services.json, bootstrap mengembalikan

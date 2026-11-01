@@ -1,8 +1,48 @@
+import 'dart:math';
+
 import 'package:home_widget/home_widget.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:nousen/core/utils/date_utils.dart';
 import 'package:nousen/core/utils/time_utils.dart';
+import 'package:nousen/features/activity/data/activity_entity.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/one_time_reminder/data/agenda_note_entity.dart';
+import 'package:nousen/features/one_time_reminder/data/one_time_reminder_entity.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/progress/data/progress_entry_entity.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/settings/data/app_settings_entity.dart';
+
+@pragma('vm:entry-point')
+Future<void> homeWidgetBackgroundCallback(Uri? uri) async {
+  if (uri == null) {
+    return;
+  }
+  await WidgetSyncService.handleBackgroundAction(uri);
+}
+
+class _ScheduleItem {
+  const _ScheduleItem({
+    required this.id,
+    required this.title,
+    required this.timeMinutes,
+    required this.type,
+    required this.isCompleted,
+    required this.subActivities,
+    required this.completedSubActivities,
+  });
+
+  final String id;
+  final String title;
+  final int timeMinutes;
+  final String type; // 'activity' | 'reminder'
+  final bool isCompleted;
+  final List<String> subActivities;
+  final List<String> completedSubActivities;
+}
 
 class WidgetSyncService {
   const WidgetSyncService._();
@@ -15,46 +55,170 @@ class WidgetSyncService {
     required List<OneTimeReminderModel> todayReminders,
   }) async {
     try {
-      final now = DateTime.now();
-      final todayWeekday = now.weekday;
+      final DateTime now = DateTime.now();
+      final int todayWeekday = now.weekday;
+      final int currentMinutes = now.hour * 60 + now.minute;
+      final String todayDateKey = dateKeyFromDate(now);
 
-      final todayActivities = activities
-          .where((a) => a.selectedDays.contains(todayWeekday))
-          .toList();
+      final List<_ScheduleItem> allItems = <_ScheduleItem>[];
 
-      final completedActivityIds = todayProgress
-          .where((p) =>
-              p.status == ActivityDayStatus.done ||
-              p.status == ActivityDayStatus.skipped)
-          .map((p) => p.activityId)
-          .toSet();
+      // 1. Aktivitas harian hari ini
+      for (final ActivityModel a in activities) {
+        if (!a.selectedDays.contains(todayWeekday)) {
+          continue;
+        }
+        final ProgressEntryModel? progress = todayProgress
+            .where((ProgressEntryModel p) => p.activityId == a.id)
+            .firstOrNull;
+        final bool isDone = progress != null &&
+            (progress.status == ActivityDayStatus.done ||
+                progress.status == ActivityDayStatus.skipped);
+        final List<String> completedSubs =
+            progress?.completedSubActivities ?? const <String>[];
 
-      final pendingActivities = todayActivities
-          .where((a) => !completedActivityIds.contains(a.id))
-          .toList();
-
-      final pendingReminders = todayReminders
-          .where((r) => !r.isCompleted)
-          .toList();
-
-      final totalPending = pendingActivities.length + pendingReminders.length;
-
-      String title = 'Semua aktivitas selesai!';
-      String subtitle = 'Bagus sekali! Tidak ada tugas tertunda.';
-
-      if (pendingReminders.isNotEmpty) {
-        final nextReminder = pendingReminders.first;
-        title = nextReminder.title;
-        subtitle = 'Agenda \u2022 ${nextReminder.scheduledAt.hour.toString().padLeft(2, '0')}:${nextReminder.scheduledAt.minute.toString().padLeft(2, '0')}';
-      } else if (pendingActivities.isNotEmpty) {
-        final nextActivity = pendingActivities.first;
-        title = nextActivity.title;
-        subtitle = 'Aktivitas \u2022 ${formatMinutesAsTime(nextActivity.timeMinutes)}';
+        allItems.add(
+          _ScheduleItem(
+            id: a.id,
+            title: a.title,
+            timeMinutes: a.timeMinutes,
+            type: 'activity',
+            isCompleted: isDone,
+            subActivities: a.subActivities,
+            completedSubActivities: completedSubs,
+          ),
+        );
       }
 
-      await HomeWidget.saveWidgetData<String>('widget_title', title);
-      await HomeWidget.saveWidgetData<String>('widget_subtitle', subtitle);
-      await HomeWidget.saveWidgetData<String>('widget_count', '$totalPending pending');
+      // 2. Agenda satu kali hari ini
+      for (final OneTimeReminderModel r in todayReminders) {
+        if (!isSameDay(r.scheduledAt, now)) {
+          continue;
+        }
+        final bool isDone = r.isCompleted || r.isSkipped;
+        final int rMinutes = r.scheduledAt.hour * 60 + r.scheduledAt.minute;
+
+        allItems.add(
+          _ScheduleItem(
+            id: r.id,
+            title: r.title,
+            timeMinutes: rMinutes,
+            type: 'reminder',
+            isCompleted: isDone,
+            subActivities: r.subActivities,
+            completedSubActivities: r.completedSubActivities,
+          ),
+        );
+      }
+
+      // Sort chronological untuk Idle view
+      allItems.sort(
+        (_ScheduleItem a, _ScheduleItem b) =>
+            a.timeMinutes.compareTo(b.timeMinutes),
+      );
+
+      // Cek Active Stack (jadwal yang sudah tiba jamnya dan belum selesai 100%)
+      final List<_ScheduleItem> activeStack = allItems
+          .where(
+            (_ScheduleItem item) =>
+                item.timeMinutes <= currentMinutes && !item.isCompleted,
+          )
+          .toList();
+
+      // Prioritas LIFO (jadwal yang paling baru aktif berada di posisi teratas)
+      activeStack.sort(
+        (_ScheduleItem a, _ScheduleItem b) =>
+            b.timeMinutes.compareTo(a.timeMinutes),
+      );
+
+      if (activeStack.isNotEmpty) {
+        // === MODE AKTIF (Menyorot jadwal terbaru yang belum tuntas) ===
+        final _ScheduleItem activeItem = activeStack.first;
+
+        await HomeWidget.saveWidgetData<String>('widget_mode', 'active');
+        await HomeWidget.saveWidgetData<String>(
+          'widget_status_badge',
+          'Sedang Aktif',
+        );
+        await HomeWidget.saveWidgetData<String>(
+          'widget_active_title',
+          activeItem.title,
+        );
+        await HomeWidget.saveWidgetData<String>(
+          'widget_active_time',
+          formatMinutesAsTime(activeItem.timeMinutes),
+        );
+        await HomeWidget.saveWidgetData<bool>(
+          'widget_active_done',
+          activeItem.isCompleted,
+        );
+        await HomeWidget.saveWidgetData<String>(
+          'widget_active_uri',
+          'nousen://toggle?type=${activeItem.type}&id=${activeItem.id}&dateKey=$todayDateKey',
+        );
+
+        final int subCount = min(3, activeItem.subActivities.length);
+        await HomeWidget.saveWidgetData<int>(
+          'widget_active_sub_count',
+          subCount,
+        );
+
+        for (int i = 0; i < subCount; i++) {
+          final String subTitle = activeItem.subActivities[i];
+          final bool subDone =
+              activeItem.completedSubActivities.contains(subTitle);
+          await HomeWidget.saveWidgetData<String>(
+            'widget_active_sub_${i}_title',
+            subTitle,
+          );
+          await HomeWidget.saveWidgetData<bool>(
+            'widget_active_sub_${i}_done',
+            subDone,
+          );
+          await HomeWidget.saveWidgetData<String>(
+            'widget_active_sub_${i}_uri',
+            'nousen://toggle-sub?type=${activeItem.type}&id=${activeItem.id}&subIndex=$i&dateKey=$todayDateKey',
+          );
+        }
+      } else {
+        // === MODE IDLE (List aktivitas & agenda hari ini) ===
+        final int totalPending =
+            allItems.where((_ScheduleItem i) => !i.isCompleted).length;
+        final String statusBadge = totalPending > 0
+            ? '$totalPending pending'
+            : 'Semua selesai!';
+
+        await HomeWidget.saveWidgetData<String>('widget_mode', 'idle');
+        await HomeWidget.saveWidgetData<String>(
+          'widget_status_badge',
+          statusBadge,
+        );
+
+        final int itemCount = min(4, allItems.length);
+        await HomeWidget.saveWidgetData<int>(
+          'widget_idle_item_count',
+          itemCount,
+        );
+
+        for (int i = 0; i < itemCount; i++) {
+          final _ScheduleItem item = allItems[i];
+          await HomeWidget.saveWidgetData<String>(
+            'widget_idle_item_${i}_title',
+            item.title,
+          );
+          await HomeWidget.saveWidgetData<String>(
+            'widget_idle_item_${i}_time',
+            formatMinutesAsTime(item.timeMinutes),
+          );
+          await HomeWidget.saveWidgetData<bool>(
+            'widget_idle_item_${i}_done',
+            item.isCompleted,
+          );
+          await HomeWidget.saveWidgetData<String>(
+            'widget_idle_item_${i}_uri',
+            'nousen://toggle?type=${item.type}&id=${item.id}&dateKey=$todayDateKey',
+          );
+        }
+      }
 
       await HomeWidget.updateWidget(
         name: appWidgetProvider,
@@ -62,6 +226,176 @@ class WidgetSyncService {
       );
     } catch (_) {
       // Non-fatal widget sync
+    }
+  }
+
+  static Future<void> updateWidgetFromIsar(Isar isar) async {
+    try {
+      final now = DateTime.now();
+      final todayDateKey = dateKeyFromDate(now);
+
+      final actEntities = await isar.activityEntitys.where().findAll();
+      final progressEntities = await isar.progressEntryEntitys
+          .filter()
+          .dateKeyEqualTo(todayDateKey)
+          .findAll();
+      final reminderEntities =
+          await isar.oneTimeReminderEntitys.where().findAll();
+
+      final activities = actEntities.map((e) => e.toDomain()).toList();
+      final todayProgress = progressEntities.map((e) => e.toDomain()).toList();
+      final todayReminders = reminderEntities.map((e) => e.toDomain()).toList();
+
+      await updateWidget(
+        activities: activities,
+        todayProgress: todayProgress,
+        todayReminders: todayReminders,
+      );
+    } catch (_) {
+      // Non-fatal
+    }
+  }
+
+  static Future<void> handleBackgroundAction(Uri uri) async {
+    try {
+      final String type = uri.queryParameters['type'] ?? '';
+      final String id = uri.queryParameters['id'] ?? '';
+      final String action = uri.host; // 'toggle' or 'toggle-sub'
+      final int subIndex =
+          int.tryParse(uri.queryParameters['subIndex'] ?? '') ?? -1;
+
+      final directory = await getApplicationDocumentsDirectory();
+      final Isar isar = Isar.getInstance('reminder_schedule_v2') ??
+          await Isar.open(
+            <CollectionSchema<dynamic>>[
+              ActivityEntitySchema,
+              OneTimeReminderEntitySchema,
+              AgendaNoteEntitySchema,
+              ProgressEntryEntitySchema,
+              AppSettingsEntitySchema,
+            ],
+            directory: directory.path,
+            name: 'reminder_schedule_v2',
+            inspector: false,
+          );
+
+      final DateTime now = DateTime.now();
+      final String todayDateKey = dateKeyFromDate(now);
+
+      if (type == 'reminder') {
+        final OneTimeReminderEntity? reminder = await isar
+            .oneTimeReminderEntitys
+            .filter()
+            .idEqualTo(id)
+            .findFirst();
+        if (reminder != null) {
+          if (action == 'toggle-sub') {
+            final List<String> subs =
+                reminder.subActivities ?? const <String>[];
+            if (subIndex >= 0 && subIndex < subs.length) {
+              final String subTitle = subs[subIndex];
+              final Set<String> done =
+                  (reminder.completedSubActivities ?? const <String>[]).toSet();
+              if (done.contains(subTitle)) {
+                done.remove(subTitle);
+              } else {
+                done.add(subTitle);
+              }
+              reminder.completedSubActivities = done.toList();
+              if (done.length >= subs.length && subs.isNotEmpty) {
+                reminder.isCompleted = true;
+              } else {
+                reminder.isCompleted = false;
+              }
+            }
+          } else {
+            final bool nextDone = !reminder.isCompleted;
+            reminder.isCompleted = nextDone;
+            if (nextDone) {
+              reminder.completedSubActivities = List<String>.from(
+                reminder.subActivities ?? const <String>[],
+              );
+            } else {
+              reminder.completedSubActivities = const <String>[];
+            }
+          }
+          reminder.updatedAt = now;
+          await isar.writeTxn(() async {
+            await isar.oneTimeReminderEntitys.put(reminder);
+          });
+        }
+      } else if (type == 'activity') {
+        final ActivityEntity? activity =
+            await isar.activityEntitys.filter().idEqualTo(id).findFirst();
+        if (activity != null) {
+          ProgressEntryEntity? progress = await isar.progressEntryEntitys
+              .filter()
+              .activityIdEqualTo(id)
+              .dateKeyEqualTo(todayDateKey)
+              .findFirst();
+
+          progress ??= ProgressEntryEntity()
+            ..id = const Uuid().v4()
+            ..activityId = id
+            ..dateKey = todayDateKey
+            ..statusKey = ActivityDayStatus.notDone.storageKey
+            ..isCompleted = false
+            ..subCompleted = 0
+            ..subTotal = activity.subActivities.length
+            ..completedSubActivities = const <String>[]
+            ..photoPaths = const <String>[]
+            ..notes = ''
+            ..createdAt = now
+            ..updatedAt = now;
+
+          if (action == 'toggle-sub') {
+            final List<String> subs = activity.subActivities;
+            if (subIndex >= 0 && subIndex < subs.length) {
+              final String subTitle = subs[subIndex];
+              final Set<String> done =
+                  (progress.completedSubActivities).toSet();
+              if (done.contains(subTitle)) {
+                done.remove(subTitle);
+              } else {
+                done.add(subTitle);
+              }
+              progress.completedSubActivities = done.toList();
+              progress.subCompleted = done.length;
+              if (done.length >= subs.length && subs.isNotEmpty) {
+                progress.statusKey = ActivityDayStatus.done.storageKey;
+                progress.isCompleted = true;
+              } else {
+                progress.statusKey = ActivityDayStatus.notDone.storageKey;
+                progress.isCompleted = false;
+              }
+            }
+          } else {
+            final bool isCurrentlyDone =
+                progress.statusKey == ActivityDayStatus.done.storageKey;
+            if (isCurrentlyDone) {
+              progress.statusKey = ActivityDayStatus.notDone.storageKey;
+              progress.isCompleted = false;
+              progress.completedSubActivities = const <String>[];
+              progress.subCompleted = 0;
+            } else {
+              progress.statusKey = ActivityDayStatus.done.storageKey;
+              progress.isCompleted = true;
+              progress.completedSubActivities = List<String>.from(
+                activity.subActivities,
+              );
+              progress.subCompleted = activity.subActivities.length;
+            }
+          }
+          progress.updatedAt = now;
+          await isar.writeTxn(() async {
+            await isar.progressEntryEntitys.put(progress!);
+          });
+        }
+      }
+
+      await updateWidgetFromIsar(isar);
+    } catch (_) {
+      // Non-fatal
     }
   }
 }
