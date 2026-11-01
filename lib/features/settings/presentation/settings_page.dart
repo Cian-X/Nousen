@@ -2,20 +2,26 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:nousen/app/providers.dart';
-import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/constants/app_constants.dart';
-import 'package:nousen/core/widgets/nousen_nav_icon.dart';
 import 'package:nousen/core/theme/app_layout.dart';
-import 'package:nousen/features/progress/presentation/cloud_sync_indicator.dart';
+import 'package:nousen/core/utils/date_utils.dart';
 import 'package:nousen/core/utils/time_utils.dart';
-import 'package:nousen/l10n/app_localizations.dart';
+import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
+import 'package:nousen/core/widgets/nousen_nav_icon.dart';
+import 'package:nousen/features/activity/domain/activity_model.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/progress/domain/progress_entry_model.dart';
+import 'package:nousen/features/progress/presentation/cloud_sync_indicator.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/domain/weekly_routine_models.dart';
 import 'package:nousen/features/settings/presentation/initial_setup_onboarding_page.dart';
 import 'package:nousen/features/settings/presentation/settings_logout_tile.dart';
 import 'package:nousen/features/settings/presentation/settings_sync_badge.dart';
+import 'package:nousen/l10n/app_localizations.dart';
 import 'package:nousen/services/firebase/firebase_bootstrap.dart';
+import 'package:nousen/services/widget_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const String _kFeedbackUrl = 'https://www.instagram.com/muzaky7_/';
@@ -227,6 +233,31 @@ class SettingsPage extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    _SectionLabel(
+                      title: isId ? 'Widget Layar Utama' : 'Home Screen Widget',
+                    ),
+                    const SizedBox(height: 12),
+                    _SectionList(
+                      children: <Widget>[
+                        _SettingsActionItem(
+                          icon: Icons.widgets_outlined,
+                          title: isId
+                              ? 'Pasang widget Nousen'
+                              : 'Add Nousen widget',
+                          value: isId
+                              ? 'Aktifkan ke layar depan'
+                              : 'Pin to home screen',
+                          onTap: () async {
+                            await _showWidgetActivationDialog(
+                              context: context,
+                              ref: ref,
+                              localeCode: localeCode,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     _SectionLabel(title: t.language),
                     const SizedBox(height: 12),
                     _SectionList(
@@ -396,6 +427,279 @@ class SettingsPage extends ConsumerWidget {
     await ref
         .read(settingsRepositoryProvider)
         .save(settings.copyWith(localeCode: nextLocale));
+  }
+
+  Future<void> _showWidgetActivationDialog({
+    required BuildContext context,
+    required WidgetRef ref,
+    required String localeCode,
+  }) async {
+    final bool isId = localeCode == AppConstants.localeId;
+    final List<ActivityModel> allActivities =
+        ref.read(activitiesStreamProvider).value ?? const <ActivityModel>[];
+    final List<OneTimeReminderModel> allReminders =
+        ref.read(oneTimeRemindersStreamProvider).value ??
+            const <OneTimeReminderModel>[];
+    final List<ProgressEntryModel> allProgress =
+        ref.read(allProgressStreamProvider).value ??
+            const <ProgressEntryModel>[];
+    final int currentStreak = ref.read(homeGlobalStreakProvider);
+
+    final DateTime today = dateOnly(DateTime.now());
+    final String todayDateKey = dateKeyFromDate(today);
+    final List<ProgressEntryModel> todayProgress = allProgress
+        .where((ProgressEntryModel p) => p.dateKey == todayDateKey)
+        .toList();
+    final List<OneTimeReminderModel> todayReminders = allReminders
+        .where(
+          (OneTimeReminderModel r) =>
+              !r.isCompleted &&
+              !r.isSkipped &&
+              isSameDay(r.scheduledAt, today),
+        )
+        .toList();
+
+    final List<ActivityModel> activeActivitiesToday = allActivities
+        .where((ActivityModel a) => a.selectedDays.contains(today.weekday))
+        .toList();
+    final Set<String> completedActivityIds = todayProgress
+        .where(
+          (ProgressEntryModel p) =>
+              p.status == ActivityDayStatus.done ||
+              p.status == ActivityDayStatus.skipped,
+        )
+        .map((ProgressEntryModel p) => p.activityId)
+        .toSet();
+    final List<ActivityModel> pendingActivities = activeActivitiesToday
+        .where((ActivityModel a) => !completedActivityIds.contains(a.id))
+        .toList();
+    final int totalPending = pendingActivities.length + todayReminders.length;
+
+    String nextTaskTitle = isId
+        ? 'Semua tugas hari ini selesai'
+        : 'All tasks completed for today';
+    if (pendingActivities.isNotEmpty) {
+      nextTaskTitle = pendingActivities.first.title;
+    } else if (todayReminders.isNotEmpty) {
+      nextTaskTitle = todayReminders.first.title;
+    }
+
+    // Pre-sync widget data with current values
+    await WidgetSyncService.updateWidget(
+      activities: allActivities,
+      todayProgress: todayProgress,
+      todayReminders: todayReminders,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext modalContext) {
+        final ThemeData theme = Theme.of(modalContext);
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isId ? 'Widget Layar Utama' : 'Home Screen Widget',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isId
+                      ? 'Info ringkas aktivitas & streak hari ini langsung di layar utama HP.'
+                      : 'Today\'s activity summary & streak right on your home screen.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Live Preview Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3B7BD6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.task_alt_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'NOUSEN',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF334155),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              children: <Widget>[
+                                const Icon(
+                                  Icons.local_fire_department_rounded,
+                                  color: Color(0xFFF97316),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$currentStreak ${isId ? 'hari' : 'days'}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '$totalPending ${isId ? 'tugas tersisa hari ini' : 'pending tasks today'}',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: <Widget>[
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 14,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              nextTaskTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () async {
+                    Navigator.of(modalContext).pop();
+                    try {
+                      await HomeWidget.requestPinWidget(
+                        androidName: 'NousenAppWidgetProvider',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isId
+                                  ? 'Widget Nousen diminta dipasang ke layar utama.'
+                                  : 'Nousen widget requested to pin to home screen.',
+                            ),
+                            backgroundColor: const Color(0xFF3B7BD6),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isId
+                                  ? 'Bisa dipasang manual: Tekan & tahan layar utama > Widgets > Nousen'
+                                  : 'Can be added manually: Long press home screen > Widgets > Nousen',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.add_to_home_screen_rounded),
+                  label: Text(
+                    isId ? 'Pasang ke Layar Utama' : 'Add to Home Screen',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B7BD6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openFeedback({
