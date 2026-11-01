@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -275,6 +278,26 @@ class WidgetSyncService {
       final int subIndex =
           int.tryParse(uri.queryParameters['subIndex'] ?? '') ?? -1;
 
+      // Handle refresh (midnight / timezone change)
+      if (uri.scheme == 'nousen' && uri.host == 'widget_action') {
+        final directory = await getApplicationDocumentsDirectory();
+        final Isar isar = Isar.getInstance('reminder_schedule_v2') ??
+            await Isar.open(
+              <CollectionSchema<dynamic>>[
+                ActivityEntitySchema,
+                OneTimeReminderEntitySchema,
+                AgendaNoteEntitySchema,
+                ProgressEntryEntitySchema,
+                AppSettingsEntitySchema,
+              ],
+              directory: directory.path,
+              name: 'reminder_schedule_v2',
+              inspector: false,
+            );
+        await updateWidgetFromIsar(isar);
+        return;
+      }
+
       final directory = await getApplicationDocumentsDirectory();
       final Isar isar = Isar.getInstance('reminder_schedule_v2') ??
           await Isar.open(
@@ -334,6 +357,9 @@ class WidgetSyncService {
           await isar.writeTxn(() async {
             await isar.oneTimeReminderEntitys.put(reminder);
           });
+
+          // Sync to Firestore
+          await _syncReminderToFirestore(reminder);
         }
       } else if (type == 'activity') {
         final ActivityEntity? activity =
@@ -401,12 +427,82 @@ class WidgetSyncService {
           await isar.writeTxn(() async {
             await isar.progressEntryEntitys.put(progress!);
           });
+
+          // Sync to Firestore
+          await _syncProgressToFirestore(progress);
         }
       }
 
       await updateWidgetFromIsar(isar);
     } catch (_) {
       // Non-fatal
+    }
+  }
+
+  /// Sync progress entry to Firestore (best-effort in background).
+  static Future<void> _syncProgressToFirestore(
+    ProgressEntryEntity progress,
+  ) async {
+    try {
+      await Firebase.initializeApp();
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      final Map<String, dynamic> data = <String, dynamic>{
+        'id': progress.id,
+        'activityId': progress.activityId,
+        'dateKey': progress.dateKey,
+        'status': progress.statusKey,
+        'subCompleted': progress.subCompleted,
+        'subTotal': progress.subTotal,
+        'completedSubActivities': progress.completedSubActivities,
+        'photoNote': null,
+        'notes': progress.notes,
+        'completionTime': null,
+        'createdAt': progress.createdAt.toIso8601String(),
+        'updatedAt': progress.updatedAt.toIso8601String(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('progress')
+          .doc(progress.id)
+          .set(data, SetOptions(merge: true));
+    } catch (_) {
+      // Best-effort: if Firebase not available, skip silently
+    }
+  }
+
+  /// Sync reminder to Firestore (best-effort in background).
+  static Future<void> _syncReminderToFirestore(
+    OneTimeReminderEntity reminder,
+  ) async {
+    try {
+      await Firebase.initializeApp();
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      final Map<String, dynamic> data = <String, dynamic>{
+        'id': reminder.id,
+        'title': reminder.title,
+        'scheduledDate': reminder.scheduledAt.toIso8601String(),
+        'isCompleted': reminder.isCompleted,
+        'isSkipped': reminder.isSkipped,
+        'subActivities': reminder.subActivities ?? const <String>[],
+        'completedSubActivities':
+            reminder.completedSubActivities ?? const <String>[],
+        'updatedAt': reminder.updatedAt.toIso8601String(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('reminders')
+          .doc(reminder.id)
+          .set(data, SetOptions(merge: true));
+    } catch (_) {
+      // Best-effort
     }
   }
 }

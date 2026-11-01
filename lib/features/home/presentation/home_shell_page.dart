@@ -1273,7 +1273,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                   // Expandable subtasks checklist
                   if (subTotal > 0 && isExpanded)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12, left: 70),
+                      padding: const EdgeInsets.only(top: 8, left: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: activity.subActivities.map((
@@ -1326,24 +1326,6 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
                                 children: <Widget>[
-                                  SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Checkbox(
-                                      value: checked,
-                                      checkColor: Colors.transparent,
-                                      activeColor: completedColor,
-                                      side: BorderSide(
-                                        color: subIndicatorColor,
-                                        width: 2,
-                                      ),
-                                      onChanged: canToggleToday
-                                          ? (bool? next) =>
-                                                toggleSub(next ?? false)
-                                          : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       subActivity,
@@ -1355,6 +1337,29 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                                                 ? FontWeight.w600
                                                 : FontWeight.w500,
                                           ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: Checkbox(
+                                          value: checked,
+                                          checkColor: Colors.transparent,
+                                          activeColor: completedColor,
+                                          side: BorderSide(
+                                            color: subIndicatorColor,
+                                            width: 2,
+                                          ),
+                                          onChanged: canToggleToday
+                                              ? (bool? next) =>
+                                                    toggleSub(next ?? false)
+                                              : null,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
