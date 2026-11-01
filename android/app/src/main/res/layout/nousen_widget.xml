@@ -50,6 +50,30 @@
         android:orientation="vertical"
         android:visibility="visible">
 
+        <!-- Section Header: Agenda -->
+        <TextView
+            android:id="@+id/widget_idle_agenda_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Agenda (0)"
+            android:textColor="#64748B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
+        <!-- Section Header: Aktivitas Harian -->
+        <TextView
+            android:id="@+id/widget_idle_activity_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktivitas Harian (0)"
+            android:textColor="#64748B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
         <!-- Item 1 -->
         <LinearLayout
             android:id="@+id/widget_idle_item_1"
@@ -100,8 +124,8 @@
 
             <ImageView
                 android:id="@+id/widget_idle_check_1"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Toggle item 1" />
         </LinearLayout>
@@ -156,8 +180,8 @@
 
             <ImageView
                 android:id="@+id/widget_idle_check_2"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Toggle item 2" />
         </LinearLayout>
@@ -212,8 +236,8 @@
 
             <ImageView
                 android:id="@+id/widget_idle_check_3"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Toggle item 3" />
         </LinearLayout>
@@ -268,8 +292,8 @@
 
             <ImageView
                 android:id="@+id/widget_idle_check_4"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Toggle item 4" />
         </LinearLayout>
@@ -344,8 +368,8 @@
 
             <ImageView
                 android:id="@+id/widget_active_main_check"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@drawable/ic_widget_check_empty"
                 android:contentDescription="Complete active task" />
         </LinearLayout>
@@ -388,8 +412,8 @@
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_1"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 1" />
             </LinearLayout>
@@ -424,8 +448,8 @@
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_2"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 2" />
             </LinearLayout>
@@ -460,8 +484,8 @@
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_3"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 3" />
             </LinearLayout>

@@ -207,6 +207,20 @@ class WidgetSyncService {
           headerInfo,
         );
 
+        // Section counts for headers
+        final int agendaCount =
+            allItems.where((_ScheduleItem i) => i.type == 'reminder').length;
+        final int activityCount =
+            allItems.where((_ScheduleItem i) => i.type == 'activity').length;
+        await HomeWidget.saveWidgetData<int>(
+          'widget_idle_agenda_count',
+          agendaCount,
+        );
+        await HomeWidget.saveWidgetData<int>(
+          'widget_idle_activity_count',
+          activityCount,
+        );
+
         final int itemCount = min(4, allItems.length);
         await HomeWidget.saveWidgetData<int>(
           'widget_idle_item_count',

@@ -148,8 +148,28 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
 
                 if (itemCount == 0) {
                     views.setViewVisibility(R.id.widget_idle_empty, View.VISIBLE)
+                    views.setViewVisibility(R.id.widget_idle_agenda_header, View.GONE)
+                    views.setViewVisibility(R.id.widget_idle_activity_header, View.GONE)
                 } else {
                     views.setViewVisibility(R.id.widget_idle_empty, View.GONE)
+
+                    // Section headers
+                    val agendaCount = widgetData.getInt("widget_idle_agenda_count", 0)
+                    val activityCount = widgetData.getInt("widget_idle_activity_count", 0)
+
+                    if (agendaCount > 0) {
+                        views.setViewVisibility(R.id.widget_idle_agenda_header, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_idle_agenda_header, "Agenda ($agendaCount)")
+                    } else {
+                        views.setViewVisibility(R.id.widget_idle_agenda_header, View.GONE)
+                    }
+
+                    if (activityCount > 0) {
+                        views.setViewVisibility(R.id.widget_idle_activity_header, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_idle_activity_header, "Aktivitas Harian ($activityCount)")
+                    } else {
+                        views.setViewVisibility(R.id.widget_idle_activity_header, View.GONE)
+                    }
                 }
 
                 for (i in 0 until 4) {

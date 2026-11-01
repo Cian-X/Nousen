@@ -1070,7 +1070,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
             ),
             if (hasSubs && _expanded)
               Padding(
-                padding: const EdgeInsets.only(top: 12, left: 70),
+                padding: const EdgeInsets.only(top: 8, left: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: item.subActivities.map((String sub) {
@@ -1092,31 +1092,6 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                             const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: <Widget>[
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: Checkbox(
-                                value: checked,
-                                checkColor: Colors.transparent,
-                                activeColor: stateColor,
-                                side: BorderSide(
-                                  color: stateColor,
-                                  width: 2,
-                                ),
-                                onChanged: (bool? value) async {
-                                  await ref
-                                      .read(
-                                        oneTimeReminderActionsProvider,
-                                      )
-                                      .toggleSubActivity(
-                                        reminder: item,
-                                        subActivity: sub,
-                                        completed: value ?? false,
-                                      );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 sub,
@@ -1126,6 +1101,36 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                                   fontWeight: checked
                                       ? FontWeight.w600
                                       : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: Checkbox(
+                                    value: checked,
+                                    checkColor: Colors.transparent,
+                                    activeColor: stateColor,
+                                    side: BorderSide(
+                                      color: stateColor,
+                                      width: 2,
+                                    ),
+                                    onChanged: (bool? value) async {
+                                      await ref
+                                          .read(
+                                            oneTimeReminderActionsProvider,
+                                          )
+                                          .toggleSubActivity(
+                                            reminder: item,
+                                            subActivity: sub,
+                                            completed: value ?? false,
+                                          );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
