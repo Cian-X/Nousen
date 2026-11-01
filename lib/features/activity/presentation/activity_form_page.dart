@@ -62,9 +62,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
   ActivityModel? get _existingActivity => widget.args?.activity;
 
   bool get _canSubmitForm =>
-      _titleController.text.trim().isNotEmpty &&
-      _selectedDays.isNotEmpty &&
-      _selectedCategoryId != null;
+      _titleController.text.trim().isNotEmpty && _selectedDays.isNotEmpty;
 
   void _handleTitleChanged() {
     if (!mounted) {
@@ -98,7 +96,7 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
     _isNotificationEnabled = existingActivity?.isNotificationEnabled ?? true;
     _selectedCategoryId = ActivityCategory.isValid(existingActivity?.category)
         ? existingActivity!.category
-        : null;
+        : ActivityCategory.values.first;
     _titleController.addListener(_handleTitleChanged);
     _titleFocusNode.addListener(() {
       if (!mounted) {

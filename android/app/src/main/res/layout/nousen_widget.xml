@@ -447,13 +447,14 @@
                     android:text="Subtask 1"
                     android:textColor="#334155"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_1"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 1" />
             </LinearLayout>
@@ -483,13 +484,14 @@
                     android:text="Subtask 2"
                     android:textColor="#334155"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_2"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 2" />
             </LinearLayout>
@@ -519,13 +521,14 @@
                     android:text="Subtask 3"
                     android:textColor="#334155"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
                 <ImageView
                     android:id="@+id/widget_active_sub_check_3"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:src="@drawable/ic_widget_check_empty"
                     android:contentDescription="Toggle subtask 3" />
             </LinearLayout>

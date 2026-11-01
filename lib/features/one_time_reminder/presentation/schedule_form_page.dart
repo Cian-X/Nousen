@@ -48,9 +48,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
 
   OneTimeReminderModel? get _existing => widget.args?.reminder;
 
-  bool get _canSubmit =>
-      _titleController.text.trim().isNotEmpty &&
-      _selectedCategoryId != null;
+  bool get _canSubmit => _titleController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -69,7 +67,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
     }
     _selectedCategoryId = ActivityCategory.isValid(existing?.categoryId)
         ? existing!.categoryId
-        : null;
+        : ActivityCategory.values.first;
     _subActivities = List<String>.from(existing?.subActivities ?? <String>[]);
     _isNotificationEnabled = existing?.isNotificationEnabled ?? true;
   }
@@ -600,7 +598,7 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
                       ),
                     )
                   : Text(
-                      isId ? 'Simpan Jadwal' : 'Save schedule',
+                      isId ? 'Simpan Agenda' : 'Save agenda',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
             ),

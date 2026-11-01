@@ -78,14 +78,11 @@ class WidgetSyncService {
             .firstOrNull;
         final List<String> completedSubs =
             progress?.completedSubActivities ?? const <String>[];
-        final bool parentDone = progress != null &&
+        // Induk dan sub adalah unit terpisah. Status induk tidak boleh
+        // diubah/ditampilkan selesai hanya karena sub dicentang.
+        final bool isDone = progress != null &&
             (progress.status == ActivityDayStatus.done ||
                 progress.status == ActivityDayStatus.skipped);
-        // Induk dan sub adalah unit terpisah: jadwal baru selesai bila
-        // induk selesai DAN seluruh sub selesai.
-        final bool isDone = parentDone &&
-            (a.subActivities.isEmpty ||
-                a.subActivities.every(completedSubs.contains));
 
         allItems.add(
           _ScheduleItem(
@@ -384,12 +381,9 @@ class WidgetSyncService {
               } else {
                 done.add(subTitle);
               }
+              // Sub dan induk independen. Klik sub tidak mengubah checkbox
+              // induk maupun sub lain.
               reminder.completedSubActivities = done.toList();
-              if (done.length >= subs.length && subs.isNotEmpty) {
-                reminder.isCompleted = true;
-              } else {
-                reminder.isCompleted = false;
-              }
             }
           } else {
             // Toggle induk saja — JANGAN ubah completedSubActivities.
@@ -439,15 +433,10 @@ class WidgetSyncService {
               } else {
                 done.add(subTitle);
               }
+              // Sub dan induk independen. Klik sub tidak mengubah checkbox
+              // induk maupun sub lain.
               progress.completedSubActivities = done.toList();
               progress.subCompleted = done.length;
-              if (done.length >= subs.length && subs.isNotEmpty) {
-                progress.statusKey = ActivityDayStatus.done.storageKey;
-                progress.isCompleted = true;
-              } else {
-                progress.statusKey = ActivityDayStatus.notDone.storageKey;
-                progress.isCompleted = false;
-              }
             }
           } else {
             // Toggle induk saja — JANGAN ubah completedSubActivities.
