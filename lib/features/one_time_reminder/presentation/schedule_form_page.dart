@@ -192,10 +192,10 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
       return;
     }
     final String title = _titleController.text.trim();
-    final String? categoryId = _selectedCategoryId;
+    final String categoryId = _selectedCategoryId ?? ActivityCategory.values.first;
     final String localeCode =
         ref.read(settingsStreamProvider).value?.localeCode ?? 'id';
-    if (title.isEmpty || categoryId == null) {
+    if (title.isEmpty) {
       if (!mounted) {
         return;
       }
@@ -203,8 +203,8 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
         SnackBar(
           content: Text(
             localeCode == 'id'
-                ? 'Isi judul dan pilih kategori dulu.'
-                : 'Fill in the title and pick a category first.',
+                ? 'Isi judul dulu.'
+                : 'Fill in the title first.',
           ),
         ),
       );
@@ -453,30 +453,6 @@ class _ScheduleFormPageState extends ConsumerState<ScheduleFormPage> {
               },
             ),
           ],
-          const SizedBox(height: 20),
-          Text(
-            isId ? 'KATEGORI' : 'CATEGORY',
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ActivityCategory.values.map((String id) {
-              return ChoiceChip(
-                label: Text(ActivityCategory.labelOf(id, localeCode)),
-                selected: _selectedCategoryId == id,
-                onSelected: (_) {
-                  setState(() {
-                    _selectedCategoryId = id;
-                  });
-                },
-              );
-            }).toList(),
-          ),
           const SizedBox(height: 20),
           Text(
             isId ? 'SUB-AKTIVITAS' : 'SUB-ACTIVITIES',

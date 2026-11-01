@@ -695,8 +695,8 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
       return;
     }
     final String title = _titleController.text.trim();
-    final String? categoryId = _selectedCategoryId;
-    if (title.isEmpty || _selectedDays.isEmpty || categoryId == null) {
+    final String categoryId = _selectedCategoryId ?? ActivityCategory.values.first;
+    if (title.isEmpty || _selectedDays.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(t.formValidationMessage)));
@@ -1295,28 +1295,6 @@ class _CreateActivityPageState extends ConsumerState<CreateActivityPage> {
                         canUseGemini: geminiService.isConfigured,
                       ),
                     ],
-                    const SizedBox(height: fieldGap),
-                    Text(
-                      localeCode == 'id' ? 'KATEGORI' : 'CATEGORY',
-                      style: sectionLabelStyle,
-                    ),
-                    const SizedBox(height: elementGap),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: ActivityCategory.values.map((String id) {
-                        final bool selected = _selectedCategoryId == id;
-                        return ChoiceChip(
-                          label: Text(ActivityCategory.labelOf(id, localeCode)),
-                          selected: selected,
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedCategoryId = id;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
                     const SizedBox(height: fieldGap),
                     Text(t.subActivitiesLabel, style: smallLabelStyle),
                     const SizedBox(height: elementGap),
