@@ -977,7 +977,11 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
       // Redup mengikuti selesai keseluruhan (induk + semua sub),
       // lingkaran mencerminkan unit induk (item.isCompleted).
       opacity: state == AgendaVisualState.done ? 0.5 : 1.0,
-      child: InkWell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => widget.onOpenDetail(item),
       child: Container(
@@ -1003,10 +1007,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                 ]
               : null,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
+        child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Expanded(
@@ -1068,12 +1069,15 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                 ),
               ],
             ),
-            if (hasSubs && _expanded)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: item.subActivities.map((String sub) {
+      ),
+      ),
+          // Expandable subtasks checklist (OUTSIDE card)
+          if (hasSubs && _expanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 14, right: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: item.subActivities.map((String sub) {
                     final bool checked =
                         item.completedSubActivities.contains(sub);
                     return InkWell(
@@ -1141,9 +1145,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                   }).toList(),
                 ),
               ),
-          ],
-        ),
-      ),
+        ],
       ),
     );
   }
