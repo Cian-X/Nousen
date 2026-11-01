@@ -1379,7 +1379,8 @@ Akar masalah (rules v2 vs kode progress v1):
 
 ## 19. Read-compat v2 untuk domain lain (tanpa backfill — 2026-10-31)
 
-Status: **diimplementasikan + tes hijau; belum di-commit saat §18 selesai.**
+Status: **diimplementasikan, tes hijau, dan di-commit (`097d63a`).**
+
 
 Masalah: setelah semua flag cloud-first menyala, daftar aktivitas/reminder/
 catatan kosong untuk data lama. Penyebabnya BUKAN data hilang: dokumen hasil
