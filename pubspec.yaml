@@ -54,6 +54,7 @@ dependencies:
   cloud_firestore: ^6.10.0
   google_sign_in: ^7.2.0
   crypto: ^3.0.7
+  home_widget: ^0.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -109,10 +110,5 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
-  fonts:
-    - family: PatrickHand
-      fonts:
-        - asset: assets/fonts/PatrickHand-Regular.ttf
-          weight: 400
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

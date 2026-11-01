@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,7 +21,9 @@ import 'package:nousen/features/activity/presentation/activity_sync_messages.dar
 import 'package:nousen/features/activity/presentation/activity_status_visuals.dart';
 import 'package:nousen/features/activity/domain/activity_progress_summary.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
-import 'package:nousen/features/home/application/home_ai_brief_engine.dart';
+import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_agenda_page.dart';
+import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:nousen/features/one_time_reminder/data/one_time_reminder_sync_failures.dart';
 import 'package:nousen/features/one_time_reminder/presentation/one_time_reminder_sync_messages.dart';
 import 'package:nousen/features/progress/data/progress_sync_failures.dart';
@@ -33,6 +34,7 @@ import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/presentation/settings_sync_messages.dart';
 import 'package:nousen/features/settings/presentation/settings_page.dart';
 import 'package:nousen/l10n/app_localizations.dart';
+import 'package:nousen/services/widget_sync_service.dart';
 
 class HomeShellPage extends ConsumerStatefulWidget {
   const HomeShellPage({super.key});
@@ -47,7 +49,6 @@ class HomeShellPage extends ConsumerStatefulWidget {
 }
 
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
-  static const HomeAiBriefEngine _homeAiBriefEngine = HomeAiBriefEngine();
   Timer? _countdownTimer;
   StreamSubscription<ActivitySyncFailure>? _activitySyncFailureSub;
   StreamSubscription<ProgressSyncFailure>? _progressSyncFailureSub;
@@ -183,43 +184,47 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     ).push(MaterialPageRoute<void>(builder: (_) => const SettingsPage()));
   }
 
-  Future<void> _openStatsSummary() async {
-    await Navigator.of(context).pushNamed(AppRoutes.activitySummary);
-  }
-
-  Future<void> _openScheduleAgenda() async {
-    await Navigator.of(context).pushNamed(AppRoutes.scheduleAgenda);
-  }
-
-  int _countCompletedSubActivities(
-    ProgressEntryModel? progressEntry,
-    List<String> subActivities,
-  ) {
-    return normalizeCompletedSubActivities(
-      completedValues:
-          progressEntry?.completedSubActivities ?? const <String>[],
-      subActivities: subActivities,
-    ).length;
-  }
-
-  double _computeTodayHeroProgress(List<_ActivityTileData> activityItems) {
-    if (activityItems.isEmpty) {
-      return 0;
-    }
-    double totalProgress = 0;
-    for (final _ActivityTileData item in activityItems) {
-      final List<String> subActivities = item.activity.subActivities;
-      if (subActivities.isEmpty) {
-        totalProgress += item.isCompleted ? 1 : 0;
-        continue;
-      }
-      final int completedSub = _countCompletedSubActivities(
-        item.progressEntry,
-        subActivities,
-      );
-      totalProgress += completedSub / subActivities.length;
-    }
-    return (totalProgress / activityItems.length).clamp(0, 1).toDouble();
+  Future<void> _showAddOptions(DateTime selectedDate, String localeCode) async {
+    final bool isId = localeCode == 'id';
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.repeat_rounded, color: Color(0xFF3B7BD6)),
+                  title: Text(isId ? 'Aktivitas Rutin' : 'Daily Activity'),
+                  subtitle: Text(isId ? 'Aktivitas berulang harian' : 'Recurring daily activity'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _openActivityForm();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.event_note_rounded, color: Color(0xFF3B7BD6)),
+                  title: Text(isId ? 'Agenda' : 'One-Time Agenda'),
+                  subtitle: Text(isId ? 'Jadwal / pengingat sekali jalan' : 'One-time schedule / reminder'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.scheduleForm,
+                      arguments: ScheduleFormArgs(initialDate: selectedDate),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -252,9 +257,6 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
 
     final List<ActivityModel> allActivities =
         ref.watch(activitiesStreamProvider).value ?? const <ActivityModel>[];
-    final List<ProgressEntryModel> historicalProgress =
-        ref.watch(allProgressStreamProvider).value ??
-        const <ProgressEntryModel>[];
     final List<ProgressEntryModel> allProgress =
         ref.watch(progressByDateProvider(selectedDateKey)).value ??
         const <ProgressEntryModel>[];
@@ -307,105 +309,30 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     }
     final bool hasActivities = activityItems.isNotEmpty;
 
-    final int skippedCount = activityItems
-        .where((item) => item.isSkipped)
-        .length;
-    final int effectiveScheduledCount = math.max(
-      0,
-      activityItems.length - skippedCount,
-    );
-    final int completedCount = activityItems
-        .where((item) => item.isCompleted)
-        .length;
-    final int scheduledCount = effectiveScheduledCount;
-    _ActivityTileData? focusItem;
-    for (final _ActivityTileData item in activityItems) {
-      if (item.isFocus) {
-        focusItem = item;
-        break;
-      }
-    }
-
-    final String selectedDayLabel =
-        toBeginningOfSentenceCase(
-          DateFormat('EEEE', localeCode).format(selectedDate),
-        ) ??
-        weekdayShortLabel(selectedWeekday, localeCode);
-    // Warna indikator untuk card insight HS
-    final Color heroProgressColor;
-    if (scheduledCount <= 0) {
-      heroProgressColor = activityStatusColor(
-        theme: theme,
-        status: ActivityDailyProgressStatus.future,
-      );
-    } else if (completedCount <= 0) {
-      heroProgressColor = activityStatusColor(
-        theme: theme,
-        status: selectedDate.isBefore(today)
-            ? ActivityDailyProgressStatus.missed
-            : ActivityDailyProgressStatus.future,
-      );
-    } else if (completedCount < scheduledCount) {
-      heroProgressColor = activityStatusColor(
-        theme: theme,
-        status: ActivityDailyProgressStatus.partial,
-      );
-    } else {
-      heroProgressColor = activityStatusColor(
-        theme: theme,
-        status: ActivityDailyProgressStatus.done,
-      );
-    }
-
-    final _HeroMascotMood heroMascotMood = _heroMascotMood(
-      isToday: selectedIsToday,
-      selectedDate: selectedDate,
-      today: today,
-      completedCount: completedCount,
-      scheduledCount: scheduledCount,
-    );
-    final Color heroMascotColor = _heroMascotColor(
-      theme: theme,
-      mood: heroMascotMood,
-    );
-
-    final String todayHeroTitle = localeCode == 'id' ? 'HARI INI' : 'TODAY';
-    final String todayHeroMain = '$completedCount / $scheduledCount';
-    final double todayHeroProgress = selectedIsToday
-        ? _computeTodayHeroProgress(
-            activityItems.where((item) => !item.isSkipped).toList(),
-          )
-        : 0;
-    final String nonTodayHeroTitle = localeCode == 'id' ? 'JADWAL' : 'SCHEDULE';
-    final String nonTodayHeroValue = selectedDayLabel;
-    final String todayHeroSummary = scheduledCount <= 0
-        ? ''
-        : (localeCode == 'id'
-              ? '$completedCount dari $scheduledCount selesai'
-              : '$completedCount of $scheduledCount completed');
-    final String nonTodayHeroSummary = filteredActivities.isEmpty
-        ? ''
-        : (localeCode == 'id'
-              ? '${filteredActivities.length} aktivitas terjadwal'
-              : '${filteredActivities.length} activities scheduled');
-    final HomeAiBrief baseHomeAiBrief = _homeAiBriefEngine.build(
-      now: now,
-      selectedDate: selectedDate,
-      selectedIsToday: selectedIsToday,
-      localeCode: localeCode,
-      allActivities: allActivities,
-      selectedActivities: filteredActivities,
-      selectedProgressByActivity: selectedProgressByActivity,
-      allProgressEntries: historicalProgress,
-    );
+    final List<OneTimeReminderModel> allReminders =
+        ref.watch(oneTimeRemindersStreamProvider).value ??
+            const <OneTimeReminderModel>[];
+    final List<OneTimeReminderModel> dayReminders = allReminders
+        .where((OneTimeReminderModel r) =>
+            dateKeyFromDate(r.scheduledAt) == selectedDateKey)
+        .toList();
     final int currentStreak = ref.watch(homeGlobalStreakProvider);
-    final HomeAiBrief homeAiBrief = baseHomeAiBrief;
-    final _HeroActionCue? heroActionCue = _buildHeroActionCue(
-      localeCode: localeCode,
-      now: now,
-      selectedIsToday: selectedIsToday,
-      focusItem: focusItem,
-    );
+
+    final String todayDateKey = dateKeyFromDate(today);
+    final List<ProgressEntryModel> todayProgress =
+        ref.watch(progressByDateProvider(todayDateKey)).value ??
+            const <ProgressEntryModel>[];
+    final List<OneTimeReminderModel> todayReminders = allReminders
+        .where((r) => dateKeyFromDate(r.scheduledAt) == todayDateKey)
+        .toList();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetSyncService.updateWidget(
+        activities: allActivities,
+        todayProgress: todayProgress,
+        todayReminders: todayReminders,
+      );
+    });
 
     return PopScope(
       canPop: false,
@@ -416,31 +343,21 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         floatingActionButton: FloatingActionButton(
-          onPressed: _openActivityForm,
-          tooltip: localeCode == 'id' ? 'Tambah aktivitas' : 'Add activity',
+          onPressed: () => _showAddOptions(selectedDate, localeCode),
+          tooltip: localeCode == 'id' ? 'Tambah' : 'Add',
           backgroundColor: const Color(0xFF3B7BD6),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 8,
-          child: NousenNavIcon(Icons.add, size: 28),
+          child: const Icon(Icons.add, size: 28),
         ),
         bottomNavigationBar: NousenBottomNavBar(
           tabs: <NousenNavTab>[
             NousenNavTab(
-              icon: Icons.home_rounded,
-              label: localeCode == 'id' ? 'Harian' : 'Daily',
+              icon: Icons.check_circle_outline_rounded,
+              label: localeCode == 'id' ? 'Aktivitas' : 'Activities',
               isSelected: true,
               onTap: () {},
-            ),
-            NousenNavTab(
-              icon: Icons.calendar_today_rounded,
-              label: localeCode == 'id' ? 'Agenda' : 'Agenda',
-              onTap: _openScheduleAgenda,
-            ),
-            NousenNavTab(
-              icon: Icons.insights_rounded,
-              label: localeCode == 'id' ? 'Statistik' : 'Analytics',
-              onTap: _openStatsSummary,
             ),
             NousenNavTab(
               icon: Icons.person_rounded,
@@ -460,6 +377,160 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                   ? constraints.maxWidth
                   : contentMaxWidth;
 
+              final List<Widget> listItems = <Widget>[
+                RepaintBoundary(
+                  child: _HomeTopContent(
+                    profileName: profileName,
+                    contextualGreeting: contextualGreeting,
+                    todayDate: today,
+                    selectedWeekday: selectedWeekday,
+                    localeCode: localeCode,
+                    sidePadding: sidePadding,
+                    currentStreak: currentStreak,
+                    onDaySelected: (int weekday) {
+                      ref
+                          .read(homeSelectedWeekdayProvider.notifier)
+                          .state = weekday;
+                    },
+                  ),
+                ),
+              ];
+
+              if (dayReminders.isNotEmpty) {
+                listItems.add(
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(sidePadding, 4, sidePadding, 8),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.event_note_rounded,
+                          size: 16,
+                          color: Color(0xFF3B7BD6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Agenda (${dayReminders.length})',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                for (final OneTimeReminderModel reminder in dayReminders) {
+                  listItems.add(
+                    Padding(
+                      key: ValueKey<String>('agenda-${reminder.id}'),
+                      padding: EdgeInsets.only(
+                        bottom: 10,
+                        left: sidePadding,
+                        right: sidePadding,
+                      ),
+                      child: AgendaCard(
+                        item: reminder,
+                        localeCode: localeCode,
+                        onOpenDetail: (OneTimeReminderModel item) {
+                          Navigator.of(context).pushNamed(
+                            AppRoutes.oneTimeReminderDetail,
+                            arguments:
+                                OneTimeReminderDetailArgs(reminderId: item.id),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                }
+              }
+
+              if (hasActivities) {
+                if (dayReminders.isNotEmpty) {
+                  listItems.add(
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 8),
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(
+                            Icons.repeat_rounded,
+                            size: 16,
+                            color: Color(0xFF3B7BD6),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            localeCode == 'id'
+                                ? 'Aktivitas Harian (${activityItems.length})'
+                                : 'Daily Activities (${activityItems.length})',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                for (int i = 0; i < activityItems.length; i++) {
+                  final _ActivityTileData item = activityItems[i];
+                  listItems.add(
+                    Padding(
+                      key: ValueKey<String>(
+                        '$selectedDateKey-${item.activity.id}',
+                      ),
+                      padding: EdgeInsets.only(
+                        top: (i == 0 && dayReminders.isEmpty) ? 0 : 10,
+                        left: sidePadding,
+                        right: sidePadding,
+                      ),
+                      child: RepaintBoundary(
+                        child: _ActivityCard(
+                          item: item,
+                          canToggleToday: selectedIsToday,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              }
+
+              if (!hasActivities && dayReminders.isEmpty) {
+                listItems.add(
+                  Padding(
+                    key: ValueKey<String>('activity-empty-$selectedWeekday'),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: sidePadding,
+                      vertical: 24,
+                    ),
+                    child: RepaintBoundary(
+                      child: _EmptyActivitiesPanel(
+                        localeCode: localeCode,
+                        onAddTap: _openActivityForm,
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                listItems.add(
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: sidePadding,
+                      vertical: 32,
+                    ),
+                    child: Text(
+                      localeCode == 'id'
+                          ? 'Tekan + untuk menambah aktivitas atau agenda'
+                          : 'Tap + to add an activity or agenda',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
               return Stack(
                 children: <Widget>[
                   Center(
@@ -470,113 +541,9 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                         padding: EdgeInsets.only(
                           bottom: AppSpacing.screenPadding,
                         ),
-                        itemCount: hasActivities ? activityItems.length + 2 : 2,
+                        itemCount: listItems.length,
                         itemBuilder: (BuildContext context, int index) {
-                          if (index == 0) {
-                            return RepaintBoundary(
-                              child: _HomeTopContent(
-                                compactEmptyState: false,
-                                profileName: profileName,
-                                contextualGreeting: contextualGreeting,
-                                todayDate: today,
-                                heroTitle: selectedIsToday
-                                    ? todayHeroTitle
-                                    : nonTodayHeroTitle,
-                                heroValue: selectedIsToday
-                                    ? todayHeroMain
-                                    : nonTodayHeroValue,
-                                heroSummary: selectedIsToday
-                                    ? todayHeroSummary
-                                    : nonTodayHeroSummary,
-                                heroActionCue: heroActionCue,
-                                heroProgress: todayHeroProgress,
-                                heroProgressColor: heroProgressColor,
-                                heroMascotMood: heroMascotMood,
-                                heroMascotColor: heroMascotColor,
-                                showHeroProgress: selectedIsToday,
-                                selectedWeekday: selectedWeekday,
-                                localeCode: localeCode,
-                                brief: homeAiBrief,
-                                sidePadding: sidePadding,
-                                currentStreak: currentStreak,
-                                onDaySelected: (int weekday) {
-                                  ref
-                                          .read(
-                                            homeSelectedWeekdayProvider
-                                                .notifier,
-                                          )
-                                          .state =
-                                      weekday;
-                                },
-                              ),
-                            );
-                          }
-
-                          if (!hasActivities) {
-                            // Penyelarasan visual dengan panel kosong Agenda:
-                            // konten di atas panel Beranda lebih pendek,
-                            // jadi panel digeser turun agar titik awalnya
-                            // sejajar. Nilai dari pengukuran screenshot.
-                            return Transform.translate(
-                              offset: const Offset(0, -40),
-                              child: Padding(
-                                key: ValueKey<String>(
-                                  'activity-empty-$selectedWeekday',
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: sidePadding,
-                                ),
-                                child: RepaintBoundary(
-                                  child: _EmptyActivitiesPanel(
-                                    localeCode: localeCode,
-                                    onAddTap: _openActivityForm,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-
-                          if (hasActivities &&
-                              index == activityItems.length + 1) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                top: 32, // Sesuaikan jarak agar lebih ke atas
-                                bottom: 32,
-                                left: sidePadding,
-                                right: sidePadding,
-                              ),
-                              child: Text(
-                                localeCode == 'id'
-                                    ? 'Tekan + untuk menambah aktivitas'
-                                    : 'Tap + to add an activity',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF94A3B8),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }
-
-                          final int itemIndex = index - 1;
-                          final _ActivityTileData item =
-                              activityItems[itemIndex];
-                          return Padding(
-                            key: ValueKey<String>(
-                              '$selectedDateKey-${item.activity.id}',
-                            ),
-                            padding: EdgeInsets.only(
-                              top: itemIndex == 0 ? 0 : 10,
-                              left: sidePadding,
-                              right: sidePadding,
-                            ),
-                            child: RepaintBoundary(
-                              child: _ActivityCard(
-                                item: item,
-                                canToggleToday: selectedIsToday,
-                              ),
-                            ),
-                          );
+                          return listItems[index];
                         },
                       ),
                     ),
@@ -620,551 +587,25 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
     }
     return 'Good evening, $profileName';
   }
-
-  _HeroActionCue? _buildHeroActionCue({
-    required String localeCode,
-    required DateTime now,
-    required bool selectedIsToday,
-    required _ActivityTileData? focusItem,
-  }) {
-    if (focusItem == null) {
-      return null;
-    }
-
-    final ActivityModel activity = focusItem.activity;
-    final DateTime scheduledAt = DateTime(
-      focusItem.scheduledDate.year,
-      focusItem.scheduledDate.month,
-      focusItem.scheduledDate.day,
-      activity.timeMinutes ~/ 60,
-      activity.timeMinutes % 60,
-    );
-
-    final String timeLabel = formatMinutesAsTime(activity.timeMinutes);
-
-    if (!selectedIsToday) {
-      return _HeroActionCue(
-        label: localeCode == 'id'
-            ? 'Pertama: ${activity.title}'
-            : 'First: ${activity.title}',
-        countdown: formatMinutesAsTime(activity.timeMinutes),
-        timeLabel: timeLabel,
-      );
-    }
-
-    final int minutesUntil = scheduledAt.difference(now).inMinutes;
-    final String label;
-    if (minutesUntil > 0) {
-      label = localeCode == 'id'
-          ? 'Berikutnya: ${activity.title}'
-          : 'Next: ${activity.title}';
-    } else if (minutesUntil >= -20) {
-      label = localeCode == 'id'
-          ? 'Saat ini: ${activity.title}'
-          : 'Now: ${activity.title}';
-    } else {
-      label = localeCode == 'id'
-          ? 'Terdekat: ${activity.title}'
-          : 'Closest: ${activity.title}';
-    }
-
-    return _HeroActionCue(
-      label: label,
-      countdown: _formatHeroCountdown(
-        localeCode: localeCode,
-        minutesUntil: minutesUntil,
-      ),
-      timeLabel: timeLabel,
-    );
-  }
-
-  String _formatHeroCountdown({
-    required String localeCode,
-    required int minutesUntil,
-  }) {
-    if (minutesUntil == 0) {
-      return localeCode == 'id' ? 'Sekarang' : 'Now';
-    }
-
-    final int safeMinutes = minutesUntil.abs();
-    final int hours = safeMinutes ~/ 60;
-    final int minutes = safeMinutes % 60;
-    final String value = hours > 0 ? '${hours}j ${minutes}m' : '${minutes}m';
-
-    if (minutesUntil > 0) {
-      return localeCode == 'id' ? '$value lagi' : '$value left';
-    }
-    return '+$value';
-  }
-
-}
-
-class _HeroActionCue {
-  const _HeroActionCue({
-    required this.label,
-    required this.countdown,
-    required this.timeLabel,
-  });
-
-  final String label;
-  final String countdown;
-  final String timeLabel;
-}
-
-enum _HeroMascotMood { happy, encouraging, disappointed, neutral }
-
-class _HeroReactionMascot extends StatelessWidget {
-  const _HeroReactionMascot({required this.mood, required this.color});
-
-  final _HeroMascotMood mood;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isHappy = mood == _HeroMascotMood.happy;
-    final bool isEncouraging = mood == _HeroMascotMood.encouraging;
-    final bool isDisappointed = mood == _HeroMascotMood.disappointed;
-    final double offsetY = isHappy ? -3 : (isDisappointed ? 2 : 0);
-
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 700),
-      curve: Curves.easeInOut,
-      tween: Tween<double>(begin: 0.92, end: 1),
-      builder: (BuildContext context, double scale, Widget? child) {
-        return Transform.translate(
-          offset: Offset(0, offsetY),
-          child: Transform.scale(scale: scale, child: child),
-        );
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.13),
-          shape: BoxShape.circle,
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            NousenNavIcon(Icons.face_rounded, size: 35, color: color),
-            Positioned(
-              bottom: 6,
-              child: NousenNavIcon(
-                isHappy
-                    ? Icons.sentiment_very_satisfied_rounded
-                    : isEncouraging
-                    ? Icons.sentiment_satisfied_alt_rounded
-                    : isDisappointed
-                    ? Icons.sentiment_dissatisfied_rounded
-                    : Icons.sentiment_neutral_rounded,
-                size: 20,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-_HeroMascotMood _heroMascotMood({
-  required bool isToday,
-  required DateTime selectedDate,
-  required DateTime today,
-  required int completedCount,
-  required int scheduledCount,
-}) {
-  if (scheduledCount <= 0) {
-    return _HeroMascotMood.neutral;
-  }
-  if (completedCount >= scheduledCount) {
-    return _HeroMascotMood.happy;
-  }
-  if (selectedDate.isBefore(today) && completedCount <= 0) {
-    return _HeroMascotMood.disappointed;
-  }
-  if (completedCount > 0 || isToday) {
-    return _HeroMascotMood.encouraging;
-  }
-  return _HeroMascotMood.neutral;
-}
-
-Color _heroMascotColor({
-  required ThemeData theme,
-  required _HeroMascotMood mood,
-}) {
-  return switch (mood) {
-    _HeroMascotMood.happy => theme.colorScheme.primary,
-    _HeroMascotMood.encouraging => const Color(0xFFF59E0B),
-    _HeroMascotMood.disappointed => theme.colorScheme.error,
-    _HeroMascotMood.neutral => theme.colorScheme.onSurfaceVariant,
-  };
-}
-
-class _TodayHeroCard extends StatelessWidget {
-  const _TodayHeroCard({
-    required this.localeCode,
-    required this.title,
-    required this.value,
-    required this.summary,
-    required this.actionCue,
-    required this.progress,
-    required this.progressColor,
-    required this.brief,
-    this.showProgress = true,
-    required this.heroMascotMood,
-    required this.heroMascotColor,
-  });
-
-  final String localeCode;
-  final String title;
-  final String value;
-  final String summary;
-  final _HeroActionCue? actionCue;
-  final double progress;
-  final Color progressColor;
-  final HomeAiBrief brief;
-  final bool showProgress;
-  final _HeroMascotMood heroMascotMood;
-  final Color heroMascotColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final double progressValue = progress.clamp(0, 1).toDouble();
-
-    return Container(
-      constraints: const BoxConstraints(minHeight: 156),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
-          width: 1,
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: const Color(0x141A5BAD), // soft elevation
-            blurRadius: 20,
-            spreadRadius: -4,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _HeroReactionMascot(mood: heroMascotMood, color: heroMascotColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  brief.headline,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0F2FE),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFDBEAFE), width: 1),
-                ),
-                child: Text(
-                  brief.source == HomeAiBriefSource.ml
-                      ? (localeCode == 'id' ? 'Nous' : 'Nous')
-                      : (localeCode == 'id' ? 'Nous' : 'Nous'),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.primary,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            brief.insight,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14, // body-md
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF475569),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      title,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.6,
-                        ),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Builder(
-                      builder: (BuildContext context) {
-                        final bool isFractionValue =
-                            showProgress && value.contains('/');
-                        if (!isFractionValue) {
-                          return Text(
-                            value,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: progressColor,
-                            ),
-                          );
-                        }
-
-                        final List<String> parts = value.split('/');
-                        final String left = parts.first.trim();
-                        final String right = parts.length > 1
-                            ? parts.last.trim()
-                            : '0';
-                        final bool allDone = left == right && right != '0';
-                        final String statusText = allDone
-                            ? (localeCode == 'id'
-                                  ? 'Semua aktivitas selesai'
-                                  : 'All activities done')
-                            : (localeCode == 'id'
-                                  ? '$left dari $right selesai'
-                                  : '$left of $right done');
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            RichText(
-                              text: TextSpan(
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: progressColor,
-                                ),
-                                text: '$left / $right',
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              statusText,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: progressColor.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              if (actionCue != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 14),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 178),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Text(
-                          () {
-                            if (actionCue!.label.contains(': ')) {
-                              return actionCue!.label
-                                  .split(': ')[0]
-                                  .toUpperCase();
-                            }
-                            return localeCode == 'id' ? 'BERIKUTNYA' : 'NEXT';
-                          }(),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          () {
-                            if (actionCue!.label.contains(': ')) {
-                              return actionCue!.label.split(': ')[1];
-                            }
-                            return actionCue!.label;
-                          }(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2FE),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: const Color(0xFFDBEAFE),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text.rich(
-                            TextSpan(
-                              children: <InlineSpan>[
-                                TextSpan(
-                                  text: actionCue!.timeLabel,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF3B7BD6),
-                                  ),
-                                ),
-                                const TextSpan(
-                                  text: ' \u2022 ',
-                                  style: TextStyle(color: Color(0xFF3B7BD6)),
-                                ),
-                                TextSpan(
-                                  text: actionCue!.countdown,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF3B7BD6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          if (showProgress)
-            Container(
-              height: 4,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints barConstraints) {
-                  final double width = barConstraints.maxWidth * progressValue;
-                  return Align(
-                    alignment: Alignment.centerLeft,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
-                      width: width,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: progressColor,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            )
-          else
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _HomeTopContent extends StatelessWidget {
   const _HomeTopContent({
-    required this.compactEmptyState,
     required this.profileName,
     required this.contextualGreeting,
     required this.todayDate,
-    required this.heroTitle,
-    required this.heroValue,
-    required this.heroSummary,
-    required this.heroActionCue,
-    required this.heroProgress,
-    required this.heroProgressColor,
-    required this.heroMascotMood,
-    required this.heroMascotColor,
-    required this.showHeroProgress,
     required this.selectedWeekday,
     required this.localeCode,
-    required this.brief,
     required this.sidePadding,
     required this.onDaySelected,
     required this.currentStreak,
   });
 
-  final bool compactEmptyState;
   final String profileName;
   final String contextualGreeting;
   final DateTime todayDate;
-  final String heroTitle;
-  final String heroValue;
-  final String heroSummary;
-  final _HeroActionCue? heroActionCue;
-  final double heroProgress;
-  final Color heroProgressColor;
-  final _HeroMascotMood heroMascotMood;
-  final Color heroMascotColor;
-  final bool showHeroProgress;
   final int selectedWeekday;
   final String localeCode;
-  final HomeAiBrief brief;
   final double sidePadding;
   final ValueChanged<int> onDaySelected;
   final int currentStreak;
@@ -1194,7 +635,7 @@ class _HomeTopContent extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
                       ),
@@ -1213,12 +654,10 @@ class _HomeTopContent extends StatelessWidget {
                         ),
                         if (currentStreak > 0) ...<Widget>[
                           const SizedBox(width: 8),
-                          NousenNavIcon(
+                          Icon(
                             Icons.local_fire_department_rounded,
                             size: 16,
-                            color: theme
-                                .colorScheme
-                                .tertiary, // Use tertiary for a "fire" color
+                            color: theme.colorScheme.tertiary,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -1238,44 +677,16 @@ class _HomeTopContent extends StatelessWidget {
             ],
           ),
         ),
-        if (!compactEmptyState) ...<Widget>[
-          const SizedBox(height: 16),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: sidePadding),
-            child: _TodayHeroCard(
-              localeCode: localeCode,
-              title: heroTitle,
-              value: heroValue,
-              summary: heroSummary,
-              actionCue: heroActionCue,
-              progress: heroProgress,
-              progressColor: heroProgressColor,
-              brief: brief,
-              heroMascotMood: heroMascotMood,
-              heroMascotColor: heroMascotColor,
-              showProgress: showHeroProgress,
-            ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: sidePadding),
+          child: _HomeDaySelector(
+            selectedWeekday: selectedWeekday,
+            localeCode: localeCode,
+            onSelected: onDaySelected,
           ),
-          const SizedBox(height: 18),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: sidePadding),
-            child: _HomeDaySelector(
-              selectedWeekday: selectedWeekday,
-              localeCode: localeCode,
-              onSelected: onDaySelected,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: sidePadding),
-            child: Divider(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const SizedBox(height: 12),
-        ],
+        ),
+        const SizedBox(height: 12),
       ],
     );
   }

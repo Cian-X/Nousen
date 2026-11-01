@@ -151,22 +151,9 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
       bottomNavigationBar: NousenBottomNavBar(
         tabs: <NousenNavTab>[
           NousenNavTab(
-            icon: Icons.home_rounded,
-            label: isId ? 'Harian' : 'Daily',
+            icon: Icons.check_circle_outline_rounded,
+            label: isId ? 'Aktivitas' : 'Activities',
             onTap: () => Navigator.of(context).pop(),
-          ),
-          NousenNavTab(
-            icon: Icons.calendar_today_rounded,
-            label: isId ? 'Agenda' : 'Agenda',
-            isSelected: true,
-            onTap: () {},
-          ),
-          NousenNavTab(
-            icon: Icons.insights_rounded,
-            label: isId ? 'Statistik' : 'Analytics',
-            onTap: () => Navigator.of(
-              context,
-            ).pushNamed(AppRoutes.activitySummary),
           ),
           NousenNavTab(
             icon: Icons.person_rounded,
@@ -829,7 +816,7 @@ class _DayAgendaSection extends StatelessWidget {
           ...items.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _AgendaCard(
+              child: AgendaCard(
                 key: ValueKey<String>('agenda-${item.id}'),
                 item: item,
                 localeCode: localeCode,
@@ -949,8 +936,8 @@ class _DayAgendaGroupCard extends StatelessWidget {
   }
 }
 
-class _AgendaCard extends ConsumerStatefulWidget {
-  const _AgendaCard({
+class AgendaCard extends ConsumerStatefulWidget {
+  const AgendaCard({
     super.key,
     required this.item,
     required this.localeCode,
@@ -962,10 +949,10 @@ class _AgendaCard extends ConsumerStatefulWidget {
   final void Function(OneTimeReminderModel) onOpenDetail;
 
   @override
-  ConsumerState<_AgendaCard> createState() => _AgendaCardState();
+  ConsumerState<AgendaCard> createState() => _AgendaCardState();
 }
 
-class _AgendaCardState extends ConsumerState<_AgendaCard> {
+class _AgendaCardState extends ConsumerState<AgendaCard> {
   bool _expanded = false;
 
   @override

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nousen/app/providers.dart';
-import 'package:nousen/app/router.dart';
 import 'package:nousen/core/widgets/nousen_bottom_nav_bar.dart';
 import 'package:nousen/core/constants/app_constants.dart';
 import 'package:nousen/core/widgets/nousen_nav_icon.dart';
@@ -66,25 +65,11 @@ class SettingsPage extends ConsumerWidget {
           : NousenBottomNavBar(
         tabs: <NousenNavTab>[
           NousenNavTab(
-            icon: Icons.home_rounded,
-            label: isId ? 'Harian' : 'Daily',
+            icon: Icons.check_circle_outline_rounded,
+            label: isId ? 'Aktivitas' : 'Activities',
             onTap: () => Navigator.of(
               context,
             ).popUntil((Route<dynamic> route) => route.isFirst),
-          ),
-          NousenNavTab(
-            icon: Icons.calendar_today_rounded,
-            label: isId ? 'Agenda' : 'Agenda',
-            onTap: () => Navigator.of(
-              context,
-            ).pushNamed(AppRoutes.scheduleAgenda),
-          ),
-          NousenNavTab(
-            icon: Icons.insights_rounded,
-            label: isId ? 'Statistik' : 'Analytics',
-            onTap: () => Navigator.of(
-              context,
-            ).pushNamed(AppRoutes.activitySummary),
           ),
           NousenNavTab(
             icon: Icons.person_rounded,

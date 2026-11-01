@@ -10,15 +10,11 @@ import 'package:nousen/features/one_time_reminder/presentation/schedule_agenda_p
 import 'package:nousen/features/one_time_reminder/presentation/schedule_form_page.dart';
 import 'package:nousen/features/settings/domain/app_settings_model.dart';
 import 'package:nousen/features/settings/presentation/initial_setup_onboarding_page.dart';
-import 'package:nousen/features/stats/presentation/stats_page.dart';
-import 'package:nousen/features/stats/presentation/stats_report_page.dart';
 
 class AppRoutes {
   static const String home = '/';
   static const String createActivity = '/create-activity';
   static const String activityDetail = '/activity-detail';
-  static const String activitySummary = '/activity-summary';
-  static const String statsReport = '/stats-report';
   static const String oneTimeReminderDetail = '/one-time-reminder-detail';
   static const String scheduleAgenda = '/schedule-agenda';
   static const String scheduleForm = '/schedule-form';
@@ -62,19 +58,6 @@ Route<dynamic> onGenerateAppRoute(RouteSettings settings) {
       return MaterialPageRoute<void>(
         builder: (_) =>
             ActivityDetailPage(args: settings.arguments! as ActivityDetailArgs),
-      );
-    case AppRoutes.activitySummary:
-      return MaterialPageRoute<void>(builder: (_) => const StatsPage());
-    case AppRoutes.statsReport:
-      return MaterialPageRoute<void>(
-        builder: (_) => StatsReportPage(
-          dailyStats: (settings.arguments as Map<String, dynamic>)['dailyStats'],
-          periodActivityStats: (settings.arguments as Map<String, dynamic>)['periodActivityStats'],
-          start: (settings.arguments as Map<String, dynamic>)['start'],
-          end: (settings.arguments as Map<String, dynamic>)['end'],
-          totalScheduled: (settings.arguments as Map<String, dynamic>)['totalScheduled'],
-          localeCode: (settings.arguments as Map<String, dynamic>)['localeCode'],
-        ),
       );
     case AppRoutes.oneTimeReminderDetail:
       return MaterialPageRoute<void>(
