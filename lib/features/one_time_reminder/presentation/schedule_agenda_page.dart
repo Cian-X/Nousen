@@ -422,7 +422,7 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
                 ),
                 icon: NousenNavIcon(Icons.description_outlined, size: 19),
                 label: Text(
-                  isId ? 'Detail Jadwal' : 'Schedule details',
+                  isId ? 'Detail Agenda' : 'Agenda details',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,

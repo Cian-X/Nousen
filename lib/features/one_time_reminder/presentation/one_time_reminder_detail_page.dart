@@ -132,7 +132,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
           ),
         ),
         title: Text(
-          isId ? 'Detail jadwal' : 'Schedule detail',
+          isId ? 'Detail agenda' : 'Agenda detail',
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -149,7 +149,7 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
         ),
         actions: <Widget>[
           PopupMenuButton<String>(
-            tooltip: isId ? 'Opsi jadwal' : 'Schedule options',
+            tooltip: isId ? 'Opsi agenda' : 'Agenda options',
             icon: NousenNavIcon(
               Icons.more_horiz_rounded,
               color: theme.colorScheme.onSurfaceVariant,
@@ -404,8 +404,8 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                             children: <Widget>[
                               Text(
                                 isId
-                                    ? 'Progres Jadwal'
-                                    : 'Schedule Progress',
+                                    ? 'Progres Agenda'
+                                    : 'Agenda Progress',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -420,8 +420,8 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                                           : '$subDone of $subTotal sub-activities done')
                                     : (reminder.isCompleted
                                           ? (isId
-                                                ? 'Jadwal selesai dikerjakan.'
-                                                : 'Schedule completed.')
+                                                ? 'Agenda selesai dikerjakan.'
+                                                : 'Agenda completed.')
                                           : (isId
                                                 ? 'Progres sesi berjalan'
                                                 : 'Session progress')),
@@ -461,8 +461,8 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
                   if (reminder.subActivities.isNotEmpty) ...<Widget>[
+                    // Samakan ritme Detail Aktivitas: progres → sub = 18dp.
                     const SizedBox(height: 18),
                     Text(
                       isId ? 'Sub-aktivitas' : 'Sub-activities',
@@ -567,7 +567,8 @@ class OneTimeReminderDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  // Samakan ritme Detail Aktivitas: card sub → konten berikutnya.
+                  const SizedBox(height: 18),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -1118,7 +1119,7 @@ class _AgendaTimelineSection extends ConsumerWidget {
     if (reminder == null) {
       return Center(
         child: Text(
-          isId ? 'Jadwal tidak ditemukan.' : 'Schedule not found.',
+          isId ? 'Agenda tidak ditemukan.' : 'Agenda not found.',
         ),
       );
     }
