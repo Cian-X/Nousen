@@ -25,7 +25,7 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                 setTextViewText(R.id.widget_subtitle, subtitle)
                 setTextViewText(R.id.widget_count, count)
 
-                // Launch main activity on tap
+                // Launch main activity on tap anywhere on widget
                 val intent = Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
@@ -35,8 +35,7 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                setOnClickPendingIntent(R.id.widget_title, pendingIntent)
-                setOnClickPendingIntent(R.id.widget_subtitle, pendingIntent)
+                setOnClickPendingIntent(R.id.widget_container, pendingIntent)
             }
             appWidgetManager.updateAppWidget(widgetId, views)
         }

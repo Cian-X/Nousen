@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white"
+    android:background="@drawable/widget_background"
     android:padding="16dp">
 
     <!-- Header -->
@@ -32,12 +33,14 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <View
+    <ImageView
+        android:id="@+id/widget_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:background="#E2E8F0" />
+        android:background="#E2E8F0"
+        android:contentDescription="@null" />
 
     <!-- Content: Next item -->
     <TextView
