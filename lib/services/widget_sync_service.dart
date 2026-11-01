@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,8 +14,10 @@ import 'package:nousen/core/utils/time_utils.dart';
 import 'package:nousen/features/activity/data/activity_entity.dart';
 import 'package:nousen/features/activity/domain/activity_model.dart';
 import 'package:nousen/features/one_time_reminder/data/agenda_note_entity.dart';
+import 'package:nousen/features/one_time_reminder/data/cloud_first_one_time_reminder_repository.dart';
 import 'package:nousen/features/one_time_reminder/data/one_time_reminder_entity.dart';
 import 'package:nousen/features/one_time_reminder/domain/one_time_reminder_model.dart';
+import 'package:nousen/features/progress/data/cloud_progress_backend.dart';
 import 'package:nousen/features/progress/data/progress_entry_entity.dart';
 import 'package:nousen/features/progress/domain/progress_entry_model.dart';
 import 'package:nousen/features/settings/data/app_settings_entity.dart';
@@ -487,29 +490,19 @@ class WidgetSyncService {
       final String? uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      final Map<String, dynamic> data = <String, dynamic>{
-        'id': progress.id,
-        'activityId': progress.activityId,
-        'dateKey': progress.dateKey,
-        'status': progress.statusKey,
-        'subCompleted': progress.subCompleted,
-        'subTotal': progress.subTotal,
-        'completedSubActivities': progress.completedSubActivities,
-        'photoNote': null,
-        'notes': progress.notes,
-        'completionTime': null,
-        'createdAt': progress.createdAt.toIso8601String(),
-        'updatedAt': progress.updatedAt.toIso8601String(),
-      };
-
+      // WAJIB memakai kontrak cloud-first: FieldValue.serverTimestamp(),
+      // tombstone state, schemaVersion, serta seluruh field model.
+      final ProgressEntryModel model = progress.toDomain();
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('progress')
           .doc(progress.id)
-          .set(data, SetOptions(merge: true));
-    } catch (_) {
-      // Best-effort: if Firebase not available, skip silently
+          .set(progressCloudDocMap(model), SetOptions(merge: true));
+    } catch (error, stackTrace) {
+      // Jangan gagalkan toggle lokal; log tetap diperlukan untuk diagnosis
+      // reject rules/payload dari background isolate.
+      debugPrint('[widget-sync] progress Firestore gagal: $error\n$stackTrace');
     }
   }
 
@@ -522,26 +515,20 @@ class WidgetSyncService {
       final String? uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      final Map<String, dynamic> data = <String, dynamic>{
-        'id': reminder.id,
-        'title': reminder.title,
-        'scheduledDate': reminder.scheduledAt.toIso8601String(),
-        'isCompleted': reminder.isCompleted,
-        'isSkipped': reminder.isSkipped,
-        'subActivities': reminder.subActivities ?? const <String>[],
-        'completedSubActivities':
-            reminder.completedSubActivities ?? const <String>[],
-        'updatedAt': reminder.updatedAt.toIso8601String(),
-      };
-
+      // Jangan buat payload manual: field scheduledAt, updatedAt server,
+      // deleted/schemaVersion harus persis sama dengan jalur app cloud-first.
+      final OneTimeReminderModel model = reminder.toDomain();
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('reminders')
           .doc(reminder.id)
-          .set(data, SetOptions(merge: true));
-    } catch (_) {
-      // Best-effort
+          .set(
+            CloudFirstOneTimeReminderRepository.reminderToMap(model),
+            SetOptions(merge: true),
+          );
+    } catch (error, stackTrace) {
+      debugPrint('[widget-sync] reminder Firestore gagal: $error\n$stackTrace');
     }
   }
 }
