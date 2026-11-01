@@ -115,12 +115,12 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
 
                         views.setViewVisibility(subContainers[i], View.VISIBLE)
                         views.setTextViewText(subTitles[i], subTitle)
-                        // Sub checkbox selalu indikator amber tanpa centang.
-                        // Status selesai tetap tersimpan dan sinkron, hanya tidak
-                        // divisualkan sebagai centang pada widget.
+                        // Status sub tetap terlihat tanpa ikon centang:
+                        // outline amber = belum selesai, lingkaran amber = selesai.
                         views.setImageViewResource(
                             subChecks[i],
-                            R.drawable.ic_widget_check_empty
+                            if (subDone) R.drawable.ic_widget_check_sub_done
+                            else R.drawable.ic_widget_check_empty
                         )
 
                         if (!subUri.isNullOrEmpty()) {
