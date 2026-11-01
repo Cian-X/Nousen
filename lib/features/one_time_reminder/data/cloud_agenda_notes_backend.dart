@@ -25,7 +25,9 @@ abstract class CloudAgendaNotesBackend {
   /// Merge-set dokumen di `/users/{uid}/agendaNotes/{docId}`.
   Future<void> setDoc(String uid, String docId, Map<String, dynamic> data);
 
-  /// Dokumen hidup (`deleted != true`) + metadata pending
+  /// Dokumen hidup + tombstone (filter `deleted != true` DI REPOSITORY —
+  /// dokumen tanpa field `deleted` = hidup, kompatibel dual-write v1 lawas)
+  /// + metadata pending
   /// (`hasPendingWrites`). Satu query kanonik per uid; repository memfilter
   /// `reminderId` (pola yang sama dengan progress S2).
   Stream<List<CloudAgendaNoteDoc>> watchVisible(String uid);
@@ -53,8 +55,9 @@ class FirestoreCloudAgendaNotesBackend implements CloudAgendaNotesBackend {
 
   @override
   Stream<List<CloudAgendaNoteDoc>> watchVisible(String uid) {
+    // TANPA filter query `deleted == false` (read-compat v2): dokumen
+    // dual-write lama tanpa field `deleted` ikut; visibility di repository.
     return _col(uid)
-        .where('deleted', isEqualTo: false)
         .snapshots(includeMetadataChanges: true)
         .map(
           (QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
@@ -74,7 +77,7 @@ class FirestoreCloudAgendaNotesBackend implements CloudAgendaNotesBackend {
   Future<List<Map<String, dynamic>>> queryVisible(String uid) async {
     final QuerySnapshot<Map<String, dynamic>> snapshot = await _col(
       uid,
-    ).where('deleted', isEqualTo: false).get();
+    ).get();
     return snapshot.docs
         .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data())
         .toList();

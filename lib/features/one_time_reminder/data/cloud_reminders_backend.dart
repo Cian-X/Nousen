@@ -32,7 +32,9 @@ abstract class CloudRemindersBackend {
   /// (create dan update lewat jalur yang sama).
   Future<void> setDoc(String uid, String docId, Map<String, dynamic> data);
 
-  /// Dokumen hidup (`deleted != true`) + metadata pending
+  /// Semua dokumen hidup + tombstone (filter `deleted != true` dilakukan
+  /// DI REPOSITORY — dokumen tanpa field `deleted` = hidup, kompatibel
+  /// dual-write v1 lawas) + metadata pending
   /// (`hasPendingWrites`). Satu query kanonik per uid dipakai untuk baca
   /// (`watchAll`/`getAll`) dan status pending per-reminder.
   Stream<List<CloudReminderDoc>> watchVisible(String uid);
@@ -64,7 +66,6 @@ class FirestoreCloudRemindersBackend implements CloudRemindersBackend {
     // metadata saja) TIDAK memicu snapshot secara default — tanpa ini badge
     // pending menempel selamanya (temuan uji device S2).
     return _col(uid)
-        .where('deleted', isEqualTo: false)
         .snapshots(includeMetadataChanges: true)
         .map(
           (QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
@@ -84,7 +85,7 @@ class FirestoreCloudRemindersBackend implements CloudRemindersBackend {
   Future<List<Map<String, dynamic>>> queryVisible(String uid) async {
     final QuerySnapshot<Map<String, dynamic>> snapshot = await _col(
       uid,
-    ).where('deleted', isEqualTo: false).get();
+    ).get();
     return snapshot.docs
         .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data())
         .toList();

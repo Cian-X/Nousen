@@ -1314,12 +1314,13 @@ Urutan yang direncanakan (BELUM dieksekusi):
 
 ## 18. Progress naik ke skema v2 (syarat rules v2 — 2026-10-31)
 
-Status: **diimplementasikan + tes hijau; tidak men-deploy apa pun — rules
-aktif di produksi masih rules lawas (owner-only). Kejadian pemicu: deploy
-rules draf v2 pada 2026-10-31 menolak tulis progress (PERMISSION_DENIED
-"Gagal simpan progres ke cloud") karena skema progress masih v1 → rules
-di-rollback ke lawas pada hari yang sama; upgrade skema dikerjakan agar
-rules v2 bisa di-deploy ulang setelah semua uji lulus.**
+Status: **diimplementasikan, diuji, dan rules draf v2 SUDAH di-deploy ke
+produksi (2026-10-31 malam), setelah APK progress v2 terpasang & diuji di
+device owner.** Kejadian pemicu: deploy rules draf v2 pertama (2026-10-31)
+menolak tulis progress (PERMISSION_DENIED "Gagal simpan progres ke cloud")
+karena skema progress masih v1 → rules di-rollback ke lawas pada hari yang
+sama; upgrade skema dikerjakan lalu rules v2 di-deploy ulang setelah semua
+uji lulus. Commit kode: `92cf199`.
 
 Akar masalah (rules v2 vs kode progress v1):
 - `CloudFirstProgressRepository` menulis `updatedAt` sebagai string ISO
@@ -1372,5 +1373,57 @@ Akar masalah (rules v2 vs kode progress v1):
    tulis/hapus progress di device.
 3. Setelah device aman → deploy rules draf v2 → uji ulang (tulis +
    tombstone + tidak ada badge merah). Emulator sudah 23/23.
-4. Setelah itu baru lanjut live run S6.0 (backfill login-first) sesuai
-   gate §17.4.
+4. Setelah itu baru bahas live run S6.0 (backfill login-first) sesuai gate
+   §17.4 — hanya untuk data device yang BELUM pernah tersinkron ke cloud;
+   dokumen dual-write lawas tidak butuh backfill (lihat §19).
+
+## 19. Read-compat v2 untuk domain lain (tanpa backfill — 2026-10-31)
+
+Status: **diimplementasikan + tes hijau; belum di-commit saat §18 selesai.**
+
+Masalah: setelah semua flag cloud-first menyala, daftar aktivitas/reminder/
+catatan kosong untuk data lama. Penyebabnya BUKAN data hilang: dokumen hasil
+dual-write lawas sudah lengkap di Firestore (`FirestoreActivityRepository.
+toMap` menulis seluruh field domain), hanya saja TIDAK punya field
+`deleted` (skema v1), sementara query cloud-first memfilter
+`.where('deleted', isEqualTo: false)` di server — dokumen tanpa field itu
+tidak pernah ikut hasil query.
+
+Keputusan: samakan pola dengan progress v2 — **dokumen tanpa field `deleted`
+dianggap HIDUP**, filter visibility dilakukan di repository (client-side).
+Backfill Isar → Firestore jadi TIDAK diperlukan untuk data yang sudah
+pernah tersinkron dual-write.
+
+### 19.1 Perubahan
+
+| File | Perubahan |
+| --- | --- |
+| `lib/features/activity/data/cloud_activities_backend.dart` | `queryVisible`/`watchVisible` tidak lagi memakai `.where('deleted', isEqualTo: false)`; `includeMetadataChanges` tetap. |
+| `lib/features/one_time_reminder/data/cloud_reminders_backend.dart` | sama untuk `watchVisible` + `queryVisible`. |
+| `lib/features/one_time_reminder/data/cloud_agenda_notes_backend.dart` | sama untuk `watchVisible` + `queryVisible`. |
+| `lib/features/activity/data/cloud_first_activity_repository.dart` | komentar kontrak diperbarui (read-compat; data lama tampil tanpa backfill). |
+
+Repository tidak perlu diubah: `_visible` (activities), `_visibleReminders`,
+filter notes, dan settings (`data['deleted'] != true`) sudah memperlakukan
+field yang tidak ada sebagai hidup. Settings memakai satu dokumen (`app`)
+tanpa query filter → tidak berubah.
+
+### 19.2 Konsekuensi
+
+- Dokumen tombstone ikut terkirim ke client lalu dibuang di repository —
+  volume kecil, tidak ada composite index baru yang dibutuhkan (index
+  `deleted == false` lama tetap terpasang, aman).
+- **Jangan** hard delete dokumen lama: edit/hapus lewat app otomatis
+  menulis merge-set v2 (`updatedAt` serverTimestamp + `deleted`) yang lolos
+  rules v2.
+- Backfill login-first (§17) tetap tersedia untuk kasus lain: device yang
+  datanya belum pernah terkirim ke cloud sama sekali (mis. install baru
+  setelah flag ON, data hanya di Isar).
+
+### 19.3 Verifikasi
+
+| Verifikasi | Hasil |
+| --- | --- |
+| Suite aktivitas + reminder/notes (`cloud_first_activity_repository_test.dart`, `cloud_first_one_time_reminder_repository_test.dart`) — 3 kasus baru read-compat (dokumen tanpa `deleted` tampil di aktivitas, reminder, catatan) | 42/42 PASSED |
+| Full suite (setelah perubahan backend) | **276 PASSED, 2 pre-existing** `typography_guardrails_test` |
+| Emulator rules | tidak berubah (23/23) — read-compat tidak menyentuh aturan |

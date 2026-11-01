@@ -33,12 +33,15 @@ abstract class CloudActivitiesBackend {
   /// (create dan update lewat jalur yang sama).
   Future<void> setDoc(String uid, String docId, Map<String, dynamic> data);
 
-  /// Semua dokumen visible (`deleted == false`), mentah; nonaktif
+  /// Semua dokumen hidup + tombstone (mentah — filter `deleted != true`
+  /// dilakukan DI REPOSITORY: dokumen TANPA field `deleted` (hasil
+  /// dual-write v1 lawas atau backfill lama) dianggap HIDUP, sehingga data
+  /// lama tampil tanpa migration/backfill);
   /// disentuh hanya oleh repository (defense filtering).
   Future<List<Map<String, dynamic>>> queryVisible(String uid);
 
-  /// Stream dokumen visible (`deleted == false`) + metadata pending
-  /// (`hasPendingWrites`) untuk status tulis per-activity.
+  /// Stream semua dokumen + metadata pending (`hasPendingWrites`) untuk
+  /// status tulis per-activity. Filter hidup/tombstone di repository.
   Stream<List<CloudActivityDoc>> watchVisible(String uid);
 
   /// Dokumen mentah, atau null bila tidak ada / tidak terbaca.
@@ -61,9 +64,7 @@ class FirestoreCloudActivitiesBackend implements CloudActivitiesBackend {
 
   @override
   Future<List<Map<String, dynamic>>> queryVisible(String uid) async {
-    final QuerySnapshot<Map<String, dynamic>> snap = await _col(
-      uid,
-    ).where('deleted', isEqualTo: false).get();
+    final QuerySnapshot<Map<String, dynamic>> snap = await _col(uid).get();
     return snap.docs
         .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
         .toList();
@@ -74,8 +75,11 @@ class FirestoreCloudActivitiesBackend implements CloudActivitiesBackend {
     // includeMetadataChanges WAJIB: transisi pending→acked (perubahan
     // metadata saja) TIDAK memicu snapshot secara default — tanpa ini
     // badge pending menempel selamanya (temuan uji device S2).
+    //
+    // TANPA filter query `deleted == false` (read-compat v2): dokumen
+    // dual-write lama tanpa field `deleted` ikut masuk; visibility
+    // ditentukan repository (`deleted != true`).
     return _col(uid)
-        .where('deleted', isEqualTo: false)
         .snapshots(includeMetadataChanges: true)
         .map(
           (QuerySnapshot<Map<String, dynamic>> s) => s.docs

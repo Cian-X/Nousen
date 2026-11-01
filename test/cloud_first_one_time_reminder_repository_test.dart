@@ -461,6 +461,37 @@ void main() {
       );
     });
 
+    test(
+      'watchAll: read-compat v2 — dokumen dual-write lawas TANPA field '
+      '`deleted` tetap terlihat',
+      () async {
+        final List<List<OneTimeReminderModel>> emissions =
+            <List<OneTimeReminderModel>>[];
+        final StreamSubscription<List<OneTimeReminderModel>> sub = repo
+            .watchAll()
+            .listen(emissions.add);
+        addTearDown(sub.cancel);
+
+        auth.emit('u1');
+        await _flush();
+
+        final CloudReminderDoc legacy = _cloudReminderDoc(_reminder('r1'));
+        backend.push('u1', <CloudReminderDoc>[
+          CloudReminderDoc(
+            id: legacy.id,
+            data: <String, dynamic>{...legacy.data}..remove('deleted'),
+            hasPendingWrites: false,
+          ),
+        ]);
+        await _flush();
+
+        expect(
+          emissions.last.map((OneTimeReminderModel r) => r.id),
+          <String>['r1'],
+        );
+      },
+    );
+
     test('watchPendingIds: hanya hasPendingWrites', () async {
       final List<Set<String>> emissions = <Set<String>>[];
       final StreamSubscription<Set<String>> sub = repo
@@ -614,6 +645,37 @@ void main() {
       expect(notes.first.photoPaths, <String>['/lokal/a.jpg']);
       expect(notes.last.photoPaths, isEmpty);
     });
+
+    test(
+      'watchNotes: read-compat v2 — catatan lawas TANPA field `deleted` '
+      'tetap terlihat',
+      () async {
+        final List<List<AgendaNoteModel>> emissions = <List<AgendaNoteModel>>[];
+        final StreamSubscription<List<AgendaNoteModel>> sub = repo
+            .watchNotes('r1')
+            .listen(emissions.add);
+        addTearDown(sub.cancel);
+
+        auth.emit('u1');
+        await _flush();
+
+        final CloudAgendaNoteDoc legacy = _cloudNoteDoc(_note('n1', 'r1'));
+        backend.push('u1', <CloudAgendaNoteDoc>[
+          CloudAgendaNoteDoc(
+            id: legacy.id,
+            data: <String, dynamic>{...legacy.data}..remove('deleted'),
+            hasPendingWrites: false,
+          ),
+        ]);
+        await _flush();
+        await _flush();
+
+        expect(
+          emissions.last.map((AgendaNoteModel n) => n.id),
+          <String>['n1'],
+        );
+      },
+    );
 
     test('deleteNote: tombstone + mirror hapus', () async {
       mirror.notes.add(_note('n1', 'r1'));

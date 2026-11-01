@@ -474,6 +474,21 @@ void main() {
     });
 
     test(
+      'getAll: read-compat v2 — dokumen dual-write lawas TANPA field '
+      '`deleted` tetap terlihat',
+      () async {
+        final Map<String, dynamic> legacy = _cloudDoc('a9');
+        legacy.remove('deleted'); // skema dual-write v1 lama
+
+        backend.queryResults = <Map<String, dynamic>>[legacy];
+
+        final List<ActivityModel> all = await repo.getAll();
+
+        expect(all.map((ActivityModel a) => a.id), <String>['a9']);
+      },
+    );
+
+    test(
       'getAll: baca dari cloud, filter deleted, mirror tidak disentuh',
       () async {
         backend.queryResults = <Map<String, dynamic>>[

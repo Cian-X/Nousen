@@ -54,9 +54,10 @@ import 'package:nousen/services/firebase/firebase_auth_state.dart';
 /// Catatan:
 /// - Hanya dipakai bila `MigrationFlags.cloudFirstActivities` aktif; default
 ///   produksi tetap `DualWriteActivityRepository` (Isar primer).
-/// - Query memfilter `deleted == false`; dokumen lama yang belum pernah
-///   ditulis dengan field `deleted` harus di-backfill dulu sebelum flag
-///   dinyalakan (lihat `BackfillService`).
+/// - Read-compat v2 (2026-10-31): dokumen lama hasil dual-write (utan field
+///   `deleted`) dianggap HIDUP — query tidak lagi memfilter `deleted ==
+///   false` di server; visibility ditentukan di `_visible` (repository).
+///   Data lama tampil tanpa backfill `BackfillService`.
 /// - Tanpa login Firebase repository ini melempar [StateError] (jalur
 ///   cloud-first mensyaratkan auth produksi) — belum ada fallback senyap.
 class CloudFirstActivityRepository implements ActivityRepository {
