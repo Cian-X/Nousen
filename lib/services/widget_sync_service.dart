@@ -133,15 +133,26 @@ class WidgetSyncService {
       if (activeStack.isNotEmpty) {
         // === MODE AKTIF (Menyorot jadwal terbaru yang belum tuntas) ===
         final _ScheduleItem activeItem = activeStack.first;
+        final int totalPending =
+            allItems.where((_ScheduleItem i) => !i.isCompleted).length;
 
         await HomeWidget.saveWidgetData<String>('widget_mode', 'active');
         await HomeWidget.saveWidgetData<String>(
-          'widget_status_badge',
-          'Sedang Aktif',
+          'widget_header_info',
+          '$totalPending tugas tersisa',
         );
         await HomeWidget.saveWidgetData<String>(
           'widget_active_title',
           activeItem.title,
+        );
+        final String subtitle = activeItem.subActivities.isNotEmpty
+            ? '${activeItem.subActivities.length} sub aktivitas'
+            : (activeItem.type == 'reminder'
+                ? 'Agenda terjadwal'
+                : 'Rutinitas harian');
+        await HomeWidget.saveWidgetData<String>(
+          'widget_active_subtitle',
+          subtitle,
         );
         await HomeWidget.saveWidgetData<String>(
           'widget_active_time',
@@ -183,14 +194,14 @@ class WidgetSyncService {
         // === MODE IDLE (List aktivitas & agenda hari ini) ===
         final int totalPending =
             allItems.where((_ScheduleItem i) => !i.isCompleted).length;
-        final String statusBadge = totalPending > 0
-            ? '$totalPending pending'
+        final String headerInfo = totalPending > 0
+            ? '$totalPending tugas tersisa'
             : 'Semua selesai!';
 
         await HomeWidget.saveWidgetData<String>('widget_mode', 'idle');
         await HomeWidget.saveWidgetData<String>(
-          'widget_status_badge',
-          statusBadge,
+          'widget_header_info',
+          headerInfo,
         );
 
         final int itemCount = min(4, allItems.length);

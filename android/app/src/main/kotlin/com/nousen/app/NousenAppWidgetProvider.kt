@@ -34,8 +34,8 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_app_label, openAppPendingIntent)
 
             val mode = widgetData.getString("widget_mode", "idle")
-            val statusBadge = widgetData.getString("widget_status_badge", "Standby")
-            views.setTextViewText(R.id.widget_status_badge, statusBadge)
+            val headerInfo = widgetData.getString("widget_header_info", "")
+            views.setTextViewText(R.id.widget_header_info, headerInfo)
 
             if (mode == "active") {
                 // Tampilkan Active View, sembunyikan Idle View
@@ -43,11 +43,13 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                 views.setViewVisibility(R.id.widget_idle_view, View.GONE)
 
                 val activeTitle = widgetData.getString("widget_active_title", "Jadwal Aktif")
+                val activeSubtitle = widgetData.getString("widget_active_subtitle", "")
                 val activeTime = widgetData.getString("widget_active_time", "")
                 val activeDone = widgetData.getBoolean("widget_active_done", false)
                 val activeUri = widgetData.getString("widget_active_uri", "")
 
                 views.setTextViewText(R.id.widget_active_title, activeTitle)
+                views.setTextViewText(R.id.widget_active_subtitle, activeSubtitle)
                 views.setTextViewText(R.id.widget_active_time, activeTime)
                 views.setImageViewResource(
                     R.id.widget_active_main_check,
@@ -173,6 +175,26 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
             }
 
             appWidgetManager.updateAppWidget(widgetId, views)
+        }
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        val action = intent.action
+        if (action == Intent.ACTION_DATE_CHANGED ||
+            action == Intent.ACTION_TIMEZONE_CHANGED ||
+            action == Intent.ACTION_TIME_CHANGED ||
+            action == Intent.ACTION_BOOT_COMPLETED ||
+            action == "android.intent.action.TIME_SET"
+        ) {
+            try {
+                val refreshIntent = HomeWidgetBackgroundIntent.getBroadcast(
+                    context,
+                    Uri.parse("nousen://widget_action?action=refresh")
+                )
+                refreshIntent.send()
+            } catch (_: Exception) {
+            }
         }
     }
 }

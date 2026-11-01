@@ -1040,26 +1040,29 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                     ),
                   ),
                 // Paling kanan: tombol Selesai (tukar posisi dengan dropdown).
-                InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () async {
-                    await ref
-                        .read(oneTimeReminderActionsProvider)
-                        .toggleCompletion(
-                          reminder: item,
-                          completed: !item.isCompleted,
-                        );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: NousenNavIcon(
-                      item.isCompleted
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      size: 26,
-                      color: item.isCompleted
-                          ? theme.colorScheme.primary
-                          : stateColor,
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () async {
+                      await ref
+                          .read(oneTimeReminderActionsProvider)
+                          .toggleCompletion(
+                            reminder: item,
+                            completed: !item.isCompleted,
+                          );
+                    },
+                    child: Center(
+                      child: NousenNavIcon(
+                        item.isCompleted
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 26,
+                        color: item.isCompleted
+                            ? theme.colorScheme.primary
+                            : stateColor,
+                      ),
                     ),
                   ),
                 ),

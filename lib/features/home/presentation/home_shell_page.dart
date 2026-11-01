@@ -1235,33 +1235,36 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                       // Paling kanan: tombol Selesai (tukar posisi dengan dropdown).
                       // Lingkaran mencerminkan unit induk (entry.status),
                       // sedangkan redup kartu mengikuti selesai keseluruhan.
-                      InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: canToggleToday
-                            ? () async {
-                                await ref
-                                    .read(activityActionsProvider)
-                                    .toggleTodayCompletion(
-                                      activity: activity,
-                                      completed:
-                                          !(entry?.isCompleted == true),
-                                    );
-                              }
-                            : null,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: NousenNavIcon(
-                            entry?.isCompleted == true
-                                ? Icons.check_circle_rounded
-                                : Icons.radio_button_unchecked_rounded,
-                            size: 26,
-                            color: entry?.isCompleted == true
-                                ? theme.colorScheme.primary
-                                : (canToggleToday
-                                      ? borderColor
-                                      : theme.colorScheme.onSurface.withValues(
-                                          alpha: 0.3,
-                                        )),
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: canToggleToday
+                              ? () async {
+                                  await ref
+                                      .read(activityActionsProvider)
+                                      .toggleTodayCompletion(
+                                        activity: activity,
+                                        completed:
+                                            !(entry?.isCompleted == true),
+                                      );
+                                }
+                              : null,
+                          child: Center(
+                            child: NousenNavIcon(
+                              entry?.isCompleted == true
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              size: 26,
+                              color: entry?.isCompleted == true
+                                  ? theme.colorScheme.primary
+                                  : (canToggleToday
+                                        ? borderColor
+                                        : theme.colorScheme.onSurface.withValues(
+                                            alpha: 0.3,
+                                          )),
+                            ),
                           ),
                         ),
                       ),
