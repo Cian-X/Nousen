@@ -603,85 +603,6 @@ class ActivityDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  // Timeline: navigasi ke halaman perbandingan yang sudah ada.
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.3,
-                        ),
-                        width: 1,
-                      ),
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => _ActivityComparisonPage(
-                              activityId: activity.id,
-                              activityTitle: activity.title,
-                              localeCode: localeCode,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          children: <Widget>[
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: NousenNavIcon(
-                                Icons.bar_chart_rounded,
-                                color: Color(0xFF475569),
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    localeCode == 'id'
-                                        ? 'Timeline progres'
-                                        : 'Progress timeline',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  Text(
-                                    localeCode == 'id'
-                                        ? 'Lihat riwayat & catatan lalu'
-                                        : 'View history & past notes',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontSize: 11,
-                                      color: const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            NousenNavIcon(
-                              Icons.chevron_right_rounded,
-                              color: Color(0xFF94A3B8),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -771,6 +692,85 @@ class ActivityDetailPage extends ConsumerWidget {
                           ],
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Timeline: navigasi ke halaman perbandingan yang sudah ada.
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                        width: 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => _ActivityComparisonPage(
+                              activityId: activity.id,
+                              activityTitle: activity.title,
+                              localeCode: localeCode,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: <Widget>[
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: NousenNavIcon(
+                                Icons.bar_chart_rounded,
+                                color: Color(0xFF475569),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    localeCode == 'id'
+                                        ? 'Timeline progres'
+                                        : 'Progress timeline',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  Text(
+                                    localeCode == 'id'
+                                        ? 'Lihat riwayat & catatan lalu'
+                                        : 'View history & past notes',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontSize: 11,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            NousenNavIcon(
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
