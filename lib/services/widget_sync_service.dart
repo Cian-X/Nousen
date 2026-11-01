@@ -219,6 +219,15 @@ class WidgetSyncService {
             'widget_idle_item_${i}_title',
             item.title,
           );
+          final String subtitle = item.type == 'reminder'
+              ? 'Agenda terjadwal'
+              : (item.subActivities.isNotEmpty
+                    ? '${item.subActivities.length} sub aktivitas'
+                    : 'Rutinitas harian');
+          await HomeWidget.saveWidgetData<String>(
+            'widget_idle_item_${i}_subtitle',
+            subtitle,
+          );
           await HomeWidget.saveWidgetData<String>(
             'widget_idle_item_${i}_time',
             formatMinutesAsTime(item.timeMinutes),

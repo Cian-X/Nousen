@@ -139,6 +139,13 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                     R.id.widget_idle_time_4
                 )
 
+                val itemSubtitles = listOf(
+                    R.id.widget_idle_subtitle_1,
+                    R.id.widget_idle_subtitle_2,
+                    R.id.widget_idle_subtitle_3,
+                    R.id.widget_idle_subtitle_4
+                )
+
                 if (itemCount == 0) {
                     views.setViewVisibility(R.id.widget_idle_empty, View.VISIBLE)
                 } else {
@@ -149,12 +156,14 @@ class NousenAppWidgetProvider : HomeWidgetProvider() {
                     if (i < itemCount) {
                         val title = widgetData.getString("widget_idle_item_${i}_title", "")
                         val time = widgetData.getString("widget_idle_item_${i}_time", "")
+                        val subtitle = widgetData.getString("widget_idle_item_${i}_subtitle", "")
                         val isDone = widgetData.getBoolean("widget_idle_item_${i}_done", false)
                         val uri = widgetData.getString("widget_idle_item_${i}_uri", "")
 
                         views.setViewVisibility(itemContainers[i], View.VISIBLE)
                         views.setTextViewText(itemTitles[i], title)
                         views.setTextViewText(itemTimes[i], time)
+                        views.setTextViewText(itemSubtitles[i], subtitle)
                         views.setImageViewResource(
                             itemChecks[i],
                             if (isDone) R.drawable.ic_widget_check_done else R.drawable.ic_widget_check_empty
