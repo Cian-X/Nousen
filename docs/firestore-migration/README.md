@@ -1,8 +1,14 @@
 # Migrasi Firestore — Catatan S0 (tooling + draft)
 
-Status: **S0 tereksekusi (temuan QC ronde 1 & 2 diperbaiki, §12); S1 dikerjakan — cloud-first + mirror Isar untuk build uji device owner (§13). Belum di-deploy; flag produksi masih mati (aktivasi S1 hanya build-time, khusus APK owner).**
-Semua artefak di bawah adalah draft lokal untuk review; tidak ada deploy,
-tidak ada perubahan data produksi, tidak ada aktivasi flag di produksi.
+Status: **S0–S19 tereksekusi. Produksi `nousen-747fb` SUDAH online: 5
+composite index deployed, rules v2 (owner-only, `serverTimestamp` +
+tombstone) aktif, progress & seluruh domain cloud-first kompatibel.
+Backfill tidak dijalankan (tidak diperlukan — lihat §19).**
+Semua artefak di repo tetap draft lokal yang di-review; deploy produksi
+dilakukan manual dan tercatat di [`CHANGELOG.md`](./CHANGELOG.md) (hash APK,
+ruleset aktif, hasil uji perangkat, bug log). Rules aktif bisa diverifikasi
+ulang kapan saja dengan
+`node firestore/rules_tests/verify_active_rules.cjs`.
 
 ## 1. Apa yang ada di S0
 
@@ -13,14 +19,17 @@ tidak ada perubahan data produksi, tidak ada aktivasi flag di produksi.
 | Repo cloud-first | `lib/features/activity/data/cloud_first_activity_repository.dart` | Firestore primer + tombstone + server timestamp + **mirror Isar best-effort (S1)** (khusus activities) |
 | Backend cloud (seam) | `lib/features/activity/data/cloud_activities_backend.dart` | `CloudActivitiesBackend` + impl Firestore — repo cloud-first bisa dites tanpa Firebase asli (S1) |
 | Backfill | `lib/features/migration/**` | `BackfillService`, sink Firestore, source Isar, checkpoint, mappers |
-| Rules draft | `firestore.rules.draft` | Draft rules skema v2 (belum deploy) |
-| Indexes draft | `firestore.indexes.json` | Draft composite indexes (belum deploy) |
+| Rules | `firestore.rules.draft` | Rules skema v2 — **AKTIF di produksi** (ruleset `91caafc1…`, lihat CHANGELOG) |
+| Indexes | `firestore.indexes.json` | 5 composite index — **deployed** |
 | Config CLI | `firebase.json` | Menunjuk rules ke `firestore.rules.draft` + port emulator |
-| Emulator test | `firestore/rules_tests/` | 19 check rules + 20 ronde konkurensi 2-client (create-if-absent) di Firestore Emulator |
+| Emulator test | `firestore/rules_tests/` | 23 check rules (termasuk 4 cek progress v2) + 20 ronde konkurensi 2-client (create-if-absent) di Firestore Emulator |
+| Verifikasi produksi | `firestore/rules_tests/verify_active_rules.cjs` | Baca release + ruleset aktif via Firebase Rules API, bandingkan hash dengan draft lokal |
 | Tes unit | `test/migration_flags_test.dart`, `test/backfill_service_test.dart`, `test/cloud_first_activity_repository_test.dart`, `test/s1_cloud_first_wiring_test.dart` | 15 tes S0 (flag + backfill full-rescan) + 16 tes S1 (CRUD/mirror cloud-first, wiring provider, aktivasi build) |
 
-`firestore.rules` (rules lama) **tidak diubah** — file itu tetap referensi
-aturan yang berlaku sekarang.
+`firestore.rules` (rules lama owner-only, 430 B) **bukan** aturan yang
+berlaku sekarang — file itu hanya backup rollback lokal. Rules aktif =
+`firestore.rules.draft` (v2), terverifikasi lewat Firebase Rules API
+(`verify_active_rules.cjs`).
 
 ## 2. Feature flag
 
@@ -427,6 +436,9 @@ lapor dulu.
   → hanya dokumen skema v2. Backfill produksi TIDAK dijalankan di S1, jadi
   dokumen lama (dual-write tanpa field `deleted`) belum muncul di daftar;
   entri baru / entri lama yang di-edit ulang lewat app akan muncul.
+  (**Berlaku sampai S19**: sejak read-compat v2 (`097d63a`), dokumen tanpa
+  field `deleted` dianggap hidup dan filter dipindah ke repository — lihat
+  §19.)
 - Semua tulis (create/edit/delete) masuk cloud + mirror Isar.
 - Offline (S1b, §13.6): save/edit/delete **selesai cepat** — UI tidak
   menggantung; entri baru/edit langsung terlihat dari cache lokal.

@@ -44,7 +44,29 @@ jadi tidak ada commit khusus untuknya.
 | Tes otomatis | Progress suite 38/38; full suite 276 PASS (+2 pre-existing); emulator rules 23/23 (4 cek baru progress v2) |
 | Deploy rules | `firebase deploy --only firestore:rules --project nousen-747fb` pada 2026-10-31T14:49:30Z (21:49 WIB) |
 | Ruleset aktif | `projects/nousen-747fb/rulesets/91caafc1-2885-4d67-a3d0-a27f9319e195` — source `firestore.rules.draft` |
-| Verifikasi isi rules aktif (2026-11-01) | Dibaca ulang via Firebase Rules API: berisi `deletedAt`, `updatedAt == request.time`, `allow delete: if false` → **v2 benar-benar aktif**, identik dengan `firestore.rules.draft` |
+| Verifikasi isi rules aktif (2026-11-01) | Dibaca ulang via Firebase Rules API: berisi `deletedAt`, `updatedAt == request.time`, `allow delete: if false` → **v2 benar-benar aktif**, identik dengan `firestore.rules.draft` (sha256 `b51d0cb5…f0d46` kedua sisi) |
+
+**Cara verifikasi ulang (reproduksibel):**
+
+```bash
+firebase login                       # sekali saja, akun pemilik project
+node firestore/rules_tests/verify_active_rules.cjs
+```
+
+Script membaca kredensial Firebase CLI, memanggil release
+`projects/nousen-747fb/releases/cloud.firestore`, mengambil ruleset aktif,
+lalu membandingkan hash-nya dengan `firestore.rules.draft`. Keluaran
+2026-11-01:
+
+```
+ruleset          : projects/nousen-747fb/rulesets/91caafc1-2885-4d67-a3d0-a27f9319e195
+updateTime       : 2026-10-31T14:49:30.729218Z
+source file      : firestore.rules.draft
+deployed sha256  : b51d0cb539680985d2da5b7f2fbb47b2ed92a805da8a06ce3c53c97cb16f0d46
+draft sha256     : b51d0cb539680985d2da5b7f2fbb47b2ed92a805da8a06ce3c53c97cb16f0d46
+identik dg draft : true
+OK: rules aktif adalah skema v2 dan identik dengan draft lokal.
+```
 
 ---
 
