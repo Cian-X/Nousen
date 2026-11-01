@@ -149,10 +149,11 @@ class _ScheduleAgendaPageState extends ConsumerState<ScheduleAgendaPage> {
         child: NousenNavIcon(Icons.add, size: 28),
       ),
       bottomNavigationBar: NousenBottomNavBar(
+        onCenterActionTap: () => Navigator.of(context).pop(),
         tabs: <NousenNavTab>[
           NousenNavTab(
-            icon: Icons.check_circle_outline_rounded,
-            label: isId ? 'Aktivitas' : 'Activities',
+            icon: Icons.home_rounded,
+            label: isId ? 'Beranda' : 'Home',
             onTap: () => Navigator.of(context).pop(),
           ),
           NousenNavTab(

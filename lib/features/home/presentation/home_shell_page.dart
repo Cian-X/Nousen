@@ -359,20 +359,13 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddOptions(selectedDate, localeCode),
-          tooltip: localeCode == 'id' ? 'Tambah' : 'Add',
-          backgroundColor: const Color(0xFF3B7BD6),
-          foregroundColor: Colors.white,
-          shape: const CircleBorder(),
-          elevation: 8,
-          child: const Icon(Icons.add, size: 28),
-        ),
         bottomNavigationBar: NousenBottomNavBar(
+          onCenterActionTap: () => _showAddOptions(selectedDate, localeCode),
+          centerActionTooltip: localeCode == 'id' ? 'Tambah' : 'Add',
           tabs: <NousenNavTab>[
             NousenNavTab(
-              icon: Icons.check_circle_outline_rounded,
-              label: localeCode == 'id' ? 'Aktivitas' : 'Activities',
+              icon: Icons.home_rounded,
+              label: localeCode == 'id' ? 'Beranda' : 'Home',
               isSelected: true,
               onTap: () {},
             ),

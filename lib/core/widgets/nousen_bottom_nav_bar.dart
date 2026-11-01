@@ -17,37 +17,103 @@ class NousenNavTab {
 }
 
 /// Shared bottom navigation bar used across all pages.
-///
-/// Replaces the duplicate `_buildNavItem` in home_shell_page.dart and
-/// `_AgendaNavItem` in schedule_agenda_page.dart.
 class NousenBottomNavBar extends StatelessWidget {
-  const NousenBottomNavBar({super.key, required this.tabs});
+  const NousenBottomNavBar({
+    super.key,
+    required this.tabs,
+    this.onCenterActionTap,
+    this.centerActionIcon = Icons.add_rounded,
+    this.centerActionTooltip,
+  });
 
   final List<NousenNavTab> tabs;
+  final VoidCallback? onCenterActionTap;
+  final IconData centerActionIcon;
+  final String? centerActionTooltip;
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final VoidCallback? onCenterTap = onCenterActionTap;
+
+    final Widget content;
+    if (onCenterTap != null && tabs.length >= 2) {
+      final int mid = tabs.length ~/ 2;
+      final List<NousenNavTab> leftTabs = tabs.sublist(0, mid);
+      final List<NousenNavTab> rightTabs = tabs.sublist(mid);
+
+      content = Row(
+        children: <Widget>[
+          for (final NousenNavTab tab in leftTabs)
+            Expanded(child: Center(child: _buildItem(tab))),
+          _buildCenterAction(context, onCenterTap),
+          for (final NousenNavTab tab in rightTabs)
+            Expanded(child: Center(child: _buildItem(tab))),
+        ],
+      );
+    } else {
+      content = Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: tabs.map(_buildItem).toList(),
+      );
+    }
+
     return Container(
-      height: 64 + MediaQuery.of(context).padding.bottom,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-      ),
+      height: 64 + bottomPadding,
+      padding: EdgeInsets.only(bottom: bottomPadding),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: Colors.white.withValues(alpha: 0.98),
         border: const Border(
           top: BorderSide(color: Color(0xFFF1F5F9), width: 1),
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: tabs.map(_buildItem).toList(),
+      child: content,
+    );
+  }
+
+  Widget _buildCenterAction(BuildContext context, VoidCallback onTap) {
+    return Semantics(
+      button: true,
+      label: centerActionTooltip ?? 'Tambah',
+      child: Tooltip(
+        message: centerActionTooltip ?? 'Tambah',
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF3B7BD6),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: const Color(0xFF3B7BD6).withValues(alpha: 0.38),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: Center(
+                child: Icon(
+                  centerActionIcon,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -63,7 +129,7 @@ class NousenBottomNavBar extends StatelessWidget {
           onTap: tab.onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,

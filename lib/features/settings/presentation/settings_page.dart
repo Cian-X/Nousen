@@ -69,10 +69,13 @@ class SettingsPage extends ConsumerWidget {
       bottomNavigationBar: forceUserSetup
           ? null
           : NousenBottomNavBar(
+        onCenterActionTap: () => Navigator.of(
+          context,
+        ).popUntil((Route<dynamic> route) => route.isFirst),
         tabs: <NousenNavTab>[
           NousenNavTab(
-            icon: Icons.check_circle_outline_rounded,
-            label: isId ? 'Aktivitas' : 'Activities',
+            icon: Icons.home_rounded,
+            label: isId ? 'Beranda' : 'Home',
             onTap: () => Navigator.of(
               context,
             ).popUntil((Route<dynamic> route) => route.isFirst),
