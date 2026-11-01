@@ -50,7 +50,6 @@ class HomeShellPage extends ConsumerStatefulWidget {
 class _HomeShellPageState extends ConsumerState<HomeShellPage> {
   Timer? _countdownTimer;
   DateTime? _selectedDate;
-  String _activeFilter = 'today';
   StreamSubscription<ActivitySyncFailure>? _activitySyncFailureSub;
   StreamSubscription<ProgressSyncFailure>? _progressSyncFailureSub;
   StreamSubscription<OneTimeReminderSyncFailure>? _reminderSyncFailureSub;
@@ -340,17 +339,15 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
       (int index) => startSunday.add(Duration(days: index)),
     );
 
-    final Set<String> scheduledDateKeys = <String>{};
+    final Set<String> activityDateKeys = <String>{};
+    final Set<String> agendaDateKeys = <String>{};
     for (final DateTime d in twoWeeksDays) {
       final String dk = dateKeyFromDate(d);
-      final bool hasActivity = allActivities.any(
-        (ActivityModel a) => a.selectedDays.contains(d.weekday),
-      );
-      final bool hasReminder = allReminders.any(
-        (OneTimeReminderModel r) => dateKeyFromDate(r.scheduledAt) == dk,
-      );
-      if (hasActivity || hasReminder) {
-        scheduledDateKeys.add(dk);
+      if (allActivities.any((a) => a.selectedDays.contains(d.weekday))) {
+        activityDateKeys.add(dk);
+      }
+      if (allReminders.any((r) => dateKeyFromDate(r.scheduledAt) == dk)) {
+        agendaDateKeys.add(dk);
       }
     }
 
@@ -405,8 +402,8 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                     todayDate: today,
                     selectedDate: selectedDate,
                     twoWeeksDays: twoWeeksDays,
-                    scheduledDateKeys: scheduledDateKeys,
-                    activeFilter: _activeFilter,
+                    activityDateKeys: activityDateKeys,
+                    agendaDateKeys: agendaDateKeys,
                     localeCode: localeCode,
                     sidePadding: sidePadding,
                     currentStreak: currentStreak,
@@ -418,30 +415,75 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                           .read(homeSelectedWeekdayProvider.notifier)
                           .state = date.weekday;
                     },
-                    onFilterChanged: (String filter) {
-                      setState(() {
-                        _activeFilter = filter;
-                      });
-                    },
                   ),
                 ),
               ];
 
-              if (_activeFilter == 'agenda') {
+              if (dayReminders.isNotEmpty) {
+                listItems.add(
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(sidePadding, 4, sidePadding, 8),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.event_note_rounded,
+                          size: 16,
+                          color: Color(0xFF3B7BD6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Agenda (${dayReminders.length})',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                for (final OneTimeReminderModel reminder in dayReminders) {
+                  listItems.add(
+                    Padding(
+                      key: ValueKey<String>('agenda-${reminder.id}'),
+                      padding: EdgeInsets.only(
+                        bottom: 10,
+                        left: sidePadding,
+                        right: sidePadding,
+                      ),
+                      child: AgendaCard(
+                        item: reminder,
+                        localeCode: localeCode,
+                        onOpenDetail: (OneTimeReminderModel item) {
+                          Navigator.of(context).pushNamed(
+                            AppRoutes.oneTimeReminderDetail,
+                            arguments:
+                                OneTimeReminderDetailArgs(reminderId: item.id),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                }
+              }
+
+              if (hasActivities) {
                 if (dayReminders.isNotEmpty) {
                   listItems.add(
                     Padding(
-                      padding: EdgeInsets.fromLTRB(sidePadding, 4, sidePadding, 8),
+                      padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 8),
                       child: Row(
                         children: <Widget>[
                           const Icon(
-                            Icons.event_note_rounded,
+                            Icons.repeat_rounded,
                             size: 16,
                             color: Color(0xFF3B7BD6),
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Agenda (${dayReminders.length})',
+                            localeCode == 'id'
+                                ? 'Aktivitas Harian (${activityItems.length})'
+                                : 'Daily Activities (${activityItems.length})',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -451,184 +493,65 @@ class _HomeShellPageState extends ConsumerState<HomeShellPage> {
                       ),
                     ),
                   );
-                  for (final OneTimeReminderModel reminder in dayReminders) {
-                    listItems.add(
-                      Padding(
-                        key: ValueKey<String>('agenda-${reminder.id}'),
-                        padding: EdgeInsets.only(
-                          bottom: 10,
-                          left: sidePadding,
-                          right: sidePadding,
-                        ),
-                        child: AgendaCard(
-                          item: reminder,
-                          localeCode: localeCode,
-                          onOpenDetail: (OneTimeReminderModel item) {
-                            Navigator.of(context).pushNamed(
-                              AppRoutes.oneTimeReminderDetail,
-                              arguments:
-                                  OneTimeReminderDetailArgs(reminderId: item.id),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                } else {
+                }
+                for (int i = 0; i < activityItems.length; i++) {
+                  final _ActivityTileData item = activityItems[i];
                   listItems.add(
                     Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: sidePadding,
-                        vertical: 32,
+                      key: ValueKey<String>(
+                        '$selectedDateKey-${item.activity.id}',
                       ),
-                      child: Center(
-                        child: Text(
-                          localeCode == 'id'
-                              ? 'Tidak ada agenda untuk tanggal ini.'
-                              : 'No agenda for this date.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }
-              } else {
-                if (dayReminders.isNotEmpty) {
-                  listItems.add(
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(sidePadding, 4, sidePadding, 8),
-                      child: Row(
-                        children: <Widget>[
-                          const Icon(
-                            Icons.event_note_rounded,
-                            size: 16,
-                            color: Color(0xFF3B7BD6),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Agenda (${dayReminders.length})',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                  for (final OneTimeReminderModel reminder in dayReminders) {
-                    listItems.add(
-                      Padding(
-                        key: ValueKey<String>('agenda-${reminder.id}'),
-                        padding: EdgeInsets.only(
-                          bottom: 10,
-                          left: sidePadding,
-                          right: sidePadding,
-                        ),
-                        child: AgendaCard(
-                          item: reminder,
-                          localeCode: localeCode,
-                          onOpenDetail: (OneTimeReminderModel item) {
-                            Navigator.of(context).pushNamed(
-                              AppRoutes.oneTimeReminderDetail,
-                              arguments:
-                                  OneTimeReminderDetailArgs(reminderId: item.id),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                }
-
-                if (hasActivities) {
-                  if (dayReminders.isNotEmpty) {
-                    listItems.add(
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 8),
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(
-                              Icons.repeat_rounded,
-                              size: 16,
-                              color: Color(0xFF3B7BD6),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              localeCode == 'id'
-                                  ? 'Aktivitas Harian (${activityItems.length})'
-                                  : 'Daily Activities (${activityItems.length})',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  for (int i = 0; i < activityItems.length; i++) {
-                    final _ActivityTileData item = activityItems[i];
-                    listItems.add(
-                      Padding(
-                        key: ValueKey<String>(
-                          '$selectedDateKey-${item.activity.id}',
-                        ),
-                        padding: EdgeInsets.only(
-                          top: (i == 0 && dayReminders.isEmpty) ? 0 : 10,
-                          left: sidePadding,
-                          right: sidePadding,
-                        ),
-                        child: RepaintBoundary(
-                          child: _ActivityCard(
-                            item: item,
-                            canToggleToday: selectedIsToday,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                }
-
-                if (!hasActivities && dayReminders.isEmpty) {
-                  listItems.add(
-                    Padding(
-                      key: ValueKey<String>('activity-empty-$selectedWeekday'),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: sidePadding,
-                        vertical: 24,
+                      padding: EdgeInsets.only(
+                        top: (i == 0 && dayReminders.isEmpty) ? 0 : 10,
+                        left: sidePadding,
+                        right: sidePadding,
                       ),
                       child: RepaintBoundary(
-                        child: _EmptyActivitiesPanel(
-                          localeCode: localeCode,
-                          onAddTap: _openActivityForm,
-                        ),
-                      ),
-                    ),
-                  );
-                } else {
-                  listItems.add(
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: sidePadding,
-                        vertical: 32,
-                      ),
-                      child: Text(
-                        localeCode == 'id'
-                            ? 'Tekan + untuk menambah aktivitas atau agenda'
-                            : 'Tap + to add an activity or agenda',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF94A3B8),
-                          fontWeight: FontWeight.w500,
+                        child: _ActivityCard(
+                          item: item,
+                          canToggleToday: selectedIsToday,
                         ),
                       ),
                     ),
                   );
                 }
+              }
+
+              if (!hasActivities && dayReminders.isEmpty) {
+                listItems.add(
+                  Padding(
+                    key: ValueKey<String>('activity-empty-$selectedWeekday'),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: sidePadding,
+                      vertical: 24,
+                    ),
+                    child: RepaintBoundary(
+                      child: _EmptyActivitiesPanel(
+                        localeCode: localeCode,
+                        onAddTap: _openActivityForm,
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                listItems.add(
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: sidePadding,
+                      vertical: 32,
+                    ),
+                    child: Text(
+                      localeCode == 'id'
+                          ? 'Tekan + untuk menambah aktivitas atau agenda'
+                          : 'Tap + to add an activity or agenda',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
               }
 
               return Stack(
@@ -696,13 +619,12 @@ class _HomeTopContent extends StatelessWidget {
     required this.todayDate,
     required this.selectedDate,
     required this.twoWeeksDays,
-    required this.scheduledDateKeys,
-    required this.activeFilter,
+    required this.activityDateKeys,
+    required this.agendaDateKeys,
     required this.localeCode,
     required this.sidePadding,
     required this.currentStreak,
     required this.onDateSelected,
-    required this.onFilterChanged,
   });
 
   final String profileName;
@@ -710,13 +632,12 @@ class _HomeTopContent extends StatelessWidget {
   final DateTime todayDate;
   final DateTime selectedDate;
   final List<DateTime> twoWeeksDays;
-  final Set<String> scheduledDateKeys;
-  final String activeFilter;
+  final Set<String> activityDateKeys;
+  final Set<String> agendaDateKeys;
   final String localeCode;
   final double sidePadding;
   final int currentStreak;
   final ValueChanged<DateTime> onDateSelected;
-  final ValueChanged<String> onFilterChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -790,11 +711,10 @@ class _HomeTopContent extends StatelessWidget {
             todayDate: todayDate,
             selectedDate: selectedDate,
             twoWeeksDays: twoWeeksDays,
-            scheduledDateKeys: scheduledDateKeys,
-            activeFilter: activeFilter,
+            activityDateKeys: activityDateKeys,
+            agendaDateKeys: agendaDateKeys,
             localeCode: localeCode,
             onDateSelected: onDateSelected,
-            onFilterChanged: onFilterChanged,
           ),
         ),
         const SizedBox(height: 12),
@@ -808,21 +728,19 @@ class _HomeCalendarSelector extends StatelessWidget {
     required this.todayDate,
     required this.selectedDate,
     required this.twoWeeksDays,
-    required this.scheduledDateKeys,
-    required this.activeFilter,
+    required this.activityDateKeys,
+    required this.agendaDateKeys,
     required this.localeCode,
     required this.onDateSelected,
-    required this.onFilterChanged,
   });
 
   final DateTime todayDate;
   final DateTime selectedDate;
   final List<DateTime> twoWeeksDays;
-  final Set<String> scheduledDateKeys;
-  final String activeFilter;
+  final Set<String> activityDateKeys;
+  final Set<String> agendaDateKeys;
   final String localeCode;
   final ValueChanged<DateTime> onDateSelected;
-  final ValueChanged<String> onFilterChanged;
 
   static const List<String> _weekdayLabels = <String>[
     'Min',
@@ -933,15 +851,15 @@ class _HomeCalendarSelector extends StatelessWidget {
               Row(
                 children: List<Widget>.generate(7, (int col) {
                   final DateTime date = twoWeeksDays[col];
+                  final String dk = dateKeyFromDate(date);
                   return Expanded(
                     child: _CalendarDayCell(
                       date: date,
                       isSelected: isSameDay(date, selectedDate),
                       isToday: isSameDay(date, todayDate),
                       isSunday: col == 0,
-                      hasSchedule: scheduledDateKeys.contains(
-                        dateKeyFromDate(date),
-                      ),
+                      hasActivity: activityDateKeys.contains(dk),
+                      hasAgenda: agendaDateKeys.contains(dk),
                       onTap: () => onDateSelected(date),
                     ),
                   );
@@ -951,15 +869,15 @@ class _HomeCalendarSelector extends StatelessWidget {
               Row(
                 children: List<Widget>.generate(7, (int col) {
                   final DateTime date = twoWeeksDays[7 + col];
+                  final String dk = dateKeyFromDate(date);
                   return Expanded(
                     child: _CalendarDayCell(
                       date: date,
                       isSelected: isSameDay(date, selectedDate),
                       isToday: isSameDay(date, todayDate),
                       isSunday: col == 0,
-                      hasSchedule: scheduledDateKeys.contains(
-                        dateKeyFromDate(date),
-                      ),
+                      hasActivity: activityDateKeys.contains(dk),
+                      hasAgenda: agendaDateKeys.contains(dk),
                       onTap: () => onDateSelected(date),
                     ),
                   );
@@ -974,135 +892,43 @@ class _HomeCalendarSelector extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Footer: Legend + Segmented Toggle
+          // Footer: Legend only (titik biru = Aktivitas, lingkaran = Agenda)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              // Legend
-              Row(
-                children: <Widget>[
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF3B7BD6),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    localeCode == 'id' ? 'Ada Jadwal' : 'Scheduled',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF3B7BD6),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    localeCode == 'id' ? 'Hari Ini' : 'Today',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-              // Segmented Switch
+              // Titik biru solid = Aktivitas
               Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF3B7BD6),
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    GestureDetector(
-                      onTap: () => onFilterChanged('today'),
-                      behavior: HitTestBehavior.opaque,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: activeFilter == 'today'
-                            ? BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(999),
-                                boxShadow: <BoxShadow>[
-                                  BoxShadow(
-                                    color: Colors.black.withValues(
-                                      alpha: 0.06,
-                                    ),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              )
-                            : null,
-                        child: Text(
-                          localeCode == 'id' ? 'Hari Ini' : 'Today',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: activeFilter == 'today'
-                                ? const Color(0xFF3B7BD6)
-                                : const Color(0xFF64748B),
-                            fontWeight: activeFilter == 'today'
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => onFilterChanged('agenda'),
-                      behavior: HitTestBehavior.opaque,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: activeFilter == 'agenda'
-                            ? BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(999),
-                                boxShadow: <BoxShadow>[
-                                  BoxShadow(
-                                    color: Colors.black.withValues(
-                                      alpha: 0.06,
-                                    ),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              )
-                            : null,
-                        child: Text(
-                          'Agenda',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: activeFilter == 'agenda'
-                                ? const Color(0xFF3B7BD6)
-                                : const Color(0xFF64748B),
-                            fontWeight: activeFilter == 'agenda'
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(width: 6),
+              Text(
+                localeCode == 'id' ? 'Aktivitas' : 'Activities',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Lingkaran = Agenda
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3B7BD6),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Agenda',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF64748B),
                 ),
               ),
             ],
@@ -1119,7 +945,8 @@ class _CalendarDayCell extends StatelessWidget {
     required this.isSelected,
     required this.isToday,
     required this.isSunday,
-    required this.hasSchedule,
+    required this.hasActivity,
+    required this.hasAgenda,
     required this.onTap,
   });
 
@@ -1127,13 +954,16 @@ class _CalendarDayCell extends StatelessWidget {
   final bool isSelected;
   final bool isToday;
   final bool isSunday;
-  final bool hasSchedule;
+  final bool hasActivity;
+  final bool hasAgenda;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final String dayStr = date.day.toString();
+    final Color indicatorColor =
+        isSelected ? Colors.white : const Color(0xFF3B7BD6);
 
     return GestureDetector(
       onTap: onTap,
@@ -1163,38 +993,36 @@ class _CalendarDayCell extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
-              if (isSelected)
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                )
-              else if (hasSchedule)
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3B7BD6),
-                    shape: BoxShape.circle,
-                  ),
-                )
-              else if (isToday)
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFF3B7BD6),
-                      width: 1.2,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (hasActivity)
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: indicatorColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                )
-              else
-                const SizedBox(width: 4, height: 4),
+                  if (hasActivity && hasAgenda) const SizedBox(width: 3),
+                  if (hasAgenda)
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: indicatorColor,
+                          width: 1.2,
+                        ),
+                      ),
+                    ),
+                  if (!hasActivity && !hasAgenda)
+                    const SizedBox(width: 4, height: 4),
+                ],
+              ),
             ],
           ),
         ),
