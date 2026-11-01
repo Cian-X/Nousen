@@ -1096,11 +1096,7 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
 
     return Opacity(
       opacity: item.isCompleted ? 0.5 : 1.0,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Material(
+      child: Material(
         color: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
@@ -1139,9 +1135,12 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
                       // Kolom waktu (kiri) mengikuti pola kartu Agenda.
                       SizedBox(
                         width: 56,
@@ -1271,17 +1270,14 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ),
-          // Expandable subtasks checklist (OUTSIDE card)
-          if (subTotal > 0 && isExpanded)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 14, right: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: activity.subActivities.map((
+                  // Expandable subtasks checklist
+                  if (subTotal > 0 && isExpanded)
+                    Padding(
+                      // Sejajar awal teks judul: kolom waktu 56 + gap 14.
+                      padding: const EdgeInsets.only(top: 8, left: 70),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: activity.subActivities.map((
                           String subActivity,
                         ) {
                           final bool checked = completedSubActivities.contains(
@@ -1374,7 +1370,11 @@ class _ActivityCardState extends ConsumerState<_ActivityCard> {
                         }).toList(),
                       ),
                     ),
-        ],
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

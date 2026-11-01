@@ -977,11 +977,7 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
       // Redup mengikuti selesai keseluruhan (induk + semua sub),
       // lingkaran mencerminkan unit induk (item.isCompleted).
       opacity: state == AgendaVisualState.done ? 0.5 : 1.0,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          InkWell(
+      child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => widget.onOpenDetail(item),
       child: Container(
@@ -1007,7 +1003,10 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                 ]
               : null,
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Expanded(
@@ -1069,15 +1068,13 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                 ),
               ],
             ),
-      ),
-      ),
-          // Expandable subtasks checklist (OUTSIDE card)
-          if (hasSubs && _expanded)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 14, right: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: item.subActivities.map((String sub) {
+            if (hasSubs && _expanded)
+              Padding(
+                // Sejajar awal teks judul: kolom waktu 56 + gap 14.
+                padding: const EdgeInsets.only(top: 8, left: 70),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: item.subActivities.map((String sub) {
                     final bool checked =
                         item.completedSubActivities.contains(sub);
                     return InkWell(
@@ -1145,7 +1142,9 @@ class _AgendaCardState extends ConsumerState<AgendaCard> {
                   }).toList(),
                 ),
               ),
-        ],
+          ],
+        ),
+      ),
       ),
     );
   }
